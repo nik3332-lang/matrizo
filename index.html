@@ -230,7 +230,7 @@
     clip-path: polygon(0% 30%, 5% 70%, 12% 20%, 20% 80%, 28% 25%, 36% 75%, 44% 15%, 52% 85%, 60% 20%, 68% 70%, 76% 30%, 84% 80%, 92% 25%, 100% 60%, 100% 100%, 0% 100%);
   }
 
-  /* ---------- Visit form section ---------- */
+  /* ---------- Notify me section ---------- */
   .visit-section {
     background: var(--purple);
     padding: 64px 20px;
@@ -239,19 +239,24 @@
   .visit-section h2 {
     color: var(--white);
     font-size: clamp(24px, 4vw, 36px);
-    margin-bottom: 32px;
+    margin-bottom: 12px;
+  }
+  .visit-section .subtext {
+    color: #E9D5FF;
+    font-size: 15px;
+    margin-bottom: 28px;
   }
 
   .form-card {
     background: var(--white);
-    max-width: 560px;
+    max-width: 480px;
     margin: 0 auto;
     border-radius: 18px;
-    padding: 32px 28px;
+    padding: 28px 28px;
     box-shadow: 0 16px 40px rgba(0,0,0,0.18);
     text-align: left;
   }
-  .form-row { margin-bottom: 18px; }
+  .form-row { margin-bottom: 6px; }
   .form-row label {
     display: block;
     font-weight: 700;
@@ -259,9 +264,7 @@
     color: var(--text-dark);
     margin-bottom: 6px;
   }
-  .form-row input,
-  .form-row select,
-  .form-row textarea {
+  .form-row input {
     width: 100%;
     font-family: 'Inter', sans-serif;
     font-size: 15px;
@@ -273,14 +276,10 @@
     outline: none;
     transition: border-color 0.2s ease;
   }
-  .form-row input:focus,
-  .form-row select:focus,
-  .form-row textarea:focus {
+  .form-row input:focus {
     border-color: var(--purple);
   }
-  .form-row textarea { resize: vertical; min-height: 80px; }
-  .form-row.error input,
-  .form-row.error select {
+  .form-row.error input {
     border-color: #DC2626;
   }
   .error-msg {
@@ -297,6 +296,7 @@
     border: none;
     cursor: pointer;
     padding: 15px 0;
+    margin-top: 16px;
     border-radius: 10px;
     font-family: 'Inter', sans-serif;
     font-weight: 800;
@@ -479,50 +479,19 @@
 
 <hr class="brushstroke" />
 
-<!-- ===================== VISIT FORM ===================== -->
+<!-- ===================== NOTIFY ME ===================== -->
 <section class="visit-section">
-  <h2>Book a Store Visit or Get a Callback</h2>
+  <h2>Get Notified When We Launch</h2>
+  <p class="subtext">Drop your email and we'll ping you on WhatsApp the moment we go live.</p>
 
-  <form class="form-card" id="visit-form" novalidate>
-    <div class="form-row" id="row-name">
-      <label for="full-name">Full Name *</label>
-      <input type="text" id="full-name" name="full-name" placeholder="Your full name" />
-      <div class="error-msg">Please enter your full name.</div>
+  <form class="form-card" id="notify-form" novalidate>
+    <div class="form-row" id="row-email">
+      <label for="notify-email">Email Address *</label>
+      <input type="email" id="notify-email" name="email" placeholder="you@example.com" />
+      <div class="error-msg">Please enter a valid email address.</div>
     </div>
 
-    <div class="form-row" id="row-phone">
-      <label for="phone">Phone Number *</label>
-      <input type="tel" id="phone" name="phone" placeholder="10-digit mobile number" />
-      <div class="error-msg">Please enter a valid phone number.</div>
-    </div>
-
-    <div class="form-row" id="row-city">
-      <label for="city">City *</label>
-      <input type="text" id="city" name="city" placeholder="Your city" />
-      <div class="error-msg">Please enter your city.</div>
-    </div>
-
-    <div class="form-row" id="row-category">
-      <label for="category">Looking for?</label>
-      <select id="category" name="category">
-        <option value="Paints">Paints</option>
-        <option value="Sanitary &amp; Plumbing">Sanitary &amp; Plumbing</option>
-        <option value="Hardware">Hardware</option>
-        <option value="All Products">All Products</option>
-      </select>
-    </div>
-
-    <div class="form-row" id="row-date">
-      <label for="visit-date">Preferred Visit Date</label>
-      <input type="date" id="visit-date" name="visit-date" />
-    </div>
-
-    <div class="form-row" id="row-message">
-      <label for="message">Message / Requirements</label>
-      <textarea id="message" name="message" placeholder="Tell us more about what you need (optional)"></textarea>
-    </div>
-
-    <button type="submit" class="submit-btn">Send via WhatsApp 💬</button>
+    <button type="submit" class="submit-btn">Notify Me 💬</button>
   </form>
 </section>
 
@@ -582,8 +551,8 @@
   tickCountdown();
   setInterval(tickCountdown, 1000);
 
-  // ---------- Visit form -> WhatsApp ----------
-  var form = document.getElementById('visit-form');
+  // ---------- Notify me -> WhatsApp ----------
+  var form = document.getElementById('notify-form');
 
   function setError(rowId, hasError) {
     var row = document.getElementById(rowId);
@@ -593,36 +562,20 @@
   form.addEventListener('submit', function (e) {
     e.preventDefault();
 
-    var name = document.getElementById('full-name').value.trim();
-    var phone = document.getElementById('phone').value.trim();
-    var city = document.getElementById('city').value.trim();
-    var category = document.getElementById('category').value;
-    var visitDate = document.getElementById('visit-date').value;
-    var message = document.getElementById('message').value.trim();
+    var email = document.getElementById('notify-email').value.trim();
+    var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    var phonePattern = /^[0-9+\-\s]{7,15}$/;
+    var hasEmailError = email.length === 0 || !emailPattern.test(email);
+    setError('row-email', hasEmailError);
 
-    var hasNameError = name.length === 0;
-    var hasPhoneError = phone.length === 0 || !phonePattern.test(phone);
-    var hasCityError = city.length === 0;
-
-    setError('row-name', hasNameError);
-    setError('row-phone', hasPhoneError);
-    setError('row-city', hasCityError);
-
-    if (hasNameError || hasPhoneError || hasCityError) {
+    if (hasEmailError) {
       return;
     }
 
     var lines = [
-      'New Matrizo Enquiry 🏠',
+      'New Matrizo Notify-Me Signup 🏠',
       '',
-      'Name: ' + name,
-      'Phone: ' + phone,
-      'City: ' + city,
-      'Looking for: ' + category,
-      'Visit Date: ' + (visitDate || 'Not specified'),
-      'Message: ' + (message || 'N/A'),
+      'Email: ' + email,
       '',
       'Sent from matrizo.com'
     ];
