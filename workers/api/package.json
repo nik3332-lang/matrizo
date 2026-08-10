@@ -10,8 +10,11 @@
     "db:migrate:remote": "wrangler d1 migrations apply matrizo-db --remote"
   },
   "dependencies": {
+    "@matrizo/shared": "workspace:*",
     "drizzle-orm": "^0.45.2",
-    "hono": "^4.13.0"
+    "hono": "^4.13.0",
+    "jose": "^6.2.8",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5",

@@ -8,25 +8,22 @@
     "enabled": true,
     "head_sampling_rate": 1
   },
-  // NOTE: these are placeholder ids. Before deploying (or running D1 migrations
-  // against a real database), create the real resources and paste their ids in:
-  //   wrangler d1 create matrizo-db
-  //   wrangler kv namespace create matrizo-cache
-  //   wrangler r2 bucket create matrizo-assets
-  // `wrangler dev` (local mode) works fine with the placeholders below since it
-  // emulates D1/KV/R2 locally under .wrangler/state.
+  // Real Cloudflare resources (account: Nikhilsinghal.official@gmail.com's Account).
+  // R2 bucket "matrizo-assets" is NOT yet created — R2 must be enabled for this
+  // account from the Cloudflare dashboard first (one-time manual step, can't be
+  // done via API token), then run: wrangler r2 bucket create matrizo-assets
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "matrizo-db",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "10aefb7e-ead4-476f-8078-a7a432bfa3d6",
       "migrations_dir": "drizzle"
     }
   ],
   "kv_namespaces": [
     {
       "binding": "CACHE",
-      "id": "00000000000000000000000000000000"
+      "id": "3829c7f693064b099cbd9513f7184026"
     }
   ],
   "r2_buckets": [
