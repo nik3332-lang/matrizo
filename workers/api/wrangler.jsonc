@@ -1,0 +1,40 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "matrizo-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-04",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  // NOTE: these are placeholder ids. Before deploying (or running D1 migrations
+  // against a real database), create the real resources and paste their ids in:
+  //   wrangler d1 create matrizo-db
+  //   wrangler kv namespace create matrizo-cache
+  //   wrangler r2 bucket create matrizo-assets
+  // `wrangler dev` (local mode) works fine with the placeholders below since it
+  // emulates D1/KV/R2 locally under .wrangler/state.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "matrizo-db",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "00000000000000000000000000000000"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "ASSETS",
+      "bucket_name": "matrizo-assets"
+    }
+  ]
+  // Secrets (MSG91 API key, JWT signing secret, Razorpay keys) are added later via
+  // `wrangler secret put <NAME>` — never committed here or to source control.
+}

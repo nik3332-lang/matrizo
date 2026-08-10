@@ -32,14 +32,6 @@ yarn-error.*
 
 # local env files
 .env*.local
-.env
-
-# Cloudflare
-.wrangler/
-.dev.vars
-
-# pnpm
-.pnpm-store/
 
 # typescript
 *.tsbuildinfo

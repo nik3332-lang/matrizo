@@ -1,0 +1,20 @@
+{
+  "name": "matrizo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Matrizo — home-improvement marketplace (web + iOS + Android from one Expo Router codebase, Cloudflare Workers API)",
+  "scripts": {
+    "app:dev": "pnpm --filter @matrizo/app start",
+    "app:web": "pnpm --filter @matrizo/app web",
+    "app:ios": "pnpm --filter @matrizo/app ios",
+    "app:android": "pnpm --filter @matrizo/app android",
+    "api:dev": "pnpm --filter @matrizo/api dev",
+    "api:deploy": "pnpm --filter @matrizo/api deploy",
+    "api:db:generate": "pnpm --filter @matrizo/api db:generate",
+    "api:db:migrate:local": "pnpm --filter @matrizo/api db:migrate:local"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@11.20.0"
+}
