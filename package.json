@@ -8,6 +8,8 @@
     "app:web": "pnpm --filter @matrizo/app web",
     "app:ios": "pnpm --filter @matrizo/app ios",
     "app:android": "pnpm --filter @matrizo/app android",
+    "app:build:web": "pnpm --filter @matrizo/app build:web",
+    "app:deploy:web": "pnpm --filter @matrizo/app deploy:web",
     "api:dev": "pnpm --filter @matrizo/api dev",
     "api:deploy": "pnpm --filter @matrizo/api deploy",
     "api:db:generate": "pnpm --filter @matrizo/api db:generate",

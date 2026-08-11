@@ -54,12 +54,21 @@ pnpm app:android   # requires Android Studio / an emulator, or use Expo Go
 pnpm app:dev        # Metro dev server, pick a platform from the CLI
 ```
 
-To produce a static web build (what would be deployed to Cloudflare Pages):
+To produce a static web build (what gets deployed to Cloudflare Pages):
 
 ```sh
-pnpm --filter @matrizo/app exec expo export -p web
+pnpm app:build:web
 # output in apps/app/dist/
 ```
+
+To deploy it straight to Cloudflare Pages (project `matrizo`, `apps/app/wrangler.jsonc`):
+
+```sh
+pnpm app:deploy:web
+```
+
+> First time only: the Pages project must exist before this will push to it —
+> `cd apps/app && npx wrangler pages project create matrizo`.
 
 ## Running the API
 
@@ -101,6 +110,8 @@ pnpm api:db:migrate:local    # apply migrations to the local D1 emulation
 
 ## Status
 
-This is a phased rebuild of what was previously a static coming-soon page (now superseded by this
-app). See the build plan for what's done and what's next — Phase 0 (this scaffold) is complete;
-catalog, auth, cart/checkout, payments, and store submission follow in later phases.
+This is a phased rebuild of what was previously a static coming-soon page. That page
+(`index.html` at the repo root) has been removed — the Expo web export (`pnpm app:build:web`,
+deployed via `pnpm app:deploy:web`) is now the thing that gets served. See the build plan for
+what's done and what's next — catalog, OTP auth, cart, checkout, and orders are wired up; native
+store submission and payment gateway go-live follow in later phases.
