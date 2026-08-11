@@ -7,6 +7,7 @@ import { cartRoutes } from './routes/cart';
 import { catalogRoutes } from './routes/catalog';
 import { deliveryRoutes } from './routes/delivery';
 import { orderRoutes } from './routes/orders';
+import { ownerRoutes } from './routes/owner';
 import { paymentRoutes } from './routes/payments';
 import type { Env } from './env';
 
@@ -31,5 +32,6 @@ v1.route('/delivery', deliveryRoutes);
 v1.route('/orders', orderRoutes);
 v1.route('/payments', paymentRoutes);
 v1.route('/account', accountRoutes);
+v1.route('/owner', ownerRoutes);
 
 export default app;

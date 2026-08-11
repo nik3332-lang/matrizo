@@ -32,6 +32,7 @@ export default function RootLayout() {
         <Stack.Screen name="checkout" options={{ headerShown: true, title: 'Checkout' }} />
         <Stack.Screen name="orders" options={{ headerShown: true, title: 'My Orders' }} />
         <Stack.Screen name="order/[id]" options={{ headerShown: true, title: 'Order' }} />
+        <Stack.Screen name="owner/index" options={{ headerShown: false }} />
       </Stack>
     </SafeAreaProvider>
   );

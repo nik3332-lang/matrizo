@@ -9,4 +9,6 @@ export type Env = CloudflareBindings & {
   RAZORPAY_KEY_ID?: string;
   RAZORPAY_KEY_SECRET?: string;
   RAZORPAY_WEBHOOK_SECRET?: string;
+  OWNER_EMAIL?: string;
+  OWNER_PASSWORD?: string;
 };

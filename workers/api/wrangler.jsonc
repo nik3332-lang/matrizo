@@ -26,12 +26,17 @@
       "id": "3829c7f693064b099cbd9513f7184026"
     }
   ],
-  "r2_buckets": [
-    {
-      "binding": "ASSETS",
-      "bucket_name": "matrizo-assets"
-    }
-  ]
+  // R2 binding commented out for now: R2 isn't enabled on the account yet, and
+  // `wrangler deploy` fails outright while it references a bucket that can't
+  // exist. Nothing in src/ reads env.ASSETS yet either. Once R2 is enabled
+  // (Cloudflare dashboard, one-time manual step) and the bucket is created
+  // (`wrangler r2 bucket create matrizo-assets`), restore this block:
+  // "r2_buckets": [
+  //   {
+  //     "binding": "ASSETS",
+  //     "bucket_name": "matrizo-assets"
+  //   }
+  // ]
   // Secrets (MSG91 API key, JWT signing secret, Razorpay keys) are added later via
   // `wrangler secret put <NAME>` — never committed here or to source control.
 }

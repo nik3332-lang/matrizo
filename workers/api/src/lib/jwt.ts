@@ -4,6 +4,7 @@ import type { Env } from '../env';
 
 const ACCESS_TOKEN_TTL = '15m';
 const REFRESH_TOKEN_TTL = '30d';
+const OWNER_TOKEN_TTL = '12h';
 const DEV_FALLBACK_SECRET = 'dev-insecure-secret-change-me';
 
 let warnedAboutDevSecret = false;
@@ -18,7 +19,7 @@ function getSecretKey(env: Env) {
   return new TextEncoder().encode(env.JWT_SECRET ?? DEV_FALLBACK_SECRET);
 }
 
-type TokenType = 'access' | 'refresh';
+type TokenType = 'access' | 'refresh' | 'owner';
 
 export async function signAccessToken(env: Env, userId: string): Promise<string> {
   return new SignJWT({ type: 'access' satisfies TokenType })
@@ -35,6 +36,17 @@ export async function signRefreshToken(env: Env, userId: string): Promise<string
     .setSubject(userId)
     .setIssuedAt()
     .setExpirationTime(REFRESH_TOKEN_TTL)
+    .sign(getSecretKey(env));
+}
+
+// The owner dashboard has no user record — subject is always the fixed
+// literal "owner" rather than a userId.
+export async function signOwnerToken(env: Env): Promise<string> {
+  return new SignJWT({ type: 'owner' satisfies TokenType })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setSubject('owner')
+    .setIssuedAt()
+    .setExpirationTime(OWNER_TOKEN_TTL)
     .sign(getSecretKey(env));
 }
 

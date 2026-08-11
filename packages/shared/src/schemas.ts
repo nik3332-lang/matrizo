@@ -100,6 +100,44 @@ export const orderSchema = z.object({
   razorpayOrderId: z.string().nullable(),
 });
 
+export const deliveryPincodeSchema = z.object({
+  pincode: z.string(),
+  serviceable: z.boolean(),
+  etaMinutes: z.number(),
+});
+
+export const adminOrderSchema = orderSchema.extend({ userPhone: z.string() });
+
+export const newProductInputSchema = z.object({
+  slug: z.string().min(1),
+  categoryId: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().optional(),
+  unit: z.string().min(1),
+  basePrice: z.number().positive(),
+  imageUrl: z.string().optional(),
+  active: z.boolean().optional(),
+});
+
+export const newCategoryInputSchema = z.object({
+  slug: z.string().min(1),
+  name: z.string().min(1),
+  icon: z.string().optional(),
+  parentId: z.string().optional(),
+  sortOrder: z.number().int().optional(),
+});
+
+export const newTierInputSchema = z.object({
+  minQty: z.number().int().positive(),
+  pricePerUnit: z.number().positive(),
+});
+
+export const newPincodeInputSchema = z.object({
+  pincode: z.string().regex(/^\d{6}$/),
+  serviceable: z.boolean().optional(),
+  etaMinutes: z.number().int().positive().optional(),
+});
+
 export const orderItemSchema = z.object({
   id: z.string(),
   orderId: z.string(),
@@ -121,3 +159,9 @@ export type DeliveryCheck = z.infer<typeof deliveryCheckSchema>;
 export type AuthTokens = z.infer<typeof authTokensSchema>;
 export type Order = z.infer<typeof orderSchema>;
 export type OrderItem = z.infer<typeof orderItemSchema>;
+export type DeliveryPincode = z.infer<typeof deliveryPincodeSchema>;
+export type AdminOrder = z.infer<typeof adminOrderSchema>;
+export type NewProductInput = z.infer<typeof newProductInputSchema>;
+export type NewCategoryInput = z.infer<typeof newCategoryInputSchema>;
+export type NewTierInput = z.infer<typeof newTierInputSchema>;
+export type NewPincodeInput = z.infer<typeof newPincodeInputSchema>;

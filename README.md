@@ -96,8 +96,16 @@ npx wrangler r2 bucket create matrizo-assets
 # then paste the returned ids into wrangler.jsonc
 ```
 
-Secrets (MSG91 API key, JWT signing secret, Razorpay keys — added in later phases) are set with
-`npx wrangler secret put <NAME>`, never committed to the repo.
+Secrets (MSG91 API key, JWT signing secret, Razorpay keys, owner dashboard credentials) are set
+with `npx wrangler secret put <NAME>`, never committed to the repo.
+
+## Owner dashboard
+
+`/owner` is a catalog/order admin screen (add/edit products & prices, categories, order status,
+delivery pincodes) gated by a fixed email+password login (`OWNER_EMAIL` / `OWNER_PASSWORD`
+secrets on the Worker), separate from customer OTP auth. It isn't linked from anywhere in the
+app's UI or its sitemap — reachable only by navigating to the URL directly, and every request
+under it requires the owner-scoped JWT issued at login.
 
 ### Database migrations (Drizzle → D1)
 
