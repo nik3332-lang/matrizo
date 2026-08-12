@@ -22,7 +22,10 @@ const LOGIN_RATE_LIMIT_KEY = 'owner:login:attempts';
 const LOGIN_MAX_ATTEMPTS = 10;
 const LOGIN_LOCKOUT_SECONDS = 15 * 60;
 
-const loginSchema = z.object({ email: z.string().email(), password: z.string().min(1) });
+const loginSchema = z.object({
+  email: z.string().trim().email(),
+  password: z.string().trim().min(1),
+});
 
 ownerRoutes.post('/login', async (c) => {
   const parsed = loginSchema.safeParse(await c.req.json().catch(() => null));

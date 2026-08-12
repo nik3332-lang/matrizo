@@ -58,7 +58,7 @@ function OwnerLogin() {
     setError(null);
     setLoading(true);
     try {
-      const res = await ownerApi.login(email.trim(), password);
+      const res = await ownerApi.login(email.trim(), password.trim());
       await login(res.ownerToken);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Something went wrong');
@@ -83,6 +83,8 @@ function OwnerLogin() {
         className="mt-3 rounded-xl border-2 border-purple bg-white px-4 py-3 text-ink"
         placeholder="Password"
         secureTextEntry
+        autoCapitalize="none"
+        autoCorrect={false}
         value={password}
         onChangeText={setPassword}
       />
