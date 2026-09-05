@@ -19,7 +19,9 @@ function generateOtp(): string {
 
 const otpRequestSchema = z.object({ phone: z.string().trim().min(6).max(15) });
 const otpVerifySchema = z.object({ phone: z.string().trim(), code: z.string().trim().length(6) });
-const loginSchema = z.object({ email: z.string().trim().toLowerCase().email(), password: z.string() });
+// .trim() on password too — a prior bug (see git history) had a mobile
+// keyboard's auto-inserted trailing space break otherwise-correct login.
+const loginSchema = z.object({ email: z.string().trim().toLowerCase().email(), password: z.string().trim() });
 
 // Dev-mode note: MSG91 isn't configured yet (no real account). Rather than
 // fail OTP login entirely, the code is returned directly in this response

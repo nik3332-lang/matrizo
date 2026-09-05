@@ -1,69 +1,90 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
+
+import { ORDER_STATUSES } from '@matrizo/shared';
+import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+
+type Order = {
+  id: string;
+  status: string;
+  totalAmount: number;
+  paymentMethod: string;
+  createdAt: string;
+};
+
+const FILTERS = ['all', ...ORDER_STATUSES] as const;
+
+export default function OrderQueuePage() {
+  const { user, loading } = useAuth();
+  const [orders, setOrders] = useState<Order[] | null>(null);
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]>('all');
+
+  useEffect(() => {
+    if (!loading && user) {
+      api.get<{ orders: Order[] }>('/orders').then((res) => setOrders(res.orders));
+    }
+  }, [loading, user]);
+
+  const filtered = useMemo(
+    () => (filter === 'all' ? orders : orders?.filter((o) => o.status === filter)),
+    [orders, filter]
+  );
+
+  if (!loading && !user) {
+    return (
+      <p className="text-neutral-600">
+        <Link href="/login" className="underline">
+          Sign in
+        </Link>{' '}
+        to view the order queue.
+      </p>
+    );
+  }
+  if (!orders) return <p className="text-neutral-500">Loading…</p>;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div>
+      <h1 className="text-xl font-semibold mb-4">Order queue</h1>
+
+      <div className="flex gap-2 mb-4 flex-wrap">
+        {FILTERS.map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`text-xs px-3 py-1 rounded-full border capitalize ${
+              filter === f ? 'bg-neutral-900 text-white border-neutral-900' : 'border-neutral-300 text-neutral-600'
+            }`}
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            {f}
+          </button>
+        ))}
+      </div>
+
+      {filtered?.length === 0 && <p className="text-neutral-500">No orders here.</p>}
+
+      <div className="divide-y border border-neutral-200 rounded-md bg-white">
+        {filtered?.map((order) => (
+          <Link
+            key={order.id}
+            href={`/orders/${order.id}`}
+            className="p-4 flex items-center justify-between hover:bg-neutral-50"
           >
-            Documentation
-          </a>
-        </div>
-      </main>
+            <div>
+              <div className="font-medium">#{order.id.slice(0, 8)}</div>
+              <div className="text-sm text-neutral-500">{new Date(order.createdAt).toLocaleString()}</div>
+            </div>
+            <div className="text-right">
+              <div className="font-medium capitalize">{order.status}</div>
+              <div className="text-sm text-neutral-500">
+                ₹{order.totalAmount} · {order.paymentMethod.toUpperCase()}
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }

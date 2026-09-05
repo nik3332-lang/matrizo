@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Dark-store ops portal — a separate Workers project from both matrizo-api
+  // and the customer-facing matrizo-web. No pre-existing Pages project to
+  // preserve here (unlike apps/web), so this goes straight to the
+  // all-Cloudflare OpenNext path with no migration step needed.
+  "name": "matrizo-admin",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-08-04",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "vars": {
+    "NEXT_PUBLIC_API_URL": "https://matrizo-api.nikhilsinghal-official.workers.dev/api/v1"
+  }
+}
