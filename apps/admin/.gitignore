@@ -32,6 +32,10 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# .env.production holds only NEXT_PUBLIC_* values, which end up in the
+# client JS bundle regardless — no secret to keep out, and Next.js needs
+# it present at build time to inline it correctly.
+!.env.production
 
 # vercel
 .vercel
