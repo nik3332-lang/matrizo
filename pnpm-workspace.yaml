@@ -1,14 +1,16 @@
 packages:
   - "apps/*"
-  - "workers/*"
   - "packages/*"
-# React Native / Metro (used by the Expo app) doesn't reliably support pnpm's
-# default strict, symlinked node_modules layout — packages like nativewind end
-# up with unresolvable nested dependencies (e.g. react-native-css-interop).
-# Hoisting keeps a flat, npm-like node_modules across the whole workspace.
+# React Native / Metro (used by the future Expo mobile app) doesn't reliably
+# support pnpm's default strict, symlinked node_modules layout — packages
+# like nativewind end up with unresolvable nested dependencies (e.g.
+# react-native-css-interop). Hoisting keeps a flat, npm-like node_modules
+# across the whole workspace. Kept ahead of apps/mobile existing again so
+# that app doesn't need a workspace-wide config change to build.
 nodeLinker: hoisted
 allowBuilds:
   esbuild: true
+  unrs-resolver: true
   workerd: true
 minimumReleaseAgeExclude:
   - hono@4.13.0

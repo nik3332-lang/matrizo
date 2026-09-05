@@ -1,0 +1,78 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "matrizo-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-04",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  // Real Cloudflare resources (account: Nikhilsinghal.official@gmail.com's Account).
+  // These IDs are carried over unchanged from the pre-rewrite worker — same D1
+  // database and KV namespace, just a new schema/migration history on top.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "matrizo-db",
+      "database_id": "10aefb7e-ead4-476f-8078-a7a432bfa3d6",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "3829c7f693064b099cbd9513f7184026"
+    }
+  ],
+
+  // Durable Objects: one instance per active order (keyed by order id),
+  // holding live WebSocket connections + a cached "current status" for fast
+  // reconnect. D1's order_status_events table stays the durable source of
+  // truth — the DO is a fan-out/perf layer, not where data lives long-term.
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "ORDER_TRACKER",
+        "class_name": "OrderTrackerDO"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["OrderTrackerDO"]
+    }
+  ],
+
+  // R2 binding commented out for now: R2 isn't enabled on the account yet, and
+  // `wrangler deploy` fails outright while it references a bucket that can't
+  // exist. Nothing in src/ reads env.MEDIA yet either. Once R2 is enabled
+  // (Cloudflare dashboard, one-time manual step) and the bucket is created
+  // (`wrangler r2 bucket create matrizo-assets`), restore this block:
+  // "r2_buckets": [
+  //   {
+  //     "binding": "MEDIA",
+  //     "bucket_name": "matrizo-assets"
+  //   }
+  // ]
+
+  // Queues binding commented out for now: the queue itself doesn't exist yet
+  // on the account (`wrangler deploy` fails referencing a nonexistent queue).
+  // One queue, not three — jobs carry a `type` discriminant
+  // ('dispatch' | 'cashback' | 'notification') and a single consumer handler
+  // switches on it, rather than provisioning + wiring three separate queues
+  // for what's the same "do this async, off the request path" need. Once
+  // created (`wrangler queues create matrizo-jobs`), restore:
+  // "queues": {
+  //   "producers": [
+  //     { "binding": "JOBS", "queue": "matrizo-jobs" }
+  //   ],
+  //   "consumers": [
+  //     { "queue": "matrizo-jobs", "max_batch_size": 10, "max_batch_timeout": 5 }
+  //   ]
+  // }
+
+  // Secrets (MSG91 API key, JWT signing secret, Razorpay keys) are added later via
+  // `wrangler secret put <NAME>` — never committed here or to source control.
+}

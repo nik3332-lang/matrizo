@@ -1,7 +1,0 @@
-{
-  "$schema": "node_modules/wrangler/config-schema.json",
-  // Cloudflare Pages project serving the Expo web export (apps/app/dist),
-  // superseding the old static index.html coming-soon page.
-  "name": "matrizo",
-  "pages_build_output_dir": "dist"
-}
