@@ -1,5 +1,10 @@
 'use client';
 
+// Required by the old Pages/next-on-pages deploy path only (Workers'
+// matrizo-web deploy doesn't need this) — every dynamic route must opt
+// into the Edge runtime or that pipeline's build fails outright.
+export const runtime = 'edge';
+
 import { use, useEffect, useState } from 'react';
 
 import { ORDER_STATUSES } from '@matrizo/shared';
