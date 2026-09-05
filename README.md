@@ -89,6 +89,26 @@ pnpm api:db:migrate:local    # apply migrations to the local D1 emulation
 pnpm api:db:migrate:remote   # apply migrations to the real D1 database (needs wrangler login)
 ```
 
+### Deploying apps/web (Cloudflare Pages → Workers migration in progress)
+
+`www.matrizo.com` is live today on a **Cloudflare Pages** project (git-integrated: pushing to
+`main` auto-deploys), built with `@cloudflare/next-on-pages`. That adapter works by internally
+running `vercel build` as a build-time step — no Vercel account/hosting involved, but it's an
+extra dependency, and the package is deprecated upstream in favor of a fully-Cloudflare toolchain.
+
+We're migrating to `@opennextjs/cloudflare`, which deploys `apps/web` as a **Workers** project
+instead (no Vercel involved at any point). Both paths coexist for now:
+
+```sh
+pnpm --filter @matrizo/web run pages:build   # old path — what the live Pages project still runs
+pnpm --filter @matrizo/web run deploy        # new path — builds + `wrangler deploy`s a Workers
+                                              # project named matrizo-web (run manually for now)
+```
+
+Once `matrizo-web` (the Worker) is verified working, the remaining step is cutting
+`www.matrizo.com` over to it and retiring the Pages project + `next-on-pages` — a deliberate,
+separate step, not automatic.
+
 ### Real Cloudflare resources
 
 `apps/api/wrangler.jsonc` points at real, already-provisioned resources (account:

@@ -33,8 +33,12 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
-# vercel
+# vercel (produced by @cloudflare/next-on-pages's internal `vercel build` step)
 .vercel
+
+# Cloudflare (OpenNext build output, wrangler local dev state)
+.open-next/
+.wrangler/
 
 # typescript
 *.tsbuildinfo

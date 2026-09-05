@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Separate Workers project from the Pages one ("matrizo") that's live
+  // today via @cloudflare/next-on-pages — this is the migration target,
+  // deployed manually (`pnpm --filter @matrizo/web run deploy`) until it's
+  // verified and the custom domain is cut over. See README for the plan.
+  "name": "matrizo-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-08-04",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "vars": {
+    "NEXT_PUBLIC_API_URL": "https://matrizo-api.nikhilsinghal-official.workers.dev/api/v1"
+  }
+}
