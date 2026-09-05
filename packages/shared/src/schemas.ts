@@ -1,5 +1,35 @@
 import { z } from 'zod';
 
+import {
+  ORDER_STATUSES,
+  PAYMENT_METHODS,
+  PAYMENT_STATUSES,
+  USER_ROLES,
+  WALLET_TXN_TYPES,
+} from './enums';
+
+export const userSchema = z.object({
+  id: z.string(),
+  role: z.enum(USER_ROLES),
+  phone: z.string().nullable(),
+  email: z.string().nullable(),
+  name: z.string().nullable(),
+  storeId: z.string().nullable(),
+  active: z.boolean(),
+});
+
+export const addressSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  label: z.string().nullable(),
+  line1: z.string(),
+  line2: z.string().nullable(),
+  city: z.string(),
+  state: z.string(),
+  pincode: z.string(),
+  isDefault: z.boolean(),
+});
+
 export const categorySchema = z.object({
   id: z.string(),
   slug: z.string(),
@@ -11,6 +41,7 @@ export const categorySchema = z.object({
 
 export const productSchema = z.object({
   id: z.string(),
+  sku: z.string(),
   slug: z.string(),
   categoryId: z.string(),
   name: z.string(),
@@ -28,6 +59,41 @@ export const bulkPricingTierSchema = z.object({
   pricePerUnit: z.number(),
 });
 
+export const storeSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  line1: z.string(),
+  line2: z.string().nullable(),
+  city: z.string(),
+  state: z.string(),
+  pincode: z.string(),
+  lat: z.number().nullable(),
+  lng: z.number().nullable(),
+  active: z.boolean(),
+});
+
+export const storeServicePincodeSchema = z.object({
+  storeId: z.string(),
+  pincode: z.string(),
+  etaMinutes: z.number(),
+});
+
+// Result of a serviceability check for a given pincode: the store that will
+// fulfil the order (nearest/fastest of possibly several serving that
+// pincode), or null when nothing serves it yet.
+export const serviceabilitySchema = z.object({
+  pincode: z.string(),
+  serviceable: z.boolean(),
+  storeId: z.string().nullable(),
+  etaMinutes: z.number().nullable(),
+});
+
+export const inventorySchema = z.object({
+  storeId: z.string(),
+  productId: z.string(),
+  stockQty: z.number(),
+});
+
 export const cartItemSchema = z.object({
   id: z.string(),
   product: productSchema,
@@ -41,101 +107,17 @@ export const cartSchema = z.object({
   subtotal: z.number(),
 });
 
-export const userSchema = z.object({
-  id: z.string(),
-  phone: z.string(),
-  name: z.string().nullable(),
-});
-
-export const addressSchema = z.object({
-  id: z.string(),
-  userId: z.string(),
-  label: z.string().nullable(),
-  line1: z.string(),
-  line2: z.string().nullable(),
-  city: z.string(),
-  state: z.string(),
-  pincode: z.string(),
-  isDefault: z.boolean(),
-});
-
-export const newAddressInputSchema = z.object({
-  label: z.string().optional(),
-  line1: z.string().min(1),
-  line2: z.string().optional(),
-  city: z.string().min(1),
-  state: z.string().min(1),
-  pincode: z.string().regex(/^\d{6}$/),
-  isDefault: z.boolean().optional(),
-});
-
-export const deliveryCheckSchema = z.object({
-  pincode: z.string(),
-  serviceable: z.boolean(),
-  etaMinutes: z.number().nullable(),
-});
-
-export const authTokensSchema = z.object({
-  accessToken: z.string(),
-  refreshToken: z.string(),
-  user: userSchema,
-});
-
-export const orderStatusSchema = z.enum([
-  'placed',
-  'confirmed',
-  'out_for_delivery',
-  'delivered',
-  'cancelled',
-]);
-
 export const orderSchema = z.object({
   id: z.string(),
   userId: z.string(),
+  storeId: z.string(),
   addressId: z.string(),
-  status: orderStatusSchema,
-  paymentMethod: z.enum(['cod', 'razorpay']),
-  paymentStatus: z.enum(['pending', 'paid', 'failed']),
+  status: z.enum(ORDER_STATUSES),
+  paymentMethod: z.enum(PAYMENT_METHODS),
+  paymentStatus: z.enum(PAYMENT_STATUSES),
   totalAmount: z.number(),
   razorpayOrderId: z.string().nullable(),
-});
-
-export const deliveryPincodeSchema = z.object({
-  pincode: z.string(),
-  serviceable: z.boolean(),
-  etaMinutes: z.number(),
-});
-
-export const adminOrderSchema = orderSchema.extend({ userPhone: z.string() });
-
-export const newProductInputSchema = z.object({
-  slug: z.string().min(1),
-  categoryId: z.string().min(1),
-  name: z.string().min(1),
-  description: z.string().optional(),
-  unit: z.string().min(1),
-  basePrice: z.number().positive(),
-  imageUrl: z.string().optional(),
-  active: z.boolean().optional(),
-});
-
-export const newCategoryInputSchema = z.object({
-  slug: z.string().min(1),
-  name: z.string().min(1),
-  icon: z.string().optional(),
-  parentId: z.string().optional(),
-  sortOrder: z.number().int().optional(),
-});
-
-export const newTierInputSchema = z.object({
-  minQty: z.number().int().positive(),
-  pricePerUnit: z.number().positive(),
-});
-
-export const newPincodeInputSchema = z.object({
-  pincode: z.string().regex(/^\d{6}$/),
-  serviceable: z.boolean().optional(),
-  etaMinutes: z.number().int().positive().optional(),
+  createdAt: z.number(),
 });
 
 export const orderItemSchema = z.object({
@@ -147,21 +129,31 @@ export const orderItemSchema = z.object({
   unitPrice: z.number(),
 });
 
-export type Category = z.infer<typeof categorySchema>;
-export type Product = z.infer<typeof productSchema>;
-export type BulkPricingTier = z.infer<typeof bulkPricingTierSchema>;
-export type CartItem = z.infer<typeof cartItemSchema>;
-export type Cart = z.infer<typeof cartSchema>;
-export type User = z.infer<typeof userSchema>;
-export type Address = z.infer<typeof addressSchema>;
-export type NewAddressInput = z.infer<typeof newAddressInputSchema>;
-export type DeliveryCheck = z.infer<typeof deliveryCheckSchema>;
-export type AuthTokens = z.infer<typeof authTokensSchema>;
-export type Order = z.infer<typeof orderSchema>;
-export type OrderItem = z.infer<typeof orderItemSchema>;
-export type DeliveryPincode = z.infer<typeof deliveryPincodeSchema>;
-export type AdminOrder = z.infer<typeof adminOrderSchema>;
-export type NewProductInput = z.infer<typeof newProductInputSchema>;
-export type NewCategoryInput = z.infer<typeof newCategoryInputSchema>;
-export type NewTierInput = z.infer<typeof newTierInputSchema>;
-export type NewPincodeInput = z.infer<typeof newPincodeInputSchema>;
+export const orderStatusEventSchema = z.object({
+  id: z.string(),
+  orderId: z.string(),
+  status: z.enum(ORDER_STATUSES),
+  actorUserId: z.string().nullable(),
+  note: z.string().nullable(),
+  createdAt: z.number(),
+});
+
+export const deliveryAssignmentSchema = z.object({
+  id: z.string(),
+  orderId: z.string(),
+  deliveryPartnerUserId: z.string(),
+  assignedAt: z.number(),
+  completedAt: z.number().nullable(),
+  proofPhotoKey: z.string().nullable(),
+});
+
+export const walletTransactionSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  type: z.enum(WALLET_TXN_TYPES),
+  amount: z.number(),
+  orderId: z.string().nullable(),
+  balanceAfter: z.number(),
+  note: z.string().nullable(),
+  createdAt: z.number(),
+});

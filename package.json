@@ -2,18 +2,17 @@
   "name": "matrizo",
   "private": true,
   "version": "0.1.0",
-  "description": "Matrizo — home-improvement marketplace (web + iOS + Android from one Expo Router codebase, Cloudflare Workers API)",
+  "description": "Matrizo — quick-commerce delivery for construction materials (dark-store model): Next.js customer site + admin ops portal, Cloudflare Workers API. Mobile (Expo) app to follow.",
   "scripts": {
-    "app:dev": "pnpm --filter @matrizo/app start",
-    "app:web": "pnpm --filter @matrizo/app web",
-    "app:ios": "pnpm --filter @matrizo/app ios",
-    "app:android": "pnpm --filter @matrizo/app android",
-    "app:build:web": "pnpm --filter @matrizo/app build:web",
-    "app:deploy:web": "pnpm --filter @matrizo/app deploy:web",
+    "web:dev": "pnpm --filter @matrizo/web dev",
+    "web:build": "pnpm --filter @matrizo/web build",
+    "admin:dev": "pnpm --filter @matrizo/admin dev",
+    "admin:build": "pnpm --filter @matrizo/admin build",
     "api:dev": "pnpm --filter @matrizo/api dev",
     "api:deploy": "pnpm --filter @matrizo/api deploy",
     "api:db:generate": "pnpm --filter @matrizo/api db:generate",
-    "api:db:migrate:local": "pnpm --filter @matrizo/api db:migrate:local"
+    "api:db:migrate:local": "pnpm --filter @matrizo/api db:migrate:local",
+    "api:db:migrate:remote": "pnpm --filter @matrizo/api db:migrate:remote"
   },
   "engines": {
     "node": ">=20"
