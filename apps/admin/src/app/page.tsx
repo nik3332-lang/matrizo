@@ -8,6 +8,15 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { STATUS_COLORS } from '@/lib/statusColors';
 
+const STATUS_BORDER: Record<string, string> = {
+  placed: 'border-l-sky-400',
+  confirmed: 'border-l-indigo-400',
+  picked: 'border-l-amber-400',
+  dispatched: 'border-l-violet-400',
+  delivered: 'border-l-emerald-400',
+  cancelled: 'border-l-rose-400',
+};
+
 type Order = {
   id: string;
   status: string;
@@ -50,6 +59,25 @@ export default function OrderQueuePage() {
     <div>
       <h1 className="text-2xl font-bold text-slate-900 mb-4">Order queue</h1>
 
+      <div className="grid grid-cols-3 gap-3 mb-5">
+        <div className="glass rounded-xl p-4 border-l-4 border-l-indigo-400">
+          <div className="text-2xl font-bold text-indigo-700">{orders.length}</div>
+          <div className="text-xs text-slate-500">Total orders</div>
+        </div>
+        <div className="glass rounded-xl p-4 border-l-4 border-l-emerald-400">
+          <div className="text-2xl font-bold text-emerald-700">
+            ₹{orders.reduce((sum, o) => sum + o.totalAmount, 0)}
+          </div>
+          <div className="text-xs text-slate-500">Total value</div>
+        </div>
+        <div className="glass rounded-xl p-4 border-l-4 border-l-amber-400">
+          <div className="text-2xl font-bold text-amber-700">
+            {orders.filter((o) => o.status !== 'delivered' && o.status !== 'cancelled').length}
+          </div>
+          <div className="text-xs text-slate-500">In progress</div>
+        </div>
+      </div>
+
       <div className="flex gap-2 mb-5 flex-wrap">
         <button
           onClick={() => setFilter('all')}
@@ -81,7 +109,7 @@ export default function OrderQueuePage() {
           <Link
             key={order.id}
             href={`/orders/${order.id}`}
-            className="glass block rounded-xl p-4 hover:ring-indigo-300 hover:-translate-y-0.5 transition-all flex items-center justify-between"
+            className={`glass block rounded-xl p-4 border-l-4 ${STATUS_BORDER[order.status] ?? 'border-l-slate-300'} hover:ring-indigo-300 hover:-translate-y-0.5 transition-all flex items-center justify-between`}
           >
             <div>
               <div className="font-semibold text-slate-900">#{order.id.slice(0, 8)}</div>

@@ -6,6 +6,7 @@ import { ApiError } from '@matrizo/shared';
 import { CategoryForm } from '@/components/CategoryForm';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { categoryColor } from '@/lib/categoryColors';
 
 type Category = {
   id: string;
@@ -14,14 +15,6 @@ type Category = {
   icon: string | null;
   sortOrder: number;
 };
-
-const ACCENTS = [
-  'from-violet-400 to-indigo-400',
-  'from-fuchsia-400 to-pink-400',
-  'from-sky-400 to-cyan-400',
-  'from-amber-400 to-orange-400',
-  'from-emerald-400 to-teal-400',
-];
 
 export default function CategoriesPage() {
   const { user, loading } = useAuth();
@@ -104,8 +97,9 @@ export default function CategoriesPage() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {categories.map((cat, i) =>
-          editingId === cat.id ? (
+        {categories.map((cat) => {
+          const color = categoryColor(cat.id);
+          return editingId === cat.id ? (
             <CategoryForm
               key={cat.id}
               initial={{ slug: cat.slug, name: cat.name, icon: cat.icon ?? '', sortOrder: cat.sortOrder }}
@@ -114,9 +108,9 @@ export default function CategoriesPage() {
               busy={busy}
             />
           ) : (
-            <div key={cat.id} className="glass rounded-xl p-4 flex items-center gap-3">
+            <div key={cat.id} className={`glass rounded-xl p-4 flex items-center gap-3 border-l-4 ${color.border}`}>
               <div
-                className={`h-10 w-10 shrink-0 rounded-full bg-gradient-to-br ${ACCENTS[i % ACCENTS.length]} flex items-center justify-center text-lg`}
+                className={`h-10 w-10 shrink-0 rounded-full bg-gradient-to-br ${color.accent} flex items-center justify-center text-lg shadow-md`}
               >
                 {cat.icon}
               </div>
@@ -137,8 +131,8 @@ export default function CategoriesPage() {
                 Delete
               </button>
             </div>
-          )
-        )}
+          );
+        })}
       </div>
     </div>
   );

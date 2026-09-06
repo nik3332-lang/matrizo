@@ -72,48 +72,68 @@ export default function InventoryPage() {
       {stores.length === 0 && <p className="text-slate-500">No store assigned to your account.</p>}
 
       {rows && (
-        <div className="glass divide-y divide-slate-100 rounded-xl">
-          <div className="p-3 flex justify-between text-xs font-semibold text-slate-400 uppercase tracking-wide">
-            <span>Product</span>
-            <span>Stock</span>
+        <>
+          <div className="grid grid-cols-3 gap-3 mb-5">
+            <div className="glass rounded-xl p-4 border-l-4 border-l-sky-400">
+              <div className="text-2xl font-bold text-sky-700">{rows.length}</div>
+              <div className="text-xs text-slate-500">SKUs stocked</div>
+            </div>
+            <div className="glass rounded-xl p-4 border-l-4 border-l-amber-400">
+              <div className="text-2xl font-bold text-amber-700">{rows.filter((r) => r.stockQty > 0 && r.stockQty <= 10).length}</div>
+              <div className="text-xs text-slate-500">Running low</div>
+            </div>
+            <div className="glass rounded-xl p-4 border-l-4 border-l-rose-400">
+              <div className="text-2xl font-bold text-rose-700">{rows.filter((r) => r.stockQty === 0).length}</div>
+              <div className="text-xs text-slate-500">Out of stock</div>
+            </div>
           </div>
-          {rows.map((row) => {
-            const low = row.stockQty <= 10;
-            return (
-              <div key={row.productId} className="p-3 flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-slate-900">{row.product.name}</div>
-                  <div className="text-xs text-slate-500">
-                    {row.product.sku} · per {row.product.unit}
+
+          <div className="space-y-2">
+            {rows.map((row) => {
+              const out = row.stockQty === 0;
+              const low = !out && row.stockQty <= 10;
+              const border = out ? 'border-l-rose-400' : low ? 'border-l-amber-400' : 'border-l-emerald-400';
+              return (
+                <div key={row.productId} className={`glass rounded-xl p-4 flex items-center justify-between border-l-4 ${border}`}>
+                  <div>
+                    <div className="font-medium text-slate-900">{row.product.name}</div>
+                    <div className="text-xs text-slate-500">
+                      {row.product.sku} · per {row.product.unit}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {out && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 font-medium">
+                        Out of stock
+                      </span>
+                    )}
+                    {low && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
+                        Low
+                      </span>
+                    )}
+                    {savedProductId === row.productId && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">
+                        Saved ✓
+                      </span>
+                    )}
+                    <input
+                      type="number"
+                      min={0}
+                      defaultValue={row.stockQty}
+                      disabled={savingProductId === row.productId}
+                      onBlur={(e) => {
+                        const value = Math.max(0, parseInt(e.target.value, 10) || 0);
+                        if (value !== row.stockQty) updateStock(row.productId, value);
+                      }}
+                      className="w-24 rounded-lg border border-slate-300 px-2 py-1 text-right focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+                    />
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {low && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
-                      Low
-                    </span>
-                  )}
-                  {savedProductId === row.productId && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">
-                      Saved ✓
-                    </span>
-                  )}
-                  <input
-                    type="number"
-                    min={0}
-                    defaultValue={row.stockQty}
-                    disabled={savingProductId === row.productId}
-                    onBlur={(e) => {
-                      const value = Math.max(0, parseInt(e.target.value, 10) || 0);
-                      if (value !== row.stockQty) updateStock(row.productId, value);
-                    }}
-                    className="w-24 rounded-lg border border-slate-300 px-2 py-1 text-right focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );

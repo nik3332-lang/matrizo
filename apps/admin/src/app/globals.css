@@ -15,18 +15,38 @@
 body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-  background: linear-gradient(135deg, #f5f3ff 0%, #fdf4ff 45%, #eff6ff 100%);
-  background-attachment: fixed;
+  background: #f7f5ff;
   min-height: 100vh;
+  position: relative;
+  isolation: isolate;
 }
 
-/* Reusable "glass" surface — light, blurred, softly glowing. Used for every
-   card/panel across the ops portal instead of flat white, per the
-   "futuristic, light colours" design direction. */
+/* Real color, not a tint: a few large, soft, saturated blobs fixed behind
+   the content. This is the actual light-glassmorphism look — the previous
+   pass had a nav bar with color and a near-white page below it, which read
+   as unfinished. The .glass cards are translucent specifically so these
+   blobs stay visible *through* them, not just around them. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(600px circle at 8% 15%, rgba(167, 139, 250, 0.55), transparent 60%),
+    radial-gradient(700px circle at 92% 12%, rgba(232, 121, 249, 0.5), transparent 60%),
+    radial-gradient(650px circle at 15% 92%, rgba(96, 165, 250, 0.45), transparent 60%),
+    radial-gradient(550px circle at 88% 88%, rgba(251, 191, 36, 0.35), transparent 60%),
+    radial-gradient(900px circle at 50% 50%, rgba(52, 211, 153, 0.25), transparent 65%);
+  filter: blur(10px);
+}
+
+/* Reusable "glass" surface — translucent enough that the background blobs
+   above show through, blurred, softly glowing. Used for every card/panel
+   across the ops portal instead of flat white. */
 .glass {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 8px 30px -8px rgba(99, 102, 241, 0.25);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 8px 32px -8px rgba(99, 102, 241, 0.3);
 }

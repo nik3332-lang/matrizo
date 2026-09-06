@@ -6,6 +6,7 @@ import { ApiError } from '@matrizo/shared';
 import { ProductForm } from '@/components/ProductForm';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { categoryColor } from '@/lib/categoryColors';
 
 type Tier = { minQty: number; pricePerUnit: number };
 type Category = { id: string; name: string };
@@ -108,6 +109,21 @@ export default function ProductsPage() {
         <p className="text-slate-500 mb-4">Add a category first — products need one to belong to.</p>
       )}
 
+      <div className="grid grid-cols-3 gap-3 mb-5">
+        <div className="glass rounded-xl p-4 border-l-4 border-l-violet-400">
+          <div className="text-2xl font-bold text-violet-700">{products.length}</div>
+          <div className="text-xs text-slate-500">Total products</div>
+        </div>
+        <div className="glass rounded-xl p-4 border-l-4 border-l-emerald-400">
+          <div className="text-2xl font-bold text-emerald-700">{products.filter((p) => p.active).length}</div>
+          <div className="text-xs text-slate-500">Visible to customers</div>
+        </div>
+        <div className="glass rounded-xl p-4 border-l-4 border-l-amber-400">
+          <div className="text-2xl font-bold text-amber-700">{products.filter((p) => p.tiers.length > 0).length}</div>
+          <div className="text-xs text-slate-500">With bulk pricing</div>
+        </div>
+      </div>
+
       {error && <p className="mb-3 text-sm text-rose-600">{error}</p>}
       {notice && <p className="mb-3 text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2 ring-1 ring-amber-200">{notice}</p>}
 
@@ -140,21 +156,29 @@ export default function ProductsPage() {
               busy={busy}
             />
           ) : (
-            <div key={product.id} className="glass rounded-xl p-4 flex items-center gap-4">
+            <div
+              key={product.id}
+              className={`glass rounded-xl p-4 flex items-center gap-4 border-l-4 ${categoryColor(product.categoryId).border}`}
+            >
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-semibold text-slate-900">{product.name}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${categoryColor(product.categoryId).chip}`}>
+                    {categoryName(product.categoryId)}
+                  </span>
                   {!product.active && (
                     <span className="text-xs px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 font-medium">
                       Hidden
                     </span>
                   )}
-                </div>
-                <div className="text-xs text-slate-500">
-                  {product.sku} · {categoryName(product.categoryId)} · ₹{product.basePrice}/{product.unit}
                   {product.tiers.length > 0 && (
-                    <span className="text-emerald-600"> · {product.tiers.length} bulk tier(s)</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">
+                      {product.tiers.length} bulk tier(s)
+                    </span>
                   )}
+                </div>
+                <div className="text-xs text-slate-500 mt-1">
+                  {product.sku} · ₹{product.basePrice}/{product.unit}
                 </div>
               </div>
               <button
