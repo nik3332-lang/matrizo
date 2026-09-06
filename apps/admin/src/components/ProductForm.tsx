@@ -70,7 +70,7 @@ export function ProductForm({
             required
             value={values.name}
             onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))}
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
           />
         </label>
         <label className="text-sm font-medium text-slate-700">
@@ -79,7 +79,7 @@ export function ProductForm({
             required
             value={values.categoryId}
             onChange={(e) => setValues((v) => ({ ...v, categoryId: e.target.value }))}
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
           >
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
@@ -97,7 +97,7 @@ export function ProductForm({
             required
             value={values.sku}
             onChange={(e) => setValues((v) => ({ ...v, sku: e.target.value }))}
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
           />
         </label>
         <label className="text-sm font-medium text-slate-700">
@@ -106,7 +106,7 @@ export function ProductForm({
             required
             value={values.slug}
             onChange={(e) => setValues((v) => ({ ...v, slug: e.target.value }))}
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
           />
         </label>
         <label className="text-sm font-medium text-slate-700">
@@ -116,7 +116,7 @@ export function ProductForm({
             value={values.unit}
             placeholder="bag, piece, coil…"
             onChange={(e) => setValues((v) => ({ ...v, unit: e.target.value }))}
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
           />
         </label>
       </div>
@@ -127,7 +127,7 @@ export function ProductForm({
           value={values.description}
           onChange={(e) => setValues((v) => ({ ...v, description: e.target.value }))}
           rows={2}
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
         />
       </label>
 
@@ -141,7 +141,7 @@ export function ProductForm({
             step="0.01"
             value={values.basePrice}
             onChange={(e) => setValues((v) => ({ ...v, basePrice: parseFloat(e.target.value) || 0 }))}
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
           />
         </label>
         <label className="text-sm font-medium text-slate-700">
@@ -150,7 +150,7 @@ export function ProductForm({
             value={values.imageUrl}
             onChange={(e) => setValues((v) => ({ ...v, imageUrl: e.target.value }))}
             placeholder="https://…"
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
           />
         </label>
       </div>
@@ -160,7 +160,7 @@ export function ProductForm({
           type="checkbox"
           checked={values.active}
           onChange={(e) => setValues((v) => ({ ...v, active: e.target.checked }))}
-          className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-400"
+          className="h-4 w-4 rounded border-slate-300 text-amber-700 focus:ring-amber-400"
         />
         Active (visible to customers)
       </label>
@@ -171,7 +171,7 @@ export function ProductForm({
           <button
             type="button"
             onClick={() => setValues((v) => ({ ...v, tiers: [...v.tiers, { minQty: 0, pricePerUnit: 0 }] }))}
-            className="text-xs px-2.5 py-1 rounded-full font-medium text-indigo-600 hover:bg-indigo-50"
+            className="text-xs px-2.5 py-1 rounded-full font-medium text-amber-700 hover:bg-amber-50"
           >
             + Add tier
           </button>
@@ -185,7 +185,7 @@ export function ProductForm({
                 placeholder="Min qty"
                 value={tier.minQty}
                 onChange={(e) => updateTier(i, { minQty: parseInt(e.target.value, 10) || 0 })}
-                className="w-28 rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+                className="w-28 rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
               />
               <span className="text-slate-400 text-sm">+ units at ₹</span>
               <input
@@ -195,7 +195,7 @@ export function ProductForm({
                 placeholder="Price"
                 value={tier.pricePerUnit}
                 onChange={(e) => updateTier(i, { pricePerUnit: parseFloat(e.target.value) || 0 })}
-                className="w-28 rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+                className="w-28 rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
               />
               <button
                 type="button"
@@ -214,7 +214,7 @@ export function ProductForm({
         <button
           type="submit"
           disabled={busy}
-          className="rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:from-violet-700 hover:to-indigo-700 disabled:opacity-60"
+          className="rounded-lg bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:from-amber-700 hover:to-yellow-700 disabled:opacity-60"
         >
           {busy ? 'Saving…' : 'Save product'}
         </button>

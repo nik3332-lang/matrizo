@@ -17,7 +17,7 @@ export function NavBar() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-10 bg-gradient-to-r from-violet-600/90 via-indigo-600/90 to-fuchsia-600/90 backdrop-blur-xl shadow-lg shadow-indigo-900/10">
+    <header className="sticky top-0 z-10 bg-gradient-to-r from-amber-700/95 via-amber-600/95 to-yellow-600/95 backdrop-blur-xl shadow-lg shadow-amber-900/10">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
         <Link href="/" className="font-bold text-lg tracking-tight text-white">
           Matrizo Ops
@@ -30,17 +30,17 @@ export function NavBar() {
                 href={link.href}
                 className={`rounded-full px-3 py-1.5 font-medium transition-colors ${
                   pathname === link.href
-                    ? 'bg-white text-indigo-700'
-                    : 'text-indigo-100 hover:bg-white/10 hover:text-white'
+                    ? 'bg-white text-amber-700'
+                    : 'text-amber-50 hover:bg-white/10 hover:text-white'
                 }`}
               >
                 {link.label}
               </Link>
             ))}
-            <span className="ml-3 text-indigo-200 text-xs hidden sm:inline">{user.email}</span>
+            <span className="ml-3 text-amber-100 text-xs hidden sm:inline">{user.email}</span>
             <button
               onClick={logout}
-              className="ml-1 rounded-full px-3 py-1.5 font-medium text-indigo-100 hover:bg-white/10 hover:text-white"
+              className="ml-1 rounded-full px-3 py-1.5 font-medium text-amber-50 hover:bg-white/10 hover:text-white"
             >
               Log out
             </button>

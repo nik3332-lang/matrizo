@@ -81,7 +81,7 @@ export default function CategoriesPage() {
         {!creating && (
           <button
             onClick={() => setCreating(true)}
-            className="rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:from-violet-700 hover:to-indigo-700"
+            className="rounded-full bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:from-amber-700 hover:to-yellow-700"
           >
             + Add category
           </button>
@@ -120,7 +120,7 @@ export default function CategoriesPage() {
               </div>
               <button
                 onClick={() => setEditingId(cat.id)}
-                className="text-xs px-3 py-1.5 rounded-full font-medium text-indigo-600 hover:bg-indigo-50"
+                className="text-xs px-3 py-1.5 rounded-full font-medium text-amber-700 hover:bg-amber-50"
               >
                 Edit
               </button>

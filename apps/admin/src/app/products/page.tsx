@@ -98,7 +98,7 @@ export default function ProductsPage() {
         {!creating && categories.length > 0 && (
           <button
             onClick={() => setCreating(true)}
-            className="rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:from-violet-700 hover:to-indigo-700"
+            className="rounded-full bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:from-amber-700 hover:to-yellow-700"
           >
             + Add product
           </button>
@@ -110,8 +110,8 @@ export default function ProductsPage() {
       )}
 
       <div className="grid grid-cols-3 gap-3 mb-5">
-        <div className="glass rounded-xl p-4 border-l-4 border-l-violet-400">
-          <div className="text-2xl font-bold text-violet-700">{products.length}</div>
+        <div className="glass rounded-xl p-4 border-l-4 border-l-stone-400">
+          <div className="text-2xl font-bold text-stone-700">{products.length}</div>
           <div className="text-xs text-slate-500">Total products</div>
         </div>
         <div className="glass rounded-xl p-4 border-l-4 border-l-emerald-400">
@@ -183,7 +183,7 @@ export default function ProductsPage() {
               </div>
               <button
                 onClick={() => setEditingId(product.id)}
-                className="text-xs px-3 py-1.5 rounded-full font-medium text-indigo-600 hover:bg-indigo-50"
+                className="text-xs px-3 py-1.5 rounded-full font-medium text-amber-700 hover:bg-amber-50"
               >
                 Edit
               </button>

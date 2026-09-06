@@ -1,13 +1,15 @@
 // Deterministic color per category (by id), reused everywhere a category
 // shows up — its own card, a product row's tag, inventory grouping — so a
-// given category always reads as the same color across the app.
+// given category always reads as the same color across the app. All warm
+// tones (beige/tan/gold/amber/yellow) to match the white/beige/light-yellow
+// palette rather than a full rainbow.
 const PALETTE = [
-  { chip: 'bg-violet-100 text-violet-700', accent: 'from-violet-400 to-indigo-400', border: 'border-l-violet-400' },
-  { chip: 'bg-fuchsia-100 text-fuchsia-700', accent: 'from-fuchsia-400 to-pink-400', border: 'border-l-fuchsia-400' },
-  { chip: 'bg-sky-100 text-sky-700', accent: 'from-sky-400 to-cyan-400', border: 'border-l-sky-400' },
-  { chip: 'bg-amber-100 text-amber-700', accent: 'from-amber-400 to-orange-400', border: 'border-l-amber-400' },
-  { chip: 'bg-emerald-100 text-emerald-700', accent: 'from-emerald-400 to-teal-400', border: 'border-l-emerald-400' },
-  { chip: 'bg-rose-100 text-rose-700', accent: 'from-rose-400 to-red-400', border: 'border-l-rose-400' },
+  { chip: 'bg-amber-100 text-amber-800', accent: 'from-amber-400 to-yellow-500', border: 'border-l-amber-400' },
+  { chip: 'bg-yellow-100 text-yellow-800', accent: 'from-yellow-400 to-amber-400', border: 'border-l-yellow-400' },
+  { chip: 'bg-orange-100 text-orange-800', accent: 'from-orange-400 to-amber-500', border: 'border-l-orange-400' },
+  { chip: 'bg-stone-200 text-stone-700', accent: 'from-stone-400 to-amber-300', border: 'border-l-stone-400' },
+  { chip: 'bg-lime-100 text-lime-800', accent: 'from-lime-400 to-yellow-400', border: 'border-l-lime-400' },
+  { chip: 'bg-stone-300 text-stone-800', accent: 'from-amber-300 to-stone-400', border: 'border-l-stone-500' },
 ];
 
 function hashIndex(id: string): number {
