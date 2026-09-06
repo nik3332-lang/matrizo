@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ORDER_STATUSES } from '@matrizo/shared';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { STATUS_COLORS } from '@/lib/statusColors';
 
 type Order = {
   id: string;
@@ -35,52 +36,70 @@ export default function OrderQueuePage() {
 
   if (!loading && !user) {
     return (
-      <p className="text-neutral-600">
-        <Link href="/login" className="underline">
+      <p className="text-slate-600">
+        <Link href="/login" className="text-indigo-600 font-medium underline">
           Sign in
         </Link>{' '}
         to view the order queue.
       </p>
     );
   }
-  if (!orders) return <p className="text-neutral-500">Loading…</p>;
+  if (!orders) return <p className="text-slate-500">Loading…</p>;
 
   return (
     <div>
-      <h1 className="text-xl font-semibold mb-4">Order queue</h1>
+      <h1 className="text-2xl font-bold text-slate-900 mb-4">Order queue</h1>
 
-      <div className="flex gap-2 mb-4 flex-wrap">
-        {FILTERS.map((f) => (
+      <div className="flex gap-2 mb-5 flex-wrap">
+        <button
+          onClick={() => setFilter('all')}
+          className={`text-xs px-3 py-1.5 rounded-full font-medium ring-1 transition-colors ${
+            filter === 'all'
+              ? 'bg-slate-900 text-white ring-slate-900'
+              : 'bg-white text-slate-600 ring-slate-200 hover:ring-slate-300'
+          }`}
+        >
+          All
+        </button>
+        {ORDER_STATUSES.map((s) => (
           <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`text-xs px-3 py-1 rounded-full border capitalize ${
-              filter === f ? 'bg-neutral-900 text-white border-neutral-900' : 'border-neutral-300 text-neutral-600'
+            key={s}
+            onClick={() => setFilter(s)}
+            className={`text-xs px-3 py-1.5 rounded-full font-medium capitalize ring-1 transition-colors ${
+              filter === s ? STATUS_COLORS[s] + ' ring-2' : 'bg-white text-slate-600 ring-slate-200 hover:ring-slate-300'
             }`}
           >
-            {f}
+            {s}
           </button>
         ))}
       </div>
 
-      {filtered?.length === 0 && <p className="text-neutral-500">No orders here.</p>}
+      {filtered?.length === 0 && <p className="text-slate-500">No orders here.</p>}
 
-      <div className="divide-y border border-neutral-200 rounded-md bg-white">
+      <div className="space-y-2">
         {filtered?.map((order) => (
           <Link
             key={order.id}
             href={`/orders/${order.id}`}
-            className="p-4 flex items-center justify-between hover:bg-neutral-50"
+            className="glass block rounded-xl p-4 hover:ring-indigo-300 hover:-translate-y-0.5 transition-all flex items-center justify-between"
           >
             <div>
-              <div className="font-medium">#{order.id.slice(0, 8)}</div>
-              <div className="text-sm text-neutral-500">{new Date(order.createdAt).toLocaleString()}</div>
+              <div className="font-semibold text-slate-900">#{order.id.slice(0, 8)}</div>
+              <div className="text-sm text-slate-500">{new Date(order.createdAt).toLocaleString()}</div>
             </div>
-            <div className="text-right">
-              <div className="font-medium capitalize">{order.status}</div>
-              <div className="text-sm text-neutral-500">
-                ₹{order.totalAmount} · {order.paymentMethod.toUpperCase()}
+            <div className="text-right flex items-center gap-3">
+              <div>
+                <div className="text-sm text-slate-500">
+                  ₹{order.totalAmount} · {order.paymentMethod.toUpperCase()}
+                </div>
               </div>
+              <span
+                className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ring-1 ${
+                  STATUS_COLORS[order.status as keyof typeof STATUS_COLORS]
+                }`}
+              >
+                {order.status}
+              </span>
             </div>
           </Link>
         ))}

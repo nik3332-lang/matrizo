@@ -36,42 +36,45 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="max-w-sm mx-auto mt-12">
-      <h1 className="text-xl font-semibold mb-6">Matrizo Ops sign in</h1>
-      <form onSubmit={submit} className="space-y-3">
-        <label className="block text-sm">
-          Email
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2"
-            required
-            autoComplete="username"
-          />
-        </label>
-        <label className="block text-sm">
-          Password
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2"
-            required
-            autoComplete="current-password"
-            autoCapitalize="off"
-            autoCorrect="off"
-          />
-        </label>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={busy}
-          className="w-full rounded-md bg-neutral-900 text-white px-4 py-2 font-medium disabled:opacity-60"
-        >
-          {busy ? 'Signing in…' : 'Sign in'}
-        </button>
-      </form>
+    <div className="min-h-[80vh] flex items-center justify-center -m-6 bg-gradient-to-br from-violet-500 via-indigo-500 to-fuchsia-500">
+      <div className="glass w-full max-w-sm mx-4 rounded-2xl p-8">
+        <h1 className="text-xl font-bold text-slate-900 mb-1">Matrizo Ops</h1>
+        <p className="text-sm text-slate-500 mb-6">Sign in to manage orders, catalog & inventory.</p>
+        <form onSubmit={submit} className="space-y-4">
+          <label className="block text-sm font-medium text-slate-700">
+            Email
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+              required
+              autoComplete="username"
+            />
+          </label>
+          <label className="block text-sm font-medium text-slate-700">
+            Password
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+              required
+              autoComplete="current-password"
+              autoCapitalize="off"
+              autoCorrect="off"
+            />
+          </label>
+          {error && <p className="text-sm text-rose-600">{error}</p>}
+          <button
+            type="submit"
+            disabled={busy}
+            className="w-full rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-4 py-2.5 font-semibold shadow-sm hover:from-violet-700 hover:to-indigo-700 disabled:opacity-60"
+          >
+            {busy ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

@@ -28,6 +28,21 @@ accountRoutes.get('/me', async (c) => {
   });
 });
 
+const updateMeSchema = z.object({ name: z.string().trim().min(1) });
+
+accountRoutes.patch('/me', async (c) => {
+  const parsed = updateMeSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ error: 'Invalid request' }, 400);
+  const auth = c.get('auth');
+  const db = getDb(c.env.DB);
+
+  await db.update(users).set({ name: parsed.data.name }).where(eq(users.id, auth.sub));
+  const [user] = await db.select().from(users).where(eq(users.id, auth.sub)).limit(1);
+  return c.json({
+    user: { id: user.id, role: user.role, phone: user.phone, email: user.email, name: user.name, storeId: user.storeId },
+  });
+});
+
 const addressSchema = z.object({
   label: z.string().trim().optional(),
   line1: z.string().trim().min(1),

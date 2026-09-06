@@ -18,6 +18,11 @@ export default function LoginPage() {
   const { login } = useAuth();
   const [step, setStep] = useState<'phone' | 'code'>('phone');
   const [phone, setPhone] = useState('');
+  const [name, setName] = useState('');
+  const [line1, setLine1] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [pincode, setPincode] = useState('');
   const [code, setCode] = useState('');
   const [devOtp, setDevOtp] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +50,23 @@ export default function LoginPage() {
     try {
       const res = await api.post<OtpVerifyResponse>('/auth/otp/verify', { phone, code });
       login(res.accessToken, res.user);
+
+      // First-time customer: this phone had no name on file yet, so save
+      // the name + address collected on the previous screen now that we're
+      // authenticated. A returning customer already has these — don't
+      // overwrite their name or add a duplicate address on every login.
+      if (!res.user.name && (name || line1)) {
+        await Promise.all([
+          name ? api.patch('/account/me', { name }) : Promise.resolve(),
+          line1 && city && state && pincode
+            ? api.post('/account/addresses', { line1, city, state, pincode, isDefault: true })
+            : Promise.resolve(),
+        ]).catch(() => {
+          // Login already succeeded — don't block on profile completion
+          // failing; the customer can add these later from checkout.
+        });
+      }
+
       router.push('/');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong');
@@ -70,6 +92,49 @@ export default function LoginPage() {
               required
             />
           </label>
+          <label className="block text-sm">
+            Name
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Your name"
+              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2"
+            />
+          </label>
+          <div className="pt-1">
+            <p className="text-sm text-neutral-500 mb-2">
+              Delivery address <span className="text-neutral-400">(you can skip and add this later)</span>
+            </p>
+            <div className="space-y-2">
+              <input
+                value={line1}
+                onChange={(e) => setLine1(e.target.value)}
+                placeholder="Address line"
+                className="w-full rounded-md border border-neutral-300 px-3 py-2"
+              />
+              <div className="flex gap-2">
+                <input
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder="City"
+                  className="w-1/2 rounded-md border border-neutral-300 px-3 py-2"
+                />
+                <input
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  placeholder="State"
+                  className="w-1/2 rounded-md border border-neutral-300 px-3 py-2"
+                />
+              </div>
+              <input
+                value={pincode}
+                onChange={(e) => setPincode(e.target.value)}
+                placeholder="Pincode"
+                className="w-full rounded-md border border-neutral-300 px-3 py-2"
+                inputMode="numeric"
+              />
+            </div>
+          </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button
             type="submit"
