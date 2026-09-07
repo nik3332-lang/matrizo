@@ -8,6 +8,7 @@ import { catalogRoutes } from './routes/catalog';
 import { inventoryRoutes } from './routes/inventory';
 import { orderRoutes } from './routes/orders';
 import { serviceabilityRoutes } from './routes/serviceability';
+import { storeRoutes } from './routes/stores';
 import type { Env } from './env';
 import type { AuthEnv } from './middleware/auth';
 
@@ -36,5 +37,6 @@ v1.route('/account', accountRoutes);
 v1.route('/cart', cartRoutes);
 v1.route('/orders', orderRoutes);
 v1.route('/inventory', inventoryRoutes);
+v1.route('/admin/stores', storeRoutes);
 
 export default app;
