@@ -22,6 +22,9 @@ export function NavBar() {
               <Link href="/orders" className="rounded-full px-3 py-1.5 font-medium text-amber-50 hover:bg-white/10 hover:text-white transition-colors">
                 Orders
               </Link>
+              <Link href="/account" className="rounded-full px-3 py-1.5 font-medium text-amber-50 hover:bg-white/10 hover:text-white transition-colors">
+                Account
+              </Link>
               <button
                 onClick={logout}
                 className="rounded-full px-3 py-1.5 font-medium text-amber-50 hover:bg-white/10 hover:text-white transition-colors"
