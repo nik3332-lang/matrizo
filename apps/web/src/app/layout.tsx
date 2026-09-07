@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 
 import { AuthProvider } from '@/lib/auth';
+import { Footer } from '@/components/Footer';
 import { NavBar } from '@/components/NavBar';
 import './globals.css';
 
@@ -16,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Matrizo — construction materials, delivered fast',
-  description: 'Cement, hardware, plumbing & electrical supplies delivered from your nearest dark store.',
+  title: 'Matrizo — sanitary & paints, delivered fast',
+  description: 'Sanitary ware, pipes & fittings, and paints delivered from your nearest dark store.',
 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
         <AuthProvider>
           <NavBar />
           <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-6">{children}</main>
+          <Footer />
         </AuthProvider>
       </body>
     </html>

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+import { priceForQuantity } from '@matrizo/shared';
 import { api } from '@/lib/api';
 import { categoryColor } from '@/lib/categoryColors';
 
@@ -13,20 +14,57 @@ type Category = {
   icon: string | null;
 };
 
+type Tier = { minQty: number; pricePerUnit: number };
+type Product = {
+  id: string;
+  slug: string;
+  name: string;
+  unit: string;
+  basePrice: number;
+  categoryId: string;
+  tiers: Tier[];
+};
+
 type Serviceability = {
   pincode: string;
   serviceable: boolean;
   etaMinutes: number | null;
 };
 
+const FEATURES = [
+  { icon: '🚚', title: 'Fast delivery', body: 'Straight from your nearest dark store, usually under an hour.' },
+  { icon: '✅', title: 'Genuine products', body: 'Trusted brands, real specs — no substitutes.' },
+  { icon: '📦', title: 'Bulk pricing', body: 'Order more, pay less — tiered pricing built in.' },
+  { icon: '💵', title: 'Pay on delivery', body: 'Cash on delivery, no payment details needed upfront.' },
+];
+
+const STEPS = [
+  { step: '1', title: 'Check your pincode', body: 'See if we deliver to your address in seconds.' },
+  { step: '2', title: 'Browse & order', body: 'Pick what you need — bulk pricing applies automatically.' },
+  { step: '3', title: 'Get it delivered', body: 'Track your order live, right up to your door.' },
+];
+
 export default function HomePage() {
   const [categories, setCategories] = useState<Category[] | null>(null);
+  const [popular, setPopular] = useState<Product[] | null>(null);
   const [pincode, setPincode] = useState('');
   const [checking, setChecking] = useState(false);
   const [result, setResult] = useState<Serviceability | null>(null);
 
   useEffect(() => {
-    api.get<{ categories: Category[] }>('/categories').then((res) => setCategories(res.categories));
+    api.get<{ categories: Category[] }>('/categories').then(async (res) => {
+      setCategories(res.categories);
+
+      const perCategory = await Promise.all(
+        res.categories.map((cat) =>
+          api
+            .get<{ products: Product[] }>(`/categories/${cat.slug}/products`)
+            .then((r) => r.products)
+            .catch(() => [])
+        )
+      );
+      setPopular(perCategory.flat().slice(0, 8));
+    });
   }, []);
 
   async function checkPincode(e: React.FormEvent) {
@@ -43,9 +81,9 @@ export default function HomePage() {
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-14">
       <section className="rounded-2xl bg-gradient-to-br from-amber-700 via-amber-600 to-yellow-600 text-white p-8 shadow-lg shadow-amber-900/20">
-        <h1 className="text-2xl font-bold">Cement, hardware & more — delivered fast.</h1>
+        <h1 className="text-2xl font-bold">Sanitary & paints — delivered fast.</h1>
         <p className="mt-2 text-amber-50">Check if we deliver to your pincode.</p>
         <form onSubmit={checkPincode} className="mt-4 flex gap-2 max-w-sm">
           <input
@@ -74,6 +112,16 @@ export default function HomePage() {
         )}
       </section>
 
+      <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {FEATURES.map((f) => (
+          <div key={f.title} className="glass rounded-xl p-4 text-center">
+            <div className="text-2xl">{f.icon}</div>
+            <div className="mt-2 font-semibold text-stone-900 text-sm">{f.title}</div>
+            <div className="mt-1 text-xs text-stone-500">{f.body}</div>
+          </div>
+        ))}
+      </section>
+
       <section>
         <h2 className="text-lg font-semibold text-stone-900 mb-4">Shop by category</h2>
         {!categories && <p className="text-stone-500">Loading…</p>}
@@ -96,6 +144,43 @@ export default function HomePage() {
               </Link>
             );
           })}
+        </div>
+      </section>
+
+      {popular && popular.length > 0 && (
+        <section>
+          <h2 className="text-lg font-semibold text-stone-900 mb-4">Popular right now</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {popular.map((product) => {
+              const price = priceForQuantity(product.tiers, 1, product.basePrice);
+              return (
+                <Link
+                  key={product.id}
+                  href={`/product/${product.slug}`}
+                  className="glass rounded-xl p-4 hover:-translate-y-0.5 hover:shadow-lg transition-all"
+                >
+                  <div className="font-medium text-sm text-stone-900 line-clamp-2">{product.name}</div>
+                  <div className="text-xs text-stone-500 mt-1">per {product.unit}</div>
+                  <div className="mt-2 font-bold text-amber-700">₹{price}</div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      <section>
+        <h2 className="text-lg font-semibold text-stone-900 mb-4">How it works</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {STEPS.map((s) => (
+            <div key={s.step} className="glass rounded-xl p-5">
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-amber-500 to-yellow-500 text-white flex items-center justify-center font-bold text-sm shadow-md">
+                {s.step}
+              </div>
+              <div className="mt-3 font-semibold text-stone-900">{s.title}</div>
+              <div className="mt-1 text-sm text-stone-500">{s.body}</div>
+            </div>
+          ))}
         </div>
       </section>
     </div>
