@@ -39,7 +39,7 @@ export function CategoryForm({
             required
             value={values.name}
             onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))}
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
           />
         </label>
         <label className="w-20 text-sm font-medium text-slate-700">
@@ -48,7 +48,7 @@ export function CategoryForm({
             value={values.icon}
             onChange={(e) => setValues((v) => ({ ...v, icon: e.target.value }))}
             placeholder="🔧"
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-center focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-center focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
           />
         </label>
       </div>
@@ -60,7 +60,7 @@ export function CategoryForm({
             value={values.slug}
             onChange={(e) => setValues((v) => ({ ...v, slug: e.target.value }))}
             placeholder="tools"
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
           />
         </label>
         <label className="w-28 text-sm font-medium text-slate-700">
@@ -69,7 +69,7 @@ export function CategoryForm({
             type="number"
             value={values.sortOrder}
             onChange={(e) => setValues((v) => ({ ...v, sortOrder: parseInt(e.target.value, 10) || 0 }))}
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
           />
         </label>
       </div>
@@ -77,7 +77,7 @@ export function CategoryForm({
         <button
           type="submit"
           disabled={busy}
-          className="rounded-lg bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:from-amber-700 hover:to-yellow-700 disabled:opacity-60"
+          className="rounded-lg bg-gradient-to-r from-brand-orange-600 to-brand-purple-600 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:from-brand-orange-700 hover:to-brand-purple-700 disabled:opacity-60"
         >
           {busy ? 'Saving…' : 'Save'}
         </button>

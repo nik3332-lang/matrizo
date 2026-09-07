@@ -82,9 +82,9 @@ export default function HomePage() {
 
   return (
     <div className="space-y-14">
-      <section className="rounded-2xl bg-gradient-to-br from-amber-700 via-amber-600 to-yellow-600 text-white p-8 shadow-lg shadow-amber-900/20">
+      <section className="rounded-2xl bg-gradient-to-br from-brand-orange-700 via-brand-orange-600 to-brand-purple-600 text-white p-8 shadow-lg shadow-brand-orange-900/20">
         <h1 className="text-2xl font-bold">Sanitary & paints — delivered fast.</h1>
-        <p className="mt-2 text-amber-50">Check if we deliver to your pincode.</p>
+        <p className="mt-2 text-brand-orange-50">Check if we deliver to your pincode.</p>
         <form onSubmit={checkPincode} className="mt-4 flex gap-2 max-w-sm">
           <input
             value={pincode}
@@ -96,7 +96,7 @@ export default function HomePage() {
           <button
             type="submit"
             disabled={checking}
-            className="rounded-lg bg-white text-amber-700 px-4 py-2 font-semibold shadow-sm disabled:opacity-60"
+            className="rounded-lg bg-white text-brand-orange-700 px-4 py-2 font-semibold shadow-sm disabled:opacity-60"
           >
             {checking ? 'Checking…' : 'Check'}
           </button>
@@ -106,7 +106,7 @@ export default function HomePage() {
             {result.serviceable ? (
               <span className="text-emerald-100 font-medium">✓ We deliver here — ETA ~{result.etaMinutes} min.</span>
             ) : (
-              <span className="text-amber-100 font-medium">Not serviceable at this pincode yet.</span>
+              <span className="text-brand-orange-100 font-medium">Not serviceable at this pincode yet.</span>
             )}
           </p>
         )}
@@ -161,7 +161,7 @@ export default function HomePage() {
                 >
                   <div className="font-medium text-sm text-stone-900 line-clamp-2">{product.name}</div>
                   <div className="text-xs text-stone-500 mt-1">per {product.unit}</div>
-                  <div className="mt-2 font-bold text-amber-700">₹{price}</div>
+                  <div className="mt-2 font-bold text-brand-orange-700">₹{price}</div>
                 </Link>
               );
             })}
@@ -174,7 +174,7 @@ export default function HomePage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {STEPS.map((s) => (
             <div key={s.step} className="glass rounded-xl p-5">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-amber-500 to-yellow-500 text-white flex items-center justify-center font-bold text-sm shadow-md">
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-brand-orange-500 to-brand-purple-500 text-white flex items-center justify-center font-bold text-sm shadow-md">
                 {s.step}
               </div>
               <div className="mt-3 font-semibold text-stone-900">{s.title}</div>

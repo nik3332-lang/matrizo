@@ -114,7 +114,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center -m-6 bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-400">
+    <div className="min-h-[80vh] flex items-center justify-center -m-6 bg-gradient-to-br from-brand-orange-500 via-brand-purple-500 to-brand-orange-400">
       <div className="glass w-full max-w-sm mx-4 rounded-2xl p-8">
         {stage === 'form' && (
           <>
@@ -123,7 +123,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => setMode('login')}
                 className={`flex-1 rounded-full py-1.5 text-sm font-semibold transition-colors ${
-                  mode === 'login' ? 'bg-white text-amber-700 shadow-sm' : 'text-stone-500'
+                  mode === 'login' ? 'bg-white text-brand-orange-700 shadow-sm' : 'text-stone-500'
                 }`}
               >
                 Log in
@@ -132,7 +132,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => setMode('signup')}
                 className={`flex-1 rounded-full py-1.5 text-sm font-semibold transition-colors ${
-                  mode === 'signup' ? 'bg-white text-amber-700 shadow-sm' : 'text-stone-500'
+                  mode === 'signup' ? 'bg-white text-brand-orange-700 shadow-sm' : 'text-stone-500'
                 }`}
               >
                 Sign up
@@ -149,7 +149,7 @@ export default function LoginPage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="9876543210"
-                    className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                    className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
                     inputMode="tel"
                     required
                   />
@@ -158,7 +158,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={busy}
-                  className="w-full rounded-lg bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-4 py-2.5 font-semibold shadow-sm hover:from-amber-700 hover:to-yellow-700 disabled:opacity-60"
+                  className="w-full rounded-lg bg-gradient-to-r from-brand-orange-600 to-brand-purple-600 text-white px-4 py-2.5 font-semibold shadow-sm hover:from-brand-orange-700 hover:to-brand-purple-700 disabled:opacity-60"
                 >
                   {busy ? 'Logging in…' : 'Log in'}
                 </button>
@@ -175,7 +175,7 @@ export default function LoginPage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="9876543210"
-                    className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                    className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
                     inputMode="tel"
                     required
                   />
@@ -186,7 +186,7 @@ export default function LoginPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Your name"
-                    className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                    className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
                     required
                   />
                 </label>
@@ -197,7 +197,7 @@ export default function LoginPage() {
                       value={line1}
                       onChange={(e) => setLine1(e.target.value)}
                       placeholder="Address line"
-                      className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                      className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
                       required
                     />
                     <div className="flex gap-2">
@@ -205,14 +205,14 @@ export default function LoginPage() {
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
                         placeholder="City"
-                        className="w-1/2 rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                        className="w-1/2 rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
                         required
                       />
                       <input
                         value={state}
                         onChange={(e) => setState(e.target.value)}
                         placeholder="State"
-                        className="w-1/2 rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                        className="w-1/2 rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
                         required
                       />
                     </div>
@@ -220,7 +220,7 @@ export default function LoginPage() {
                       value={pincode}
                       onChange={(e) => setPincode(e.target.value)}
                       placeholder="Pincode"
-                      className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                      className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
                       inputMode="numeric"
                       required
                     />
@@ -230,7 +230,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={busy}
-                  className="w-full rounded-lg bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-4 py-2.5 font-semibold shadow-sm hover:from-amber-700 hover:to-yellow-700 disabled:opacity-60"
+                  className="w-full rounded-lg bg-gradient-to-r from-brand-orange-600 to-brand-purple-600 text-white px-4 py-2.5 font-semibold shadow-sm hover:from-brand-orange-700 hover:to-brand-purple-700 disabled:opacity-60"
                 >
                   {busy ? 'Creating account…' : 'Sign up'}
                 </button>
@@ -249,7 +249,7 @@ export default function LoginPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Your name"
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
                 required
               />
             </label>
@@ -260,7 +260,7 @@ export default function LoginPage() {
                   value={line1}
                   onChange={(e) => setLine1(e.target.value)}
                   placeholder="Address line"
-                  className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                  className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
                   required
                 />
                 <div className="flex gap-2">
@@ -268,14 +268,14 @@ export default function LoginPage() {
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     placeholder="City"
-                    className="w-1/2 rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                    className="w-1/2 rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
                     required
                   />
                   <input
                     value={state}
                     onChange={(e) => setState(e.target.value)}
                     placeholder="State"
-                    className="w-1/2 rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                    className="w-1/2 rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
                     required
                   />
                 </div>
@@ -283,7 +283,7 @@ export default function LoginPage() {
                   value={pincode}
                   onChange={(e) => setPincode(e.target.value)}
                   placeholder="Pincode"
-                  className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                  className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
                   inputMode="numeric"
                   required
                 />
@@ -293,7 +293,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={busy}
-              className="w-full rounded-lg bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-4 py-2.5 font-semibold shadow-sm hover:from-amber-700 hover:to-yellow-700 disabled:opacity-60"
+              className="w-full rounded-lg bg-gradient-to-r from-brand-orange-600 to-brand-purple-600 text-white px-4 py-2.5 font-semibold shadow-sm hover:from-brand-orange-700 hover:to-brand-purple-700 disabled:opacity-60"
             >
               {busy ? 'Saving…' : 'Continue'}
             </button>

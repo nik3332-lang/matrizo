@@ -35,7 +35,7 @@ export default function SearchPage() {
       <h1 className="text-xl font-bold text-stone-900 mb-4">
         {q ? (
           <>
-            Results for <span className="text-amber-700">&ldquo;{q}&rdquo;</span>
+            Results for <span className="text-brand-orange-700">&ldquo;{q}&rdquo;</span>
           </>
         ) : (
           'Search'
@@ -56,7 +56,7 @@ export default function SearchPage() {
             >
               <div className="font-medium text-stone-900">{product.name}</div>
               <div className="text-sm text-stone-500">per {product.unit}</div>
-              <div className="mt-2 font-bold text-amber-700">₹{price}</div>
+              <div className="mt-2 font-bold text-brand-orange-700">₹{price}</div>
             </Link>
           );
         })}

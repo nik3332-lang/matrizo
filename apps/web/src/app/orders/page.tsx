@@ -42,7 +42,7 @@ export default function OrdersPage() {
               <div className="text-sm text-stone-500">{new Date(order.createdAt).toLocaleString()}</div>
             </div>
             <div className="text-right">
-              <div className="font-semibold capitalize text-amber-700">{order.status}</div>
+              <div className="font-semibold capitalize text-brand-orange-700">{order.status}</div>
               <div className="text-sm text-stone-500">₹{order.totalAmount}</div>
             </div>
           </Link>

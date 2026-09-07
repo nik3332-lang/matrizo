@@ -82,13 +82,13 @@ export default function CheckoutPage() {
           <label
             key={addr.id}
             className={`glass block rounded-xl p-3 cursor-pointer transition-all ${
-              selectedId === addr.id ? 'ring-2 ring-amber-500' : ''
+              selectedId === addr.id ? 'ring-2 ring-brand-orange-500' : ''
             }`}
           >
             <input
               type="radio"
               name="address"
-              className="mr-2 accent-amber-600"
+              className="mr-2 accent-brand-orange-600"
               checked={selectedId === addr.id}
               onChange={() => setSelectedId(addr.id)}
             />
@@ -98,7 +98,7 @@ export default function CheckoutPage() {
       </div>
 
       {!showNewForm && (
-        <button onClick={() => setShowNewForm(true)} className="mt-3 text-sm font-medium text-amber-700 underline">
+        <button onClick={() => setShowNewForm(true)} className="mt-3 text-sm font-medium text-brand-orange-700 underline">
           + Add a new address
         </button>
       )}
@@ -110,7 +110,7 @@ export default function CheckoutPage() {
             placeholder="Address line"
             value={newAddress.line1}
             onChange={(e) => setNewAddress((a) => ({ ...a, line1: e.target.value }))}
-            className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+            className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
           />
           <div className="flex gap-2">
             <input
@@ -118,14 +118,14 @@ export default function CheckoutPage() {
               placeholder="City"
               value={newAddress.city}
               onChange={(e) => setNewAddress((a) => ({ ...a, city: e.target.value }))}
-              className="w-1/2 rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+              className="w-1/2 rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
             />
             <input
               required
               placeholder="State"
               value={newAddress.state}
               onChange={(e) => setNewAddress((a) => ({ ...a, state: e.target.value }))}
-              className="w-1/2 rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+              className="w-1/2 rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
             />
           </div>
           <input
@@ -133,12 +133,12 @@ export default function CheckoutPage() {
             placeholder="Pincode"
             value={newAddress.pincode}
             onChange={(e) => setNewAddress((a) => ({ ...a, pincode: e.target.value }))}
-            className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+            className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
             inputMode="numeric"
           />
           <button
             type="submit"
-            className="rounded-lg bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-4 py-2 font-semibold shadow-sm hover:from-amber-700 hover:to-yellow-700"
+            className="rounded-lg bg-gradient-to-r from-brand-orange-600 to-brand-purple-600 text-white px-4 py-2 font-semibold shadow-sm hover:from-brand-orange-700 hover:to-brand-purple-700"
           >
             Save address
           </button>
@@ -155,7 +155,7 @@ export default function CheckoutPage() {
       <button
         onClick={placeOrder}
         disabled={!selectedId || placing}
-        className="mt-4 w-full rounded-lg bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-5 py-2.5 font-semibold shadow-sm hover:from-amber-700 hover:to-yellow-700 disabled:opacity-60"
+        className="mt-4 w-full rounded-lg bg-gradient-to-r from-brand-orange-600 to-brand-purple-600 text-white px-5 py-2.5 font-semibold shadow-sm hover:from-brand-orange-700 hover:to-brand-purple-700 disabled:opacity-60"
       >
         {placing ? 'Placing order…' : 'Place order'}
       </button>

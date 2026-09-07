@@ -1,12 +1,14 @@
 // Deterministic color per category (by id), matching the same palette used
-// in the admin portal for a consistent brand feel.
+// in the admin portal for a consistent brand feel. Built entirely from the
+// Matrizo brand scale (purple / orange / coral / cream) so every category
+// still reads as visually distinct without introducing off-brand hues.
 const PALETTE = [
-  { chip: 'bg-amber-100 text-amber-800', accent: 'from-amber-400 to-yellow-500' },
-  { chip: 'bg-yellow-100 text-yellow-800', accent: 'from-yellow-400 to-amber-400' },
-  { chip: 'bg-orange-100 text-orange-800', accent: 'from-orange-400 to-amber-500' },
-  { chip: 'bg-stone-200 text-stone-700', accent: 'from-stone-400 to-amber-300' },
-  { chip: 'bg-lime-100 text-lime-800', accent: 'from-lime-400 to-yellow-400' },
-  { chip: 'bg-stone-300 text-stone-800', accent: 'from-amber-300 to-stone-400' },
+  { chip: 'bg-brand-orange-100 text-brand-orange-800', accent: 'from-brand-orange-500 to-brand-orange-700' },
+  { chip: 'bg-brand-purple-100 text-brand-purple-800', accent: 'from-brand-purple-500 to-brand-purple-800' },
+  { chip: 'bg-brand-coral-100 text-brand-coral-800', accent: 'from-brand-coral-400 to-brand-orange-600' },
+  { chip: 'bg-stone-200 text-stone-700', accent: 'from-stone-400 to-brand-purple-400' },
+  { chip: 'bg-brand-purple-50 text-brand-purple-600', accent: 'from-brand-purple-300 to-brand-purple-600' },
+  { chip: 'bg-brand-orange-50 text-brand-orange-600', accent: 'from-brand-orange-300 to-brand-purple-500' },
 ];
 
 function hashIndex(id: string): number {

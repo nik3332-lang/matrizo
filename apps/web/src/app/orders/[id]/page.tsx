@@ -104,10 +104,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               <li key={status} className="flex-1 flex flex-col items-center">
                 <div
                   className={`h-3 w-3 rounded-full ${
-                    i <= currentIndex ? 'bg-gradient-to-br from-amber-500 to-yellow-500' : 'bg-stone-200'
+                    i <= currentIndex ? 'bg-gradient-to-br from-brand-orange-500 to-brand-purple-500' : 'bg-stone-200'
                   }`}
                 />
-                <span className={`mt-2 capitalize ${i <= currentIndex ? 'text-amber-700 font-medium' : 'text-stone-400'}`}>
+                <span className={`mt-2 capitalize ${i <= currentIndex ? 'text-brand-orange-700 font-medium' : 'text-stone-400'}`}>
                   {status.replace('_', ' ')}
                 </span>
               </li>
@@ -127,7 +127,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         ))}
         <div className="p-3 flex justify-between font-semibold text-stone-900">
           <span>Total ({order.paymentMethod.toUpperCase()})</span>
-          <span className="text-amber-700">₹{order.totalAmount}</span>
+          <span className="text-brand-orange-700">₹{order.totalAmount}</span>
         </div>
       </div>
 

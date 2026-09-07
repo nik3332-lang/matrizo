@@ -41,7 +41,7 @@ export default function CartPage() {
   if (!authLoading && !user) {
     return (
       <p className="text-stone-600">
-        <Link href="/login" className="text-amber-700 font-medium underline">
+        <Link href="/login" className="text-brand-orange-700 font-medium underline">
           Log in
         </Link>{' '}
         to view your cart.
@@ -57,7 +57,7 @@ export default function CartPage() {
         <h1 className="text-xl font-bold text-stone-900 mb-4">Your cart</h1>
         <p className="text-stone-500">
           Your cart is empty.{' '}
-          <Link href="/" className="text-amber-700 font-medium underline">
+          <Link href="/" className="text-brand-orange-700 font-medium underline">
             Browse categories
           </Link>
           .
@@ -85,20 +85,20 @@ export default function CartPage() {
                 value={item.quantity}
                 disabled={busyProductId === item.product.id}
                 onChange={(e) => updateQuantity(item.product.id, Math.max(0, parseInt(e.target.value, 10) || 0))}
-                className="w-16 rounded-lg border border-stone-300 px-2 py-1 text-center focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                className="w-16 rounded-lg border border-stone-300 px-2 py-1 text-center focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
               />
-              <div className="w-20 text-right font-semibold text-amber-700">₹{item.lineTotal}</div>
+              <div className="w-20 text-right font-semibold text-brand-orange-700">₹{item.lineTotal}</div>
             </div>
           </div>
         ))}
       </div>
       <div className="glass mt-4 rounded-xl p-4 flex items-center justify-between">
         <span className="text-stone-600 font-medium">Subtotal</span>
-        <span className="text-lg font-bold text-amber-700">₹{cart.subtotal}</span>
+        <span className="text-lg font-bold text-brand-orange-700">₹{cart.subtotal}</span>
       </div>
       <Link
         href="/checkout"
-        className="mt-4 block text-center rounded-lg bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-5 py-2.5 font-semibold shadow-sm hover:from-amber-700 hover:to-yellow-700"
+        className="mt-4 block text-center rounded-lg bg-gradient-to-r from-brand-orange-600 to-brand-purple-600 text-white px-5 py-2.5 font-semibold shadow-sm hover:from-brand-orange-700 hover:to-brand-purple-700"
       >
         Proceed to checkout
       </Link>

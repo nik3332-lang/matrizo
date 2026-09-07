@@ -41,12 +41,12 @@ export default function AnalyticsPage() {
           <div className="text-2xl font-bold text-emerald-700">₹{summary.totalRevenue.toFixed(2)}</div>
           <div className="text-xs text-stone-500">Total revenue</div>
         </div>
-        <div className="glass rounded-xl p-4 border-l-4 border-l-amber-400">
-          <div className="text-2xl font-bold text-amber-700">{summary.totalOrders}</div>
+        <div className="glass rounded-xl p-4 border-l-4 border-l-brand-orange-400">
+          <div className="text-2xl font-bold text-brand-orange-700">{summary.totalOrders}</div>
           <div className="text-xs text-stone-500">Orders (excl. cancelled)</div>
         </div>
-        <div className="glass rounded-xl p-4 border-l-4 border-l-orange-400">
-          <div className="text-2xl font-bold text-orange-700">₹{summary.avgOrderValue.toFixed(2)}</div>
+        <div className="glass rounded-xl p-4 border-l-4 border-l-brand-purple-400">
+          <div className="text-2xl font-bold text-brand-purple-700">₹{summary.avgOrderValue.toFixed(2)}</div>
           <div className="text-xs text-stone-500">Average order value</div>
         </div>
       </div>
@@ -82,7 +82,7 @@ export default function AnalyticsPage() {
               </div>
               <div className="h-2 rounded-full bg-stone-100 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-500"
+                  className="h-full rounded-full bg-gradient-to-r from-brand-orange-500 to-brand-purple-500"
                   style={{ width: `${(p.quantity / maxTopQty) * 100}%` }}
                 />
               </div>
@@ -99,13 +99,13 @@ export default function AnalyticsPage() {
             <div
               key={`${row.storeId}-${row.productId}`}
               className={`glass rounded-xl p-3 flex items-center justify-between border-l-4 ${
-                row.stockQty === 0 ? 'border-l-rose-400' : 'border-l-amber-400'
+                row.stockQty === 0 ? 'border-l-rose-400' : 'border-l-brand-orange-400'
               }`}
             >
               <span className="text-sm font-medium text-stone-900">{row.productName}</span>
               <span
                 className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                  row.stockQty === 0 ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
+                  row.stockQty === 0 ? 'bg-rose-100 text-rose-700' : 'bg-brand-orange-100 text-brand-orange-700'
                 }`}
               >
                 {row.stockQty} left

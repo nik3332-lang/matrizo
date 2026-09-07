@@ -170,18 +170,18 @@ export default function ProductsPage() {
           <a
             href={`data:text/csv;charset=utf-8,${encodeURIComponent(CSV_TEMPLATE)}`}
             download="matrizo-products-template.csv"
-            className="text-xs px-3 py-1.5 rounded-full font-medium text-amber-700 hover:bg-amber-50"
+            className="text-xs px-3 py-1.5 rounded-full font-medium text-brand-orange-700 hover:bg-brand-orange-50"
           >
             Download CSV template
           </a>
-          <label className="text-xs px-3 py-1.5 rounded-full font-medium text-amber-700 hover:bg-amber-50 cursor-pointer">
+          <label className="text-xs px-3 py-1.5 rounded-full font-medium text-brand-orange-700 hover:bg-brand-orange-50 cursor-pointer">
             {importing ? 'Importing…' : 'Import CSV'}
             <input type="file" accept=".csv" onChange={importCsv} disabled={importing} className="hidden" />
           </label>
           {!creating && categories.length > 0 && (
             <button
               onClick={() => setCreating(true)}
-              className="rounded-full bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:from-amber-700 hover:to-yellow-700"
+              className="rounded-full bg-gradient-to-r from-brand-orange-600 to-brand-purple-600 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:from-brand-orange-700 hover:to-brand-purple-700"
             >
               + Add product
             </button>
@@ -224,14 +224,14 @@ export default function ProductsPage() {
           <div className="text-2xl font-bold text-emerald-700">{products.filter((p) => p.active).length}</div>
           <div className="text-xs text-slate-500">Visible to customers</div>
         </div>
-        <div className="glass rounded-xl p-4 border-l-4 border-l-amber-400">
-          <div className="text-2xl font-bold text-amber-700">{products.filter((p) => p.tiers.length > 0).length}</div>
+        <div className="glass rounded-xl p-4 border-l-4 border-l-brand-orange-400">
+          <div className="text-2xl font-bold text-brand-orange-700">{products.filter((p) => p.tiers.length > 0).length}</div>
           <div className="text-xs text-slate-500">With bulk pricing</div>
         </div>
       </div>
 
       {error && <p className="mb-3 text-sm text-rose-600">{error}</p>}
-      {notice && <p className="mb-3 text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2 ring-1 ring-amber-200">{notice}</p>}
+      {notice && <p className="mb-3 text-sm text-brand-orange-700 bg-brand-orange-50 rounded-lg px-3 py-2 ring-1 ring-brand-orange-200">{notice}</p>}
 
       {creating && (
         <div className="mb-4">
@@ -289,7 +289,7 @@ export default function ProductsPage() {
               </div>
               <button
                 onClick={() => setEditingId(product.id)}
-                className="text-xs px-3 py-1.5 rounded-full font-medium text-amber-700 hover:bg-amber-50"
+                className="text-xs px-3 py-1.5 rounded-full font-medium text-brand-orange-700 hover:bg-brand-orange-50"
               >
                 Edit
               </button>

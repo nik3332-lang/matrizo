@@ -150,7 +150,7 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
               defaultValue=""
               onChange={(e) => assignPartner(e.target.value)}
               disabled={updating || eligiblePartners.length === 0}
-              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
             >
               <option value="" disabled>
                 {eligiblePartners.length === 0 ? 'No delivery partners at this store' : delivery ? 'Reassign to…' : 'Assign to…'}

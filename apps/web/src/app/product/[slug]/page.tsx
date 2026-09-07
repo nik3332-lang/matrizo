@@ -70,7 +70,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
 
       {product.tiers.length > 0 && (
         <div className="glass mt-4 rounded-xl divide-y divide-stone-200/70 text-sm overflow-hidden">
-          <div className="px-3 py-2 flex justify-between font-semibold text-stone-700 bg-amber-50/60">
+          <div className="px-3 py-2 flex justify-between font-semibold text-stone-700 bg-brand-orange-50/60">
             <span>Quantity</span>
             <span>Price / {product.unit}</span>
           </div>
@@ -99,15 +99,15 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
           min={1}
           value={quantity}
           onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value, 10) || 1))}
-          className="w-20 rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+          className="w-20 rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
         />
-        <div className="font-bold text-amber-700">₹{unitPrice * quantity} total</div>
+        <div className="font-bold text-brand-orange-700">₹{unitPrice * quantity} total</div>
       </div>
 
       <button
         onClick={addToCart}
         disabled={adding}
-        className="mt-4 rounded-lg bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-5 py-2.5 font-semibold shadow-sm hover:from-amber-700 hover:to-yellow-700 disabled:opacity-60"
+        className="mt-4 rounded-lg bg-gradient-to-r from-brand-orange-600 to-brand-purple-600 text-white px-5 py-2.5 font-semibold shadow-sm hover:from-brand-orange-700 hover:to-brand-purple-700 disabled:opacity-60"
       >
         {adding ? 'Adding…' : added ? 'Added ✓' : 'Add to cart'}
       </button>

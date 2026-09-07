@@ -59,7 +59,7 @@ export default function InventoryPage() {
         <select
           value={storeId ?? ''}
           onChange={(e) => setStoreId(e.target.value)}
-          className="mb-4 rounded-lg border border-slate-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+          className="mb-4 rounded-lg border border-slate-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
         >
           {stores.map((s) => (
             <option key={s.id} value={s.id}>
@@ -68,18 +68,18 @@ export default function InventoryPage() {
           ))}
         </select>
       )}
-      {stores.length === 1 && <p className="mb-4 text-amber-700 font-medium">{stores[0].name}</p>}
+      {stores.length === 1 && <p className="mb-4 text-brand-orange-700 font-medium">{stores[0].name}</p>}
       {stores.length === 0 && <p className="text-slate-500">No store assigned to your account.</p>}
 
       {rows && (
         <>
           <div className="grid grid-cols-3 gap-3 mb-5">
-            <div className="glass rounded-xl p-4 border-l-4 border-l-yellow-400">
-              <div className="text-2xl font-bold text-yellow-800">{rows.length}</div>
+            <div className="glass rounded-xl p-4 border-l-4 border-l-brand-purple-400">
+              <div className="text-2xl font-bold text-brand-purple-800">{rows.length}</div>
               <div className="text-xs text-slate-500">SKUs stocked</div>
             </div>
-            <div className="glass rounded-xl p-4 border-l-4 border-l-amber-400">
-              <div className="text-2xl font-bold text-amber-700">{rows.filter((r) => r.stockQty > 0 && r.stockQty <= 10).length}</div>
+            <div className="glass rounded-xl p-4 border-l-4 border-l-brand-orange-400">
+              <div className="text-2xl font-bold text-brand-orange-700">{rows.filter((r) => r.stockQty > 0 && r.stockQty <= 10).length}</div>
               <div className="text-xs text-slate-500">Running low</div>
             </div>
             <div className="glass rounded-xl p-4 border-l-4 border-l-rose-400">
@@ -92,7 +92,7 @@ export default function InventoryPage() {
             {rows.map((row) => {
               const out = row.stockQty === 0;
               const low = !out && row.stockQty <= 10;
-              const border = out ? 'border-l-rose-400' : low ? 'border-l-amber-400' : 'border-l-emerald-400';
+              const border = out ? 'border-l-rose-400' : low ? 'border-l-brand-orange-400' : 'border-l-emerald-400';
               return (
                 <div key={row.productId} className={`glass rounded-xl p-4 flex items-center justify-between border-l-4 ${border}`}>
                   <div>
@@ -108,7 +108,7 @@ export default function InventoryPage() {
                       </span>
                     )}
                     {low && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-brand-orange-100 text-brand-orange-700 font-medium">
                         Low
                       </span>
                     )}
@@ -126,7 +126,7 @@ export default function InventoryPage() {
                         const value = Math.max(0, parseInt(e.target.value, 10) || 0);
                         if (value !== row.stockQty) updateStock(row.productId, value);
                       }}
-                      className="w-24 rounded-lg border border-slate-300 px-2 py-1 text-right focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                      className="w-24 rounded-lg border border-slate-300 px-2 py-1 text-right focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
                     />
                   </div>
                 </div>

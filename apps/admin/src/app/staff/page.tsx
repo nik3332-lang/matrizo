@@ -23,8 +23,8 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const ROLE_CHIP: Record<string, string> = {
-  store_staff: 'bg-amber-100 text-amber-800',
-  delivery_partner: 'bg-orange-100 text-orange-800',
+  store_staff: 'bg-brand-orange-100 text-brand-orange-800',
+  delivery_partner: 'bg-brand-coral-100 text-brand-coral-800',
   admin: 'bg-stone-300 text-stone-800',
 };
 
@@ -100,7 +100,7 @@ export default function StaffPage() {
         {!creating && (
           <button
             onClick={() => setCreating(true)}
-            className="rounded-full bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:from-amber-700 hover:to-yellow-700"
+            className="rounded-full bg-gradient-to-r from-brand-orange-600 to-brand-purple-600 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:from-brand-orange-700 hover:to-brand-purple-700"
           >
             + Add staff
           </button>
@@ -118,7 +118,7 @@ export default function StaffPage() {
                 required
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
               />
             </label>
             <label className="text-sm font-medium text-stone-700">
@@ -126,7 +126,7 @@ export default function StaffPage() {
               <select
                 value={form.role}
                 onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as FormValues['role'] }))}
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
               >
                 <option value="store_staff">Store staff</option>
                 <option value="delivery_partner">Delivery partner</option>
@@ -142,7 +142,7 @@ export default function StaffPage() {
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
               />
             </label>
             <label className="text-sm font-medium text-stone-700">
@@ -153,7 +153,7 @@ export default function StaffPage() {
                 minLength={8}
                 value={form.password}
                 onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
               />
             </label>
           </div>
@@ -164,7 +164,7 @@ export default function StaffPage() {
                 required
                 value={form.storeId}
                 onChange={(e) => setForm((f) => ({ ...f, storeId: e.target.value }))}
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
               >
                 <option value="" disabled>
                   Select a store…
@@ -181,7 +181,7 @@ export default function StaffPage() {
             <button
               type="submit"
               disabled={busy}
-              className="rounded-lg bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:from-amber-700 hover:to-yellow-700 disabled:opacity-60"
+              className="rounded-lg bg-gradient-to-r from-brand-orange-600 to-brand-purple-600 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:from-brand-orange-700 hover:to-brand-purple-700 disabled:opacity-60"
             >
               {busy ? 'Creating…' : 'Create account'}
             </button>

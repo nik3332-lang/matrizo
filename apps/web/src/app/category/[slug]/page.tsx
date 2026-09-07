@@ -56,7 +56,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
             >
               <div className="font-semibold text-stone-900">{product.name}</div>
               <div className="text-sm text-stone-500">per {product.unit}</div>
-              <div className="mt-2 font-bold text-amber-700">₹{product.basePrice}</div>
+              <div className="mt-2 font-bold text-brand-orange-700">₹{product.basePrice}</div>
               {bestTier && (
                 <div className="text-xs mt-1 inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">
                   ₹{bestTier.pricePerUnit} for {bestTier.minQty}+
