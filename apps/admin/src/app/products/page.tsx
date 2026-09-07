@@ -24,6 +24,25 @@ type Product = {
   tiers: Tier[];
 };
 
+type BulkImportResult = { imported: number; failed: number; results: { row: number; sku: string; ok: boolean; error?: string }[] };
+
+// Deliberately simple (splits on commas, no quoted-field support) — the CSV
+// template below never needs quoting since none of its columns contain
+// commas. Fine for this; swap for a real parser if that stops being true.
+function parseCsv(text: string): Record<string, string>[] {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(',').map((h) => h.trim());
+  return lines.slice(1).map((line) => {
+    const cells = line.split(',').map((c) => c.trim());
+    const row: Record<string, string> = {};
+    headers.forEach((h, i) => (row[h] = cells[i] ?? ''));
+    return row;
+  });
+}
+
+const CSV_TEMPLATE = 'sku,slug,name,description,unit,basePrice,categorySlug,imageUrl\nEX-001,example-product,Example Product,Optional description,piece,99.5,upvc,\n';
+
 export default function ProductsPage() {
   const { user, loading } = useAuth();
   const [categories, setCategories] = useState<Category[] | null>(null);
@@ -33,6 +52,8 @@ export default function ProductsPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [importResult, setImportResult] = useState<BulkImportResult | null>(null);
+  const [importing, setImporting] = useState(false);
 
   function load() {
     api.get<{ categories: Category[] }>('/categories').then((res) => setCategories(res.categories));
@@ -86,6 +107,56 @@ export default function ProductsPage() {
     }
   }
 
+  async function importCsv(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file after fixing it
+    if (!file || !categories) return;
+
+    setImporting(true);
+    setImportResult(null);
+    setError(null);
+    try {
+      const text = await file.text();
+      const rows = parseCsv(text);
+
+      // The `categories` state here only carries {id, name} — the CSV is
+      // written in terms of slugs (what an admin actually knows), so map
+      // categorySlug -> categoryId via a fresh fetch that includes slugs.
+      const catRes = await api.get<{ categories: { id: string; slug: string }[] }>('/categories');
+      const slugToId = new Map(catRes.categories.map((c) => [c.slug, c.id]));
+
+      const payload = rows
+        .map((row) => {
+          const categoryId = slugToId.get(row.categorySlug);
+          if (!categoryId || !row.sku || !row.slug || !row.name || !row.unit || !row.basePrice) return null;
+          return {
+            sku: row.sku,
+            slug: row.slug,
+            name: row.name,
+            description: row.description || undefined,
+            unit: row.unit,
+            basePrice: parseFloat(row.basePrice),
+            categoryId,
+            imageUrl: row.imageUrl || undefined,
+          };
+        })
+        .filter((r): r is NonNullable<typeof r> => r !== null);
+
+      if (payload.length === 0) {
+        setError('No valid rows found — check the CSV matches the template columns and categorySlug values.');
+        return;
+      }
+
+      const res = await api.post<BulkImportResult>('/admin/products/bulk', payload);
+      setImportResult(res);
+      load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not import CSV.');
+    } finally {
+      setImporting(false);
+    }
+  }
+
   if (!loading && !user) return <p className="text-slate-600">Please sign in.</p>;
   if (!categories || !products) return <p className="text-slate-500">Loading…</p>;
 
@@ -93,20 +164,55 @@ export default function ProductsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <h1 className="text-2xl font-bold text-slate-900">Products</h1>
-        {!creating && categories.length > 0 && (
-          <button
-            onClick={() => setCreating(true)}
-            className="rounded-full bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:from-amber-700 hover:to-yellow-700"
+        <div className="flex items-center gap-2">
+          <a
+            href={`data:text/csv;charset=utf-8,${encodeURIComponent(CSV_TEMPLATE)}`}
+            download="matrizo-products-template.csv"
+            className="text-xs px-3 py-1.5 rounded-full font-medium text-amber-700 hover:bg-amber-50"
           >
-            + Add product
-          </button>
-        )}
+            Download CSV template
+          </a>
+          <label className="text-xs px-3 py-1.5 rounded-full font-medium text-amber-700 hover:bg-amber-50 cursor-pointer">
+            {importing ? 'Importing…' : 'Import CSV'}
+            <input type="file" accept=".csv" onChange={importCsv} disabled={importing} className="hidden" />
+          </label>
+          {!creating && categories.length > 0 && (
+            <button
+              onClick={() => setCreating(true)}
+              className="rounded-full bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:from-amber-700 hover:to-yellow-700"
+            >
+              + Add product
+            </button>
+          )}
+        </div>
       </div>
 
       {categories.length === 0 && (
         <p className="text-slate-500 mb-4">Add a category first — products need one to belong to.</p>
+      )}
+
+      {importResult && (
+        <div className="mb-4 glass rounded-xl p-4">
+          <div className="text-sm font-medium text-stone-900">
+            Imported {importResult.imported} of {importResult.imported + importResult.failed} rows.
+          </div>
+          {importResult.failed > 0 && (
+            <ul className="mt-2 text-xs text-rose-600 space-y-1">
+              {importResult.results
+                .filter((r) => !r.ok)
+                .map((r) => (
+                  <li key={r.row}>
+                    Row {r.row + 2} ({r.sku}): {r.error}
+                  </li>
+                ))}
+            </ul>
+          )}
+          <button onClick={() => setImportResult(null)} className="mt-2 text-xs text-stone-500 hover:underline">
+            Dismiss
+          </button>
+        </div>
       )}
 
       <div className="grid grid-cols-3 gap-3 mb-5">

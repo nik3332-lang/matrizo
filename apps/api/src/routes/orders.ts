@@ -3,17 +3,19 @@ import type { BatchItem } from 'drizzle-orm/batch';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
-import { ORDER_STATUSES, priceForQuantity } from '@matrizo/shared';
+import { ORDER_STATUSES, priceForQuantity, type OrderStatus } from '@matrizo/shared';
 import { getDb } from '../db/client';
 import {
   addresses,
   bulkPricingTiers,
   cartItems,
+  deliveryAssignments,
   inventory,
   orderItems,
   orderStatusEvents,
   orders,
   products,
+  users,
 } from '../db/schema';
 import { findStoreWithStock } from '../lib/orderAssignment';
 import { notifyOrderStatus } from '../lib/orderTracking';
@@ -133,17 +135,34 @@ orderRoutes.get('/', requireAuth, async (c) => {
   const auth = c.get('auth');
   const db = getDb(c.env.DB);
 
-  const rows =
-    auth.role === 'customer'
-      ? await db.select().from(orders).where(eq(orders.userId, auth.sub)).orderBy(desc(orders.createdAt))
-      : auth.role === 'admin'
-        ? await db.select().from(orders).orderBy(desc(orders.createdAt))
-        : await db
-            .select()
-            .from(orders)
-            .where(eq(orders.storeId, auth.storeId ?? ''))
-            .orderBy(desc(orders.createdAt));
+  if (auth.role === 'customer') {
+    const rows = await db.select().from(orders).where(eq(orders.userId, auth.sub)).orderBy(desc(orders.createdAt));
+    return c.json({ orders: rows });
+  }
 
+  if (auth.role === 'admin') {
+    const rows = await db.select().from(orders).orderBy(desc(orders.createdAt));
+    return c.json({ orders: rows });
+  }
+
+  if (auth.role === 'delivery_partner') {
+    // Only orders actually assigned to this person — not the whole store's
+    // queue, which store_staff sees but a delivery partner has no reason to.
+    const rows = await db
+      .select({ order: orders })
+      .from(deliveryAssignments)
+      .innerJoin(orders, eq(orders.id, deliveryAssignments.orderId))
+      .where(eq(deliveryAssignments.deliveryPartnerUserId, auth.sub))
+      .orderBy(desc(orders.createdAt));
+    return c.json({ orders: rows.map((r) => r.order) });
+  }
+
+  // store_staff
+  const rows = await db
+    .select()
+    .from(orders)
+    .where(eq(orders.storeId, auth.storeId ?? ''))
+    .orderBy(desc(orders.createdAt));
   return c.json({ orders: rows });
 });
 
@@ -156,9 +175,18 @@ orderRoutes.get('/:id', requireAuth, async (c) => {
   if (!order) return c.json({ error: 'Order not found' }, 404);
 
   const isOwnCustomerOrder = auth.role === 'customer' && order.userId === auth.sub;
-  const isScopedStoreStaff =
-    (auth.role === 'store_staff' || auth.role === 'delivery_partner') && order.storeId === auth.storeId;
-  if (!isOwnCustomerOrder && !isScopedStoreStaff && auth.role !== 'admin') {
+  const isScopedStoreStaff = auth.role === 'store_staff' && order.storeId === auth.storeId;
+  const isAssignedDeliveryPartner =
+    auth.role === 'delivery_partner' &&
+    (
+      await db
+        .select()
+        .from(deliveryAssignments)
+        .where(and(eq(deliveryAssignments.orderId, id), eq(deliveryAssignments.deliveryPartnerUserId, auth.sub)))
+        .limit(1)
+    ).length > 0;
+
+  if (!isOwnCustomerOrder && !isScopedStoreStaff && !isAssignedDeliveryPartner && auth.role !== 'admin') {
     return c.json({ error: 'Order not found' }, 404);
   }
 
@@ -169,13 +197,117 @@ orderRoutes.get('/:id', requireAuth, async (c) => {
     .where(eq(orderStatusEvents.orderId, id))
     .orderBy(asc(orderStatusEvents.createdAt));
 
-  return c.json({ order, items, events });
+  const [assignmentRow] = await db
+    .select({ assignment: deliveryAssignments, partner: users })
+    .from(deliveryAssignments)
+    .innerJoin(users, eq(users.id, deliveryAssignments.deliveryPartnerUserId))
+    .where(eq(deliveryAssignments.orderId, id))
+    .limit(1);
+
+  const delivery = assignmentRow
+    ? {
+        partnerId: assignmentRow.partner.id,
+        partnerName: assignmentRow.partner.name,
+        assignedAt: assignmentRow.assignment.assignedAt,
+        completedAt: assignmentRow.assignment.completedAt,
+      }
+    : null;
+
+  return c.json({ order, items, events, delivery });
 });
 
+const CANCELLABLE_STATUSES: OrderStatus[] = ['placed', 'confirmed'];
 const statusUpdateSchema = z.object({ status: z.enum(ORDER_STATUSES) });
 
-orderRoutes.patch('/:id/status', requireAuth, requireRole('store_staff', 'admin'), async (c) => {
+orderRoutes.patch('/:id/status', requireAuth, async (c) => {
   const parsed = statusUpdateSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ error: 'Invalid request' }, 400);
+  const auth = c.get('auth');
+  const db = getDb(c.env.DB);
+  const id = c.req.param('id')!;
+  const targetStatus = parsed.data.status;
+
+  const [order] = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+  if (!order) return c.json({ error: 'Order not found' }, 404);
+
+  // Each role gets a narrow, explicit slice of the status machine — not the
+  // same "any status, any order at my store" power staff/admin have.
+  if (auth.role === 'customer') {
+    if (order.userId !== auth.sub) return c.json({ error: 'Order not found' }, 404);
+    if (targetStatus !== 'cancelled') {
+      return c.json({ error: 'Customers can only cancel an order' }, 403);
+    }
+    if (!CANCELLABLE_STATUSES.includes(order.status)) {
+      return c.json({ error: `Can't cancel an order that's already ${order.status}` }, 409);
+    }
+  } else if (auth.role === 'delivery_partner') {
+    const [assignment] = await db
+      .select()
+      .from(deliveryAssignments)
+      .where(and(eq(deliveryAssignments.orderId, id), eq(deliveryAssignments.deliveryPartnerUserId, auth.sub)))
+      .limit(1);
+    if (!assignment) return c.json({ error: 'Order not found' }, 404);
+    if (targetStatus !== 'delivered') {
+      return c.json({ error: 'Delivery partners can only mark an order delivered' }, 403);
+    }
+  } else if (auth.role === 'store_staff') {
+    if (order.storeId !== auth.storeId) return c.json({ error: 'Forbidden' }, 403);
+  } else if (auth.role !== 'admin') {
+    return c.json({ error: 'Forbidden' }, 403);
+  }
+
+  const batchStatements: BatchItem<'sqlite'>[] = [
+    db.update(orders).set({ status: targetStatus }).where(eq(orders.id, id)),
+    db.insert(orderStatusEvents).values({
+      id: crypto.randomUUID(),
+      orderId: id,
+      status: targetStatus,
+      actorUserId: auth.sub,
+    }),
+  ];
+
+  // Cancelling gives back the stock that checkout reserved — otherwise
+  // every cancellation permanently loses that inventory.
+  if (targetStatus === 'cancelled' && order.status !== 'cancelled') {
+    const items = await db.select().from(orderItems).where(eq(orderItems.orderId, id));
+    const stockRows = await db
+      .select()
+      .from(inventory)
+      .where(
+        and(
+          eq(inventory.storeId, order.storeId),
+          inArray(
+            inventory.productId,
+            items.map((i) => i.productId)
+          )
+        )
+      );
+    const stockByProduct = new Map(stockRows.map((r) => [r.productId, r.stockQty]));
+    for (const item of items) {
+      batchStatements.push(
+        db
+          .update(inventory)
+          .set({ stockQty: (stockByProduct.get(item.productId) ?? 0) + item.quantity })
+          .where(and(eq(inventory.storeId, order.storeId), eq(inventory.productId, item.productId)))
+      );
+    }
+  }
+
+  if (targetStatus === 'delivered') {
+    batchStatements.push(
+      db.update(deliveryAssignments).set({ completedAt: new Date() }).where(eq(deliveryAssignments.orderId, id))
+    );
+  }
+
+  await db.batch(batchStatements as unknown as Parameters<typeof db.batch>[0]);
+  await notifyOrderStatus(c.env, id, targetStatus);
+  return c.json({ ok: true, status: targetStatus });
+});
+
+const assignDeliverySchema = z.object({ deliveryPartnerUserId: z.string() });
+
+orderRoutes.patch('/:id/assign-delivery', requireAuth, requireRole('store_staff', 'admin'), async (c) => {
+  const parsed = assignDeliverySchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ error: 'Invalid request' }, 400);
   const auth = c.get('auth');
   const db = getDb(c.env.DB);
@@ -187,19 +319,27 @@ orderRoutes.patch('/:id/status', requireAuth, requireRole('store_staff', 'admin'
     return c.json({ error: 'Forbidden' }, 403);
   }
 
-  const statusStatements: BatchItem<'sqlite'>[] = [
-    db.update(orders).set({ status: parsed.data.status }).where(eq(orders.id, id)),
-    db.insert(orderStatusEvents).values({
-      id: crypto.randomUUID(),
-      orderId: id,
-      status: parsed.data.status,
-      actorUserId: auth.sub,
-    }),
-  ];
-  await db.batch(statusStatements as unknown as Parameters<typeof db.batch>[0]);
+  const [partner] = await db
+    .select()
+    .from(users)
+    .where(and(eq(users.id, parsed.data.deliveryPartnerUserId), eq(users.role, 'delivery_partner')))
+    .limit(1);
+  if (!partner) return c.json({ error: 'Delivery partner not found' }, 404);
+  if (partner.storeId !== order.storeId) {
+    return c.json({ error: "That delivery partner isn't assigned to this order's store" }, 400);
+  }
 
-  await notifyOrderStatus(c.env, id, parsed.data.status);
-  return c.json({ ok: true, status: parsed.data.status });
+  const [existing] = await db.select().from(deliveryAssignments).where(eq(deliveryAssignments.orderId, id)).limit(1);
+  if (existing) {
+    await db
+      .update(deliveryAssignments)
+      .set({ deliveryPartnerUserId: partner.id, assignedAt: new Date(), completedAt: null })
+      .where(eq(deliveryAssignments.id, existing.id));
+  } else {
+    await db.insert(deliveryAssignments).values({ id: crypto.randomUUID(), orderId: id, deliveryPartnerUserId: partner.id });
+  }
+
+  return c.json({ ok: true });
 });
 
 // Live order tracking over WebSocket — proxies straight through to that

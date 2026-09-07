@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 
 import { accountRoutes } from './routes/account';
+import { analyticsRoutes } from './routes/analytics';
 import { authRoutes } from './routes/auth';
 import { cartRoutes } from './routes/cart';
 import { catalogRoutes } from './routes/catalog';
@@ -9,6 +10,7 @@ import { inventoryRoutes } from './routes/inventory';
 import { orderRoutes } from './routes/orders';
 import { serviceabilityRoutes } from './routes/serviceability';
 import { storeRoutes } from './routes/stores';
+import { userRoutes } from './routes/users';
 import type { Env } from './env';
 import type { AuthEnv } from './middleware/auth';
 
@@ -38,5 +40,7 @@ v1.route('/cart', cartRoutes);
 v1.route('/orders', orderRoutes);
 v1.route('/inventory', inventoryRoutes);
 v1.route('/admin/stores', storeRoutes);
+v1.route('/admin/users', userRoutes);
+v1.route('/admin/analytics', analyticsRoutes);
 
 export default app;

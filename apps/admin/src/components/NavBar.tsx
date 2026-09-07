@@ -5,16 +5,28 @@ import { usePathname } from 'next/navigation';
 
 import { useAuth } from '@/lib/auth';
 
-const LINKS = [
+const ADMIN_LINKS = [
   { href: '/', label: 'Orders' },
   { href: '/categories', label: 'Categories' },
   { href: '/products', label: 'Products' },
   { href: '/inventory', label: 'Inventory' },
+  { href: '/staff', label: 'Staff' },
+  { href: '/analytics', label: 'Analytics' },
 ];
+
+const STORE_STAFF_LINKS = [
+  { href: '/', label: 'Orders' },
+  { href: '/inventory', label: 'Inventory' },
+];
+
+const DELIVERY_PARTNER_LINKS = [{ href: '/', label: 'My deliveries' }];
 
 export function NavBar() {
   const { user, loading, logout } = useAuth();
   const pathname = usePathname();
+
+  const links =
+    user?.role === 'admin' ? ADMIN_LINKS : user?.role === 'store_staff' ? STORE_STAFF_LINKS : DELIVERY_PARTNER_LINKS;
 
   return (
     <header className="sticky top-0 z-10 bg-gradient-to-r from-amber-700/95 via-amber-600/95 to-yellow-600/95 backdrop-blur-xl shadow-lg shadow-amber-900/10">
@@ -24,7 +36,7 @@ export function NavBar() {
         </Link>
         {!loading && user && (
           <nav className="flex items-center gap-1 text-sm">
-            {LINKS.map((link) => (
+            {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}

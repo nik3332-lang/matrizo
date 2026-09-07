@@ -7,7 +7,7 @@ import { api, getStoredToken, setStoredToken } from './api';
 
 export type StaffUser = {
   id: string;
-  role: 'store_staff' | 'admin';
+  role: 'store_staff' | 'delivery_partner' | 'admin';
   email: string | null;
   name: string | null;
   storeId: string | null;
@@ -33,9 +33,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     api
-      .get<{ user: StaffUser }>('/account/me')
+      .get<{ user: { id: string; role: string; email: string | null; name: string | null; storeId: string | null } }>(
+        '/account/me'
+      )
       .then((res) => {
-        if (res.user.role === 'store_staff' || res.user.role === 'admin') setUser(res.user);
+        if (res.user.role !== 'customer') setUser(res.user as StaffUser);
         else setStoredToken(null);
       })
       .catch((err) => {

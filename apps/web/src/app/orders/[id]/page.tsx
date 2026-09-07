@@ -7,7 +7,7 @@ export const runtime = 'edge';
 
 import { use, useEffect, useState } from 'react';
 
-import { ORDER_STATUSES } from '@matrizo/shared';
+import { ApiError, ORDER_STATUSES } from '@matrizo/shared';
 import { api, wsUrl } from '@/lib/api';
 
 type OrderItem = { id: string; productName: string; quantity: number; unitPrice: number };
@@ -23,6 +23,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [events, setEvents] = useState<StatusEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [live, setLive] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     api
@@ -53,10 +54,25 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     return () => ws.close();
   }, [id]);
 
-  if (error) return <p className="text-stone-500">{error}</p>;
+  async function cancelOrder() {
+    if (!confirm('Cancel this order?')) return;
+    setCancelling(true);
+    setError(null);
+    try {
+      await api.patch(`/orders/${id}/status`, { status: 'cancelled' });
+      setOrder((prev) => (prev ? { ...prev, status: 'cancelled' } : prev));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not cancel this order.');
+    } finally {
+      setCancelling(false);
+    }
+  }
+
+  if (error && !order) return <p className="text-stone-500">{error}</p>;
   if (!order) return <p className="text-stone-500">Loading…</p>;
 
   const currentIndex = TRACKABLE_STATUSES.indexOf(order.status as (typeof TRACKABLE_STATUSES)[number]);
+  const canCancel = order.status === 'placed' || order.status === 'confirmed';
 
   return (
     <div className="max-w-lg">
@@ -66,6 +82,18 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           {live ? '● live' : '○ connecting…'}
         </span>
       </div>
+
+      {error && <p className="mt-2 text-sm text-rose-600">{error}</p>}
+
+      {canCancel && (
+        <button
+          onClick={cancelOrder}
+          disabled={cancelling}
+          className="mt-3 text-sm font-medium text-rose-600 hover:underline disabled:opacity-60"
+        >
+          {cancelling ? 'Cancelling…' : 'Cancel order'}
+        </button>
+      )}
 
       {order.status === 'cancelled' ? (
         <p className="mt-4 text-rose-600 font-medium">This order was cancelled.</p>

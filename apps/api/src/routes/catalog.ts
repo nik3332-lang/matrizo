@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray, like, or } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
 import { Hono } from 'hono';
 import { z } from 'zod';
@@ -32,6 +32,28 @@ catalogRoutes.get('/categories/:slug/products', async (c) => {
 
   const withTiers = await attachTiers(db, productRows);
   return c.json({ category, products: withTiers });
+});
+
+// Product search by name or SKU. Simple LIKE match — fine at this catalog
+// size; if it ever gets slow, that's what D1's FTS5 extension or a proper
+// search index is for, not a reason to build one preemptively now.
+// Must be registered before /products/:slug — otherwise Hono matches
+// "search" itself as the :slug param and this is never reached (confirmed
+// via a real 404 "Product not found" during testing).
+catalogRoutes.get('/products/search', async (c) => {
+  const q = c.req.query('q')?.trim();
+  if (!q) return c.json({ products: [] });
+
+  const db = getDb(c.env.DB);
+  const pattern = `%${q}%`;
+  const productRows = await db
+    .select()
+    .from(products)
+    .where(and(eq(products.active, true), or(like(products.name, pattern), like(products.sku, pattern))))
+    .limit(30);
+
+  const withTiers = await attachTiers(db, productRows);
+  return c.json({ products: withTiers });
 });
 
 catalogRoutes.get('/products/:slug', async (c) => {
@@ -247,6 +269,56 @@ catalogRoutes.patch('/admin/products/:id', async (c) => {
   const [product] = await db.select().from(products).where(eq(products.id, id)).limit(1);
   const tierRows = await db.select().from(bulkPricingTiers).where(eq(bulkPricingTiers.productId, id));
   return c.json({ product: { ...product, tiers: tierRows } });
+});
+
+// Bulk import — the whole reason this exists is that adding a real catalog
+// one product at a time via the form is fine at dozens of SKUs, painful at
+// hundreds. Each row is inserted independently (not one D1 batch) so one
+// bad row (duplicate SKU, say) doesn't fail the whole import — the response
+// reports success/failure per row so the admin can see exactly what to fix.
+const bulkProductSchema = z.array(productSchema);
+
+catalogRoutes.post('/admin/products/bulk', async (c) => {
+  const parsed = bulkProductSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ error: 'Invalid request — expected an array of products' }, 400);
+
+  const db = getDb(c.env.DB);
+  const results: { row: number; sku: string; ok: boolean; error?: string }[] = [];
+
+  for (const [i, item] of parsed.data.entries()) {
+    const { tiers, ...productData } = item;
+    const id = crypto.randomUUID();
+    try {
+      const statements: BatchItem<'sqlite'>[] = [
+        db.insert(products).values({
+          id,
+          sku: productData.sku,
+          slug: productData.slug,
+          categoryId: productData.categoryId,
+          name: productData.name,
+          description: productData.description ?? null,
+          unit: productData.unit,
+          basePrice: productData.basePrice,
+          imageUrl: productData.imageUrl ?? null,
+          active: productData.active ?? true,
+        }),
+        ...(tiers ?? []).map((tier) =>
+          db.insert(bulkPricingTiers).values({ id: crypto.randomUUID(), productId: id, ...tier })
+        ),
+      ];
+      await db.batch(statements as unknown as Parameters<typeof db.batch>[0]);
+      results.push({ row: i, sku: item.sku, ok: true });
+    } catch (err) {
+      const message = uniqueConstraintMessage(err) ?? (err instanceof Error ? err.message : 'Unknown error');
+      results.push({ row: i, sku: item.sku, ok: false, error: message });
+    }
+  }
+
+  return c.json({
+    imported: results.filter((r) => r.ok).length,
+    failed: results.filter((r) => !r.ok).length,
+    results,
+  });
 });
 
 catalogRoutes.delete('/admin/products/:id', async (c) => {
