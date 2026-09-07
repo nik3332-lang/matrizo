@@ -53,38 +53,42 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     return () => ws.close();
   }, [id]);
 
-  if (error) return <p className="text-neutral-500">{error}</p>;
-  if (!order) return <p className="text-neutral-500">Loading…</p>;
+  if (error) return <p className="text-stone-500">{error}</p>;
+  if (!order) return <p className="text-stone-500">Loading…</p>;
 
   const currentIndex = TRACKABLE_STATUSES.indexOf(order.status as (typeof TRACKABLE_STATUSES)[number]);
 
   return (
     <div className="max-w-lg">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Order #{order.id.slice(0, 8)}</h1>
-        <span className={`text-xs ${live ? 'text-emerald-600' : 'text-neutral-400'}`}>
+        <h1 className="text-xl font-bold text-stone-900">Order #{order.id.slice(0, 8)}</h1>
+        <span className={`text-xs font-medium ${live ? 'text-emerald-600' : 'text-stone-400'}`}>
           {live ? '● live' : '○ connecting…'}
         </span>
       </div>
 
       {order.status === 'cancelled' ? (
-        <p className="mt-4 text-red-600 font-medium">This order was cancelled.</p>
+        <p className="mt-4 text-rose-600 font-medium">This order was cancelled.</p>
       ) : (
-        <ol className="mt-6 flex justify-between text-xs">
-          {TRACKABLE_STATUSES.map((status, i) => (
-            <li key={status} className="flex-1 flex flex-col items-center">
-              <div
-                className={`h-3 w-3 rounded-full ${i <= currentIndex ? 'bg-neutral-900' : 'bg-neutral-200'}`}
-              />
-              <span className={`mt-2 capitalize ${i <= currentIndex ? 'text-neutral-900' : 'text-neutral-400'}`}>
-                {status.replace('_', ' ')}
-              </span>
-            </li>
-          ))}
-        </ol>
+        <div className="glass mt-6 rounded-xl p-4">
+          <ol className="flex justify-between text-xs">
+            {TRACKABLE_STATUSES.map((status, i) => (
+              <li key={status} className="flex-1 flex flex-col items-center">
+                <div
+                  className={`h-3 w-3 rounded-full ${
+                    i <= currentIndex ? 'bg-gradient-to-br from-amber-500 to-yellow-500' : 'bg-stone-200'
+                  }`}
+                />
+                <span className={`mt-2 capitalize ${i <= currentIndex ? 'text-amber-700 font-medium' : 'text-stone-400'}`}>
+                  {status.replace('_', ' ')}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
       )}
 
-      <div className="mt-8 divide-y border border-neutral-200 rounded-md bg-white">
+      <div className="glass mt-8 divide-y divide-stone-200/70 rounded-xl">
         {items.map((item) => (
           <div key={item.id} className="p-3 flex justify-between text-sm">
             <span>
@@ -93,16 +97,16 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             <span>₹{item.unitPrice * item.quantity}</span>
           </div>
         ))}
-        <div className="p-3 flex justify-between font-medium">
+        <div className="p-3 flex justify-between font-semibold text-stone-900">
           <span>Total ({order.paymentMethod.toUpperCase()})</span>
-          <span>₹{order.totalAmount}</span>
+          <span className="text-amber-700">₹{order.totalAmount}</span>
         </div>
       </div>
 
-      <div className="mt-6 text-sm text-neutral-500 space-y-1">
+      <div className="mt-6 text-sm text-stone-500 space-y-1">
         {events.map((ev, i) => (
           <div key={i}>
-            {new Date(ev.createdAt).toLocaleString()} — <span className="capitalize">{ev.status}</span>
+            {new Date(ev.createdAt).toLocaleString()} — <span className="capitalize font-medium text-stone-700">{ev.status}</span>
           </div>
         ))}
       </div>

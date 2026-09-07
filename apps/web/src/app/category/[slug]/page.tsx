@@ -36,15 +36,15 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
       .catch(() => setError('Category not found.'));
   }, [slug]);
 
-  if (error) return <p className="text-neutral-500">{error}</p>;
-  if (!data) return <p className="text-neutral-500">Loading…</p>;
+  if (error) return <p className="text-stone-500">{error}</p>;
+  if (!data) return <p className="text-stone-500">Loading…</p>;
 
   return (
     <div>
-      <h1 className="text-xl font-semibold mb-1">
+      <h1 className="text-xl font-bold text-stone-900 mb-1">
         {data.category.icon} {data.category.name}
       </h1>
-      {data.products.length === 0 && <p className="text-neutral-500 mt-4">No products in this category yet.</p>}
+      {data.products.length === 0 && <p className="text-stone-500 mt-4">No products in this category yet.</p>}
       <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-4">
         {data.products.map((product) => {
           const bestTier = [...product.tiers].sort((a, b) => b.minQty - a.minQty)[0];
@@ -52,13 +52,13 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
             <Link
               key={product.id}
               href={`/product/${product.slug}`}
-              className="rounded-lg border border-neutral-200 bg-white p-4 hover:border-neutral-400 transition-colors"
+              className="glass rounded-xl p-4 hover:-translate-y-0.5 hover:shadow-lg transition-all"
             >
-              <div className="font-medium">{product.name}</div>
-              <div className="text-sm text-neutral-500">per {product.unit}</div>
-              <div className="mt-2 font-semibold">₹{product.basePrice}</div>
+              <div className="font-semibold text-stone-900">{product.name}</div>
+              <div className="text-sm text-stone-500">per {product.unit}</div>
+              <div className="mt-2 font-bold text-amber-700">₹{product.basePrice}</div>
               {bestTier && (
-                <div className="text-xs text-emerald-600">
+                <div className="text-xs mt-1 inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">
                   ₹{bestTier.pricePerUnit} for {bestTier.minQty}+
                 </div>
               )}

@@ -8,27 +8,30 @@ export function NavBar() {
   const { user, loading, logout } = useAuth();
 
   return (
-    <header className="border-b border-neutral-200 bg-white">
+    <header className="sticky top-0 z-10 bg-gradient-to-r from-amber-700/95 via-amber-600/95 to-yellow-600/95 backdrop-blur-xl shadow-lg shadow-amber-900/10">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-        <Link href="/" className="font-semibold text-lg tracking-tight">
+        <Link href="/" className="font-bold text-lg tracking-tight text-white">
           Matrizo
         </Link>
-        <nav className="flex items-center gap-4 text-sm">
-          <Link href="/cart" className="hover:underline">
+        <nav className="flex items-center gap-1 text-sm">
+          <Link href="/cart" className="rounded-full px-3 py-1.5 font-medium text-amber-50 hover:bg-white/10 hover:text-white transition-colors">
             Cart
           </Link>
           {!loading && user && (
             <>
-              <Link href="/orders" className="hover:underline">
+              <Link href="/orders" className="rounded-full px-3 py-1.5 font-medium text-amber-50 hover:bg-white/10 hover:text-white transition-colors">
                 Orders
               </Link>
-              <button onClick={logout} className="text-neutral-500 hover:text-neutral-900">
+              <button
+                onClick={logout}
+                className="rounded-full px-3 py-1.5 font-medium text-amber-50 hover:bg-white/10 hover:text-white transition-colors"
+              >
                 Log out
               </button>
             </>
           )}
           {!loading && !user && (
-            <Link href="/login" className="hover:underline">
+            <Link href="/login" className="ml-1 rounded-full bg-white text-amber-700 px-4 py-1.5 font-semibold shadow-sm">
               Log in
             </Link>
           )}

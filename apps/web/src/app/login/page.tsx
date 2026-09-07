@@ -76,105 +76,108 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="max-w-sm mx-auto">
-      <h1 className="text-xl font-semibold mb-6">Log in</h1>
+    <div className="min-h-[80vh] flex items-center justify-center -m-6 bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-400">
+      <div className="glass w-full max-w-sm mx-4 rounded-2xl p-8">
+        <h1 className="text-xl font-bold text-stone-900 mb-1">Log in</h1>
+        <p className="text-sm text-stone-500 mb-6">Fast delivery starts with your phone number.</p>
 
-      {step === 'phone' && (
-        <form onSubmit={requestOtp} className="space-y-3">
-          <label className="block text-sm">
-            Phone number
-            <input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="9876543210"
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2"
-              inputMode="tel"
-              required
-            />
-          </label>
-          <label className="block text-sm">
-            Name
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2"
-            />
-          </label>
-          <div className="pt-1">
-            <p className="text-sm text-neutral-500 mb-2">
-              Delivery address <span className="text-neutral-400">(you can skip and add this later)</span>
-            </p>
-            <div className="space-y-2">
+        {step === 'phone' && (
+          <form onSubmit={requestOtp} className="space-y-3">
+            <label className="block text-sm font-medium text-stone-700">
+              Phone number
               <input
-                value={line1}
-                onChange={(e) => setLine1(e.target.value)}
-                placeholder="Address line"
-                className="w-full rounded-md border border-neutral-300 px-3 py-2"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="9876543210"
+                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                inputMode="tel"
+                required
               />
-              <div className="flex gap-2">
+            </label>
+            <label className="block text-sm font-medium text-stone-700">
+              Name
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your name"
+                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+              />
+            </label>
+            <div className="pt-1">
+              <p className="text-sm text-stone-500 mb-2">
+                Delivery address <span className="text-stone-400">(you can skip and add this later)</span>
+              </p>
+              <div className="space-y-2">
                 <input
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  placeholder="City"
-                  className="w-1/2 rounded-md border border-neutral-300 px-3 py-2"
+                  value={line1}
+                  onChange={(e) => setLine1(e.target.value)}
+                  placeholder="Address line"
+                  className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
                 />
+                <div className="flex gap-2">
+                  <input
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="City"
+                    className="w-1/2 rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                  />
+                  <input
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                    placeholder="State"
+                    className="w-1/2 rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                  />
+                </div>
                 <input
-                  value={state}
-                  onChange={(e) => setState(e.target.value)}
-                  placeholder="State"
-                  className="w-1/2 rounded-md border border-neutral-300 px-3 py-2"
+                  value={pincode}
+                  onChange={(e) => setPincode(e.target.value)}
+                  placeholder="Pincode"
+                  className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                  inputMode="numeric"
                 />
               </div>
-              <input
-                value={pincode}
-                onChange={(e) => setPincode(e.target.value)}
-                placeholder="Pincode"
-                className="w-full rounded-md border border-neutral-300 px-3 py-2"
-                inputMode="numeric"
-              />
             </div>
-          </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <button
-            type="submit"
-            disabled={busy}
-            className="w-full rounded-md bg-neutral-900 text-white px-4 py-2 font-medium disabled:opacity-60"
-          >
-            {busy ? 'Sending…' : 'Send OTP'}
-          </button>
-        </form>
-      )}
+            {error && <p className="text-sm text-rose-600">{error}</p>}
+            <button
+              type="submit"
+              disabled={busy}
+              className="w-full rounded-lg bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-4 py-2.5 font-semibold shadow-sm hover:from-amber-700 hover:to-yellow-700 disabled:opacity-60"
+            >
+              {busy ? 'Sending…' : 'Send OTP'}
+            </button>
+          </form>
+        )}
 
-      {step === 'code' && (
-        <form onSubmit={verifyOtp} className="space-y-3">
-          {devOtp && (
-            <p className="text-sm rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-amber-800">
-              Test mode — your code is <strong>{devOtp}</strong> (SMS isn&apos;t wired up yet).
-            </p>
-          )}
-          <label className="block text-sm">
-            Enter the 6-digit code
-            <input
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="123456"
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2"
-              inputMode="numeric"
-              maxLength={6}
-              required
-            />
-          </label>
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <button
-            type="submit"
-            disabled={busy}
-            className="w-full rounded-md bg-neutral-900 text-white px-4 py-2 font-medium disabled:opacity-60"
-          >
-            {busy ? 'Verifying…' : 'Verify & log in'}
-          </button>
-        </form>
-      )}
+        {step === 'code' && (
+          <form onSubmit={verifyOtp} className="space-y-3">
+            {devOtp && (
+              <p className="text-sm rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-amber-800">
+                Test mode — your code is <strong>{devOtp}</strong> (SMS isn&apos;t wired up yet).
+              </p>
+            )}
+            <label className="block text-sm font-medium text-stone-700">
+              Enter the 6-digit code
+              <input
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="123456"
+                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
+                inputMode="numeric"
+                maxLength={6}
+                required
+              />
+            </label>
+            {error && <p className="text-sm text-rose-600">{error}</p>}
+            <button
+              type="submit"
+              disabled={busy}
+              className="w-full rounded-lg bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-4 py-2.5 font-semibold shadow-sm hover:from-amber-700 hover:to-yellow-700 disabled:opacity-60"
+            >
+              {busy ? 'Verifying…' : 'Verify & log in'}
+            </button>
+          </form>
+        )}
+      </div>
     </div>
   );
 }

@@ -58,19 +58,19 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
     }
   }
 
-  if (error) return <p className="text-neutral-500">{error}</p>;
-  if (!product) return <p className="text-neutral-500">Loading…</p>;
+  if (error) return <p className="text-stone-500">{error}</p>;
+  if (!product) return <p className="text-stone-500">Loading…</p>;
 
   const unitPrice = priceForQuantity(product.tiers, quantity, product.basePrice);
 
   return (
     <div className="max-w-lg">
-      <h1 className="text-xl font-semibold">{product.name}</h1>
-      {product.description && <p className="mt-2 text-neutral-600">{product.description}</p>}
+      <h1 className="text-xl font-bold text-stone-900">{product.name}</h1>
+      {product.description && <p className="mt-2 text-stone-600">{product.description}</p>}
 
       {product.tiers.length > 0 && (
-        <div className="mt-4 rounded-md border border-neutral-200 divide-y text-sm">
-          <div className="px-3 py-2 flex justify-between font-medium">
+        <div className="glass mt-4 rounded-xl divide-y divide-stone-200/70 text-sm overflow-hidden">
+          <div className="px-3 py-2 flex justify-between font-semibold text-stone-700 bg-amber-50/60">
             <span>Quantity</span>
             <span>Price / {product.unit}</span>
           </div>
@@ -86,28 +86,28 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                   {tier.minQty}
                   {arr[i + 1] ? ` – ${arr[i + 1].minQty - 1}` : '+'}
                 </span>
-                <span>₹{tier.pricePerUnit}</span>
+                <span className="font-medium text-emerald-700">₹{tier.pricePerUnit}</span>
               </div>
             ))}
         </div>
       )}
 
       <div className="mt-6 flex items-center gap-3">
-        <label className="text-sm">Quantity</label>
+        <label className="text-sm font-medium text-stone-700">Quantity</label>
         <input
           type="number"
           min={1}
           value={quantity}
           onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value, 10) || 1))}
-          className="w-20 rounded-md border border-neutral-300 px-3 py-2"
+          className="w-20 rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
         />
-        <div className="font-semibold">₹{unitPrice * quantity} total</div>
+        <div className="font-bold text-amber-700">₹{unitPrice * quantity} total</div>
       </div>
 
       <button
         onClick={addToCart}
         disabled={adding}
-        className="mt-4 rounded-md bg-neutral-900 text-white px-5 py-2 font-medium disabled:opacity-60"
+        className="mt-4 rounded-lg bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-5 py-2.5 font-semibold shadow-sm hover:from-amber-700 hover:to-yellow-700 disabled:opacity-60"
       >
         {adding ? 'Adding…' : added ? 'Added ✓' : 'Add to cart'}
       </button>

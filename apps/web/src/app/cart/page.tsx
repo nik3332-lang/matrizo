@@ -40,8 +40,8 @@ export default function CartPage() {
 
   if (!authLoading && !user) {
     return (
-      <p className="text-neutral-600">
-        <Link href="/login" className="underline">
+      <p className="text-stone-600">
+        <Link href="/login" className="text-amber-700 font-medium underline">
           Log in
         </Link>{' '}
         to view your cart.
@@ -49,15 +49,15 @@ export default function CartPage() {
     );
   }
 
-  if (!cart) return <p className="text-neutral-500">Loading…</p>;
+  if (!cart) return <p className="text-stone-500">Loading…</p>;
 
   if (cart.items.length === 0) {
     return (
       <div>
-        <h1 className="text-xl font-semibold mb-4">Your cart</h1>
-        <p className="text-neutral-500">
+        <h1 className="text-xl font-bold text-stone-900 mb-4">Your cart</h1>
+        <p className="text-stone-500">
           Your cart is empty.{' '}
-          <Link href="/" className="underline">
+          <Link href="/" className="text-amber-700 font-medium underline">
             Browse categories
           </Link>
           .
@@ -68,13 +68,13 @@ export default function CartPage() {
 
   return (
     <div className="max-w-lg">
-      <h1 className="text-xl font-semibold mb-4">Your cart</h1>
-      <div className="divide-y border border-neutral-200 rounded-md bg-white">
+      <h1 className="text-xl font-bold text-stone-900 mb-4">Your cart</h1>
+      <div className="glass divide-y divide-stone-200/70 rounded-xl">
         {cart.items.map((item) => (
           <div key={item.id} className="p-4 flex items-center justify-between gap-4">
             <div>
-              <div className="font-medium">{item.product.name}</div>
-              <div className="text-sm text-neutral-500">
+              <div className="font-semibold text-stone-900">{item.product.name}</div>
+              <div className="text-sm text-stone-500">
                 ₹{item.unitPrice} / {item.product.unit}
               </div>
             </div>
@@ -85,20 +85,20 @@ export default function CartPage() {
                 value={item.quantity}
                 disabled={busyProductId === item.product.id}
                 onChange={(e) => updateQuantity(item.product.id, Math.max(0, parseInt(e.target.value, 10) || 0))}
-                className="w-16 rounded-md border border-neutral-300 px-2 py-1 text-center"
+                className="w-16 rounded-lg border border-stone-300 px-2 py-1 text-center focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
               />
-              <div className="w-20 text-right font-medium">₹{item.lineTotal}</div>
+              <div className="w-20 text-right font-semibold text-amber-700">₹{item.lineTotal}</div>
             </div>
           </div>
         ))}
       </div>
-      <div className="mt-4 flex items-center justify-between">
-        <span className="text-neutral-600">Subtotal</span>
-        <span className="text-lg font-semibold">₹{cart.subtotal}</span>
+      <div className="glass mt-4 rounded-xl p-4 flex items-center justify-between">
+        <span className="text-stone-600 font-medium">Subtotal</span>
+        <span className="text-lg font-bold text-amber-700">₹{cart.subtotal}</span>
       </div>
       <Link
         href="/checkout"
-        className="mt-4 block text-center rounded-md bg-neutral-900 text-white px-5 py-2 font-medium"
+        className="mt-4 block text-center rounded-lg bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-5 py-2.5 font-semibold shadow-sm hover:from-amber-700 hover:to-yellow-700"
       >
         Proceed to checkout
       </Link>

@@ -23,27 +23,27 @@ export default function OrdersPage() {
     }
   }, [loading, user]);
 
-  if (!loading && !user) return <p className="text-neutral-600">Please log in to see your orders.</p>;
-  if (!orders) return <p className="text-neutral-500">Loading…</p>;
-  if (orders.length === 0) return <p className="text-neutral-500">No orders yet.</p>;
+  if (!loading && !user) return <p className="text-stone-600">Please log in to see your orders.</p>;
+  if (!orders) return <p className="text-stone-500">Loading…</p>;
+  if (orders.length === 0) return <p className="text-stone-500">No orders yet.</p>;
 
   return (
     <div>
-      <h1 className="text-xl font-semibold mb-4">Your orders</h1>
-      <div className="divide-y border border-neutral-200 rounded-md bg-white">
+      <h1 className="text-xl font-bold text-stone-900 mb-4">Your orders</h1>
+      <div className="space-y-2">
         {orders.map((order) => (
           <Link
             key={order.id}
             href={`/orders/${order.id}`}
-            className="p-4 flex items-center justify-between hover:bg-neutral-50"
+            className="glass block rounded-xl p-4 flex items-center justify-between hover:-translate-y-0.5 hover:shadow-lg transition-all"
           >
             <div>
-              <div className="font-medium">Order #{order.id.slice(0, 8)}</div>
-              <div className="text-sm text-neutral-500">{new Date(order.createdAt).toLocaleString()}</div>
+              <div className="font-semibold text-stone-900">Order #{order.id.slice(0, 8)}</div>
+              <div className="text-sm text-stone-500">{new Date(order.createdAt).toLocaleString()}</div>
             </div>
             <div className="text-right">
-              <div className="font-medium capitalize">{order.status}</div>
-              <div className="text-sm text-neutral-500">₹{order.totalAmount}</div>
+              <div className="font-semibold capitalize text-amber-700">{order.status}</div>
+              <div className="text-sm text-stone-500">₹{order.totalAmount}</div>
             </div>
           </Link>
         ))}

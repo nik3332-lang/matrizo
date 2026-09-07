@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fdfaf3;
+  --foreground: #3d3527;
 }
 
 @theme inline {
@@ -12,15 +12,36 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
+  background: #fdfaf3;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  position: relative;
+  isolation: isolate;
+}
+
+/* White / beige / light-yellow: soft blurred color blobs fixed behind the
+   content, visible through the translucent .glass cards. Same treatment as
+   the admin portal, for a consistent brand feel across both apps. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(650px circle at 10% 10%, rgba(253, 224, 71, 0.35), transparent 60%),
+    radial-gradient(700px circle at 90% 15%, rgba(214, 197, 165, 0.5), transparent 60%),
+    radial-gradient(650px circle at 15% 90%, rgba(250, 240, 210, 0.6), transparent 60%),
+    radial-gradient(600px circle at 88% 90%, rgba(253, 230, 138, 0.4), transparent 60%),
+    radial-gradient(900px circle at 50% 50%, rgba(232, 220, 192, 0.3), transparent 65%);
+  filter: blur(10px);
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 8px 32px -10px rgba(161, 129, 55, 0.25);
 }

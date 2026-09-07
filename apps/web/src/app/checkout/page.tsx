@@ -69,26 +69,26 @@ export default function CheckoutPage() {
   }
 
   if (!authLoading && !user) {
-    return <p className="text-neutral-600">Please log in to check out.</p>;
+    return <p className="text-stone-600">Please log in to check out.</p>;
   }
-  if (!addresses) return <p className="text-neutral-500">Loading…</p>;
+  if (!addresses) return <p className="text-stone-500">Loading…</p>;
 
   return (
     <div className="max-w-lg">
-      <h1 className="text-xl font-semibold mb-4">Delivery address</h1>
+      <h1 className="text-xl font-bold text-stone-900 mb-4">Delivery address</h1>
 
       <div className="space-y-2">
         {addresses.map((addr) => (
           <label
             key={addr.id}
-            className={`block rounded-md border p-3 cursor-pointer ${
-              selectedId === addr.id ? 'border-neutral-900' : 'border-neutral-200'
+            className={`glass block rounded-xl p-3 cursor-pointer transition-all ${
+              selectedId === addr.id ? 'ring-2 ring-amber-500' : ''
             }`}
           >
             <input
               type="radio"
               name="address"
-              className="mr-2"
+              className="mr-2 accent-amber-600"
               checked={selectedId === addr.id}
               onChange={() => setSelectedId(addr.id)}
             />
@@ -98,19 +98,19 @@ export default function CheckoutPage() {
       </div>
 
       {!showNewForm && (
-        <button onClick={() => setShowNewForm(true)} className="mt-3 text-sm underline text-neutral-600">
+        <button onClick={() => setShowNewForm(true)} className="mt-3 text-sm font-medium text-amber-700 underline">
           + Add a new address
         </button>
       )}
 
       {showNewForm && (
-        <form onSubmit={saveAddress} className="mt-4 space-y-3 rounded-md border border-neutral-200 p-4">
+        <form onSubmit={saveAddress} className="glass mt-4 space-y-3 rounded-xl p-4">
           <input
             required
             placeholder="Address line"
             value={newAddress.line1}
             onChange={(e) => setNewAddress((a) => ({ ...a, line1: e.target.value }))}
-            className="w-full rounded-md border border-neutral-300 px-3 py-2"
+            className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
           />
           <div className="flex gap-2">
             <input
@@ -118,14 +118,14 @@ export default function CheckoutPage() {
               placeholder="City"
               value={newAddress.city}
               onChange={(e) => setNewAddress((a) => ({ ...a, city: e.target.value }))}
-              className="w-1/2 rounded-md border border-neutral-300 px-3 py-2"
+              className="w-1/2 rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
             />
             <input
               required
               placeholder="State"
               value={newAddress.state}
               onChange={(e) => setNewAddress((a) => ({ ...a, state: e.target.value }))}
-              className="w-1/2 rounded-md border border-neutral-300 px-3 py-2"
+              className="w-1/2 rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
             />
           </div>
           <input
@@ -133,26 +133,29 @@ export default function CheckoutPage() {
             placeholder="Pincode"
             value={newAddress.pincode}
             onChange={(e) => setNewAddress((a) => ({ ...a, pincode: e.target.value }))}
-            className="w-full rounded-md border border-neutral-300 px-3 py-2"
+            className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none"
             inputMode="numeric"
           />
-          <button type="submit" className="rounded-md bg-neutral-900 text-white px-4 py-2 font-medium">
+          <button
+            type="submit"
+            className="rounded-lg bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-4 py-2 font-semibold shadow-sm hover:from-amber-700 hover:to-yellow-700"
+          >
             Save address
           </button>
         </form>
       )}
 
-      <div className="mt-6 rounded-md border border-neutral-200 p-4">
-        <div className="font-medium">Payment method</div>
-        <div className="text-sm text-neutral-500">Cash on delivery (online payment coming soon)</div>
+      <div className="glass mt-6 rounded-xl p-4">
+        <div className="font-semibold text-stone-900">Payment method</div>
+        <div className="text-sm text-stone-500">Cash on delivery (online payment coming soon)</div>
       </div>
 
-      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-3 text-sm text-rose-600">{error}</p>}
 
       <button
         onClick={placeOrder}
         disabled={!selectedId || placing}
-        className="mt-4 w-full rounded-md bg-neutral-900 text-white px-5 py-2 font-medium disabled:opacity-60"
+        className="mt-4 w-full rounded-lg bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-5 py-2.5 font-semibold shadow-sm hover:from-amber-700 hover:to-yellow-700 disabled:opacity-60"
       >
         {placing ? 'Placing order…' : 'Place order'}
       </button>
