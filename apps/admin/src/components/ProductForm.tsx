@@ -2,6 +2,10 @@
 
 import { useState } from 'react';
 
+import { PRODUCT_BRANDS, type ProductBrand } from '@matrizo/shared';
+
+const BRAND_LABELS: Record<ProductBrand, string> = { raksha: 'Raksha', prince: 'Prince', others: 'Others' };
+
 type Tier = { minQty: number; pricePerUnit: number };
 type ProductFormValues = {
   sku: string;
@@ -12,6 +16,7 @@ type ProductFormValues = {
   unit: string;
   basePrice: number;
   imageUrl: string;
+  brand: ProductBrand;
   active: boolean;
   tiers: Tier[];
 };
@@ -25,6 +30,7 @@ const EMPTY: ProductFormValues = {
   unit: '',
   basePrice: 0,
   imageUrl: '',
+  brand: 'others',
   active: true,
   tiers: [],
 };
@@ -120,6 +126,21 @@ export function ProductForm({
           />
         </label>
       </div>
+
+      <label className="block text-sm font-medium text-slate-700 w-full sm:w-1/3">
+        Brand
+        <select
+          value={values.brand}
+          onChange={(e) => setValues((v) => ({ ...v, brand: e.target.value as ProductBrand }))}
+          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
+        >
+          {PRODUCT_BRANDS.map((b) => (
+            <option key={b} value={b}>
+              {BRAND_LABELS[b]}
+            </option>
+          ))}
+        </select>
+      </label>
 
       <label className="block text-sm font-medium text-slate-700">
         Description

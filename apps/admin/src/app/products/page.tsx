@@ -2,11 +2,18 @@
 
 import { useEffect, useState } from 'react';
 
-import { ApiError } from '@matrizo/shared';
+import { ApiError, PRODUCT_BRANDS, type ProductBrand } from '@matrizo/shared';
 import { ProductForm } from '@/components/ProductForm';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { categoryColor } from '@/lib/categoryColors';
+
+const BRAND_LABELS: Record<ProductBrand, string> = { raksha: 'Raksha', prince: 'Prince', others: 'Others' };
+const BRAND_CHIP: Record<ProductBrand, string> = {
+  raksha: 'bg-brand-purple-100 text-brand-purple-800',
+  prince: 'bg-brand-orange-100 text-brand-orange-800',
+  others: 'bg-stone-200 text-stone-700',
+};
 
 type Tier = { minQty: number; pricePerUnit: number };
 type Category = { id: string; name: string };
@@ -20,6 +27,7 @@ type Product = {
   unit: string;
   basePrice: number;
   imageUrl: string | null;
+  brand: ProductBrand;
   active: boolean;
   tiers: Tier[];
 };
@@ -41,12 +49,13 @@ function parseCsv(text: string): Record<string, string>[] {
   });
 }
 
-const CSV_TEMPLATE = 'sku,slug,name,description,unit,basePrice,categorySlug,imageUrl\nEX-001,example-product,Example Product,Optional description,piece,99.5,upvc,\n';
+const CSV_TEMPLATE = 'sku,slug,name,description,unit,basePrice,categorySlug,brand,imageUrl\nEX-001,example-product,Example Product,Optional description,piece,99.5,upvc,others,\n';
 
 export default function ProductsPage() {
   const { user, loading } = useAuth();
   const [categories, setCategories] = useState<Category[] | null>(null);
   const [products, setProducts] = useState<Product[] | null>(null);
+  const [brandFilter, setBrandFilter] = useState<ProductBrand | 'all'>('all');
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -129,6 +138,7 @@ export default function ProductsPage() {
         .map((row) => {
           const categoryId = slugToId.get(row.categorySlug);
           if (!categoryId || !row.sku || !row.slug || !row.name || !row.unit || !row.basePrice) return null;
+          const brand = PRODUCT_BRANDS.includes(row.brand as ProductBrand) ? (row.brand as ProductBrand) : 'others';
           return {
             sku: row.sku,
             slug: row.slug,
@@ -137,6 +147,7 @@ export default function ProductsPage() {
             unit: row.unit,
             basePrice: parseFloat(row.basePrice),
             categoryId,
+            brand,
             imageUrl: row.imageUrl || undefined,
           };
         })
@@ -161,6 +172,7 @@ export default function ProductsPage() {
   if (!categories || !products) return <p className="text-slate-500">Loading…</p>;
 
   const categoryName = (id: string) => categories.find((c) => c.id === id)?.name ?? '—';
+  const visibleProducts = brandFilter === 'all' ? products : products.filter((p) => p.brand === brandFilter);
 
   return (
     <div>
@@ -233,6 +245,30 @@ export default function ProductsPage() {
       {error && <p className="mb-3 text-sm text-rose-600">{error}</p>}
       {notice && <p className="mb-3 text-sm text-brand-orange-700 bg-brand-orange-50 rounded-lg px-3 py-2 ring-1 ring-brand-orange-200">{notice}</p>}
 
+      <div className="flex gap-2 mb-5 flex-wrap">
+        <button
+          onClick={() => setBrandFilter('all')}
+          className={`text-xs px-3 py-1.5 rounded-full font-medium ring-1 transition-colors ${
+            brandFilter === 'all'
+              ? 'bg-slate-900 text-white ring-slate-900'
+              : 'bg-white text-slate-600 ring-slate-200 hover:ring-slate-300'
+          }`}
+        >
+          All brands
+        </button>
+        {PRODUCT_BRANDS.map((b) => (
+          <button
+            key={b}
+            onClick={() => setBrandFilter(b)}
+            className={`text-xs px-3 py-1.5 rounded-full font-medium ring-1 transition-colors ${
+              brandFilter === b ? BRAND_CHIP[b] + ' ring-2' : 'bg-white text-slate-600 ring-slate-200 hover:ring-slate-300'
+            }`}
+          >
+            {BRAND_LABELS[b]} ({products.filter((p) => p.brand === b).length})
+          </button>
+        ))}
+      </div>
+
       {creating && (
         <div className="mb-4">
           <ProductForm categories={categories} onSubmit={createProduct} onCancel={() => setCreating(false)} busy={busy} />
@@ -240,7 +276,7 @@ export default function ProductsPage() {
       )}
 
       <div className="space-y-3">
-        {products.map((product) =>
+        {visibleProducts.map((product) =>
           editingId === product.id ? (
             <ProductForm
               key={product.id}
@@ -254,6 +290,7 @@ export default function ProductsPage() {
                 unit: product.unit,
                 basePrice: product.basePrice,
                 imageUrl: product.imageUrl ?? '',
+                brand: product.brand,
                 active: product.active,
                 tiers: product.tiers,
               }}
@@ -271,6 +308,9 @@ export default function ProductsPage() {
                   <span className="font-semibold text-slate-900">{product.name}</span>
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${categoryColor(product.categoryId).chip}`}>
                     {categoryName(product.categoryId)}
+                  </span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${BRAND_CHIP[product.brand]}`}>
+                    {BRAND_LABELS[product.brand]}
                   </span>
                   {!product.active && (
                     <span className="text-xs px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 font-medium">
@@ -302,7 +342,9 @@ export default function ProductsPage() {
             </div>
           )
         )}
-        {products.length === 0 && <p className="text-slate-500">No products yet.</p>}
+        {visibleProducts.length === 0 && (
+          <p className="text-slate-500">{products.length === 0 ? 'No products yet.' : 'No products for this brand.'}</p>
+        )}
       </div>
     </div>
   );

@@ -10,11 +10,26 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { priceForQuantity } from '@matrizo/shared';
+import { priceForQuantity, type ProductBrand } from '@matrizo/shared';
 import { api } from '@/lib/api';
 
+const BRAND_LABELS: Record<ProductBrand, string> = { raksha: 'Raksha', prince: 'Prince', others: 'Others' };
+const BRAND_CHIP: Record<ProductBrand, string> = {
+  raksha: 'bg-brand-purple-100 text-brand-purple-800',
+  prince: 'bg-brand-orange-100 text-brand-orange-800',
+  others: 'bg-stone-200 text-stone-700',
+};
+
 type Tier = { minQty: number; pricePerUnit: number };
-type Product = { id: string; slug: string; name: string; unit: string; basePrice: number; tiers: Tier[] };
+type Product = {
+  id: string;
+  slug: string;
+  name: string;
+  unit: string;
+  basePrice: number;
+  brand: ProductBrand;
+  tiers: Tier[];
+};
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
@@ -55,7 +70,10 @@ export default function SearchPage() {
               className="glass rounded-xl p-4 hover:-translate-y-0.5 hover:shadow-lg transition-all"
             >
               <div className="font-medium text-stone-900">{product.name}</div>
-              <div className="text-sm text-stone-500">per {product.unit}</div>
+              <span className={`inline-block mt-1 text-[11px] px-2 py-0.5 rounded-full font-medium ${BRAND_CHIP[product.brand]}`}>
+                {BRAND_LABELS[product.brand]}
+              </span>
+              <div className="text-sm text-stone-500 mt-1">per {product.unit}</div>
               <div className="mt-2 font-bold text-brand-orange-700">₹{price}</div>
             </Link>
           );

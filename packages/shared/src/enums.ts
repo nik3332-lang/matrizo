@@ -25,3 +25,10 @@ export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 // adjustment) so the ledger stays legible in the account statement UI.
 export const WALLET_TXN_TYPES = ['credit', 'debit', 'cashback', 'refund'] as const;
 export type WalletTxnType = (typeof WALLET_TXN_TYPES)[number];
+
+// Manufacturer brand, independent of category (a UPVC fitting and a CPVC
+// fitting can both be Prince, say) — lets both apps filter/browse by brand
+// as a second axis alongside category. 'others' covers any manufacturer
+// without its own dedicated bucket.
+export const PRODUCT_BRANDS = ['raksha', 'prince', 'others'] as const;
+export type ProductBrand = (typeof PRODUCT_BRANDS)[number];

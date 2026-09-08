@@ -1,0 +1,1 @@
+ALTER TABLE `products` ADD `brand` text DEFAULT 'others' NOT NULL;

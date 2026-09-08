@@ -1,14 +1,23 @@
-import { and, asc, eq, inArray, like, or } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, like, or } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
+import { PRODUCT_BRANDS, type ProductBrand } from '@matrizo/shared';
 import { getDb } from '../db/client';
 import { bulkPricingTiers, cartItems, categories, inventory, orderItems, products } from '../db/schema';
 import { requireAuth, requireRole, type AuthEnv } from '../middleware/auth';
 import type { Env } from '../env';
 
 export const catalogRoutes = new Hono<AuthEnv>();
+
+// Brand is a fixed enum (unlike categories, which are admin-managed rows),
+// so there's no `brands` table — this is just the display label for each.
+const BRAND_LABELS: Record<ProductBrand, string> = {
+  raksha: 'Raksha',
+  prince: 'Prince',
+  others: 'Others',
+};
 
 // --- public reads ---------------------------------------------------------
 
@@ -18,17 +27,51 @@ catalogRoutes.get('/categories', async (c) => {
   return c.json({ categories: rows });
 });
 
+// Fixed brand list (with a live count of active products per brand, so the
+// UI can hide/grey out an empty brand rather than guess).
+catalogRoutes.get('/brands', async (c) => {
+  const db = getDb(c.env.DB);
+  const rows = await db
+    .select({ brand: products.brand, count: count() })
+    .from(products)
+    .where(eq(products.active, true))
+    .groupBy(products.brand);
+  const counts = new Map(rows.map((r) => [r.brand, r.count]));
+
+  return c.json({
+    brands: PRODUCT_BRANDS.map((brand) => ({ brand, name: BRAND_LABELS[brand], productCount: counts.get(brand) ?? 0 })),
+  });
+});
+
+catalogRoutes.get('/brands/:brand/products', async (c) => {
+  const brand = c.req.param('brand') as ProductBrand;
+  if (!PRODUCT_BRANDS.includes(brand)) return c.json({ error: 'Unknown brand' }, 404);
+
+  const db = getDb(c.env.DB);
+  const productRows = await db
+    .select()
+    .from(products)
+    .where(and(eq(products.brand, brand), eq(products.active, true)));
+
+  const withTiers = await attachTiers(db, productRows);
+  return c.json({ brand: { brand, name: BRAND_LABELS[brand] }, products: withTiers });
+});
+
 catalogRoutes.get('/categories/:slug/products', async (c) => {
   const db = getDb(c.env.DB);
   const slug = c.req.param('slug');
+  const brand = c.req.query('brand');
 
   const [category] = await db.select().from(categories).where(eq(categories.slug, slug)).limit(1);
   if (!category) return c.json({ error: 'Category not found' }, 404);
 
+  const conditions = [eq(products.categoryId, category.id), eq(products.active, true)];
+  if (brand && PRODUCT_BRANDS.includes(brand as ProductBrand)) conditions.push(eq(products.brand, brand as ProductBrand));
+
   const productRows = await db
     .select()
     .from(products)
-    .where(and(eq(products.categoryId, category.id), eq(products.active, true)));
+    .where(and(...conditions));
 
   const withTiers = await attachTiers(db, productRows);
   return c.json({ category, products: withTiers });
@@ -43,13 +86,17 @@ catalogRoutes.get('/categories/:slug/products', async (c) => {
 catalogRoutes.get('/products/search', async (c) => {
   const q = c.req.query('q')?.trim();
   if (!q) return c.json({ products: [] });
+  const brand = c.req.query('brand');
 
   const db = getDb(c.env.DB);
   const pattern = `%${q}%`;
+  const conditions = [eq(products.active, true), or(like(products.name, pattern), like(products.sku, pattern))!];
+  if (brand && PRODUCT_BRANDS.includes(brand as ProductBrand)) conditions.push(eq(products.brand, brand as ProductBrand));
+
   const productRows = await db
     .select()
     .from(products)
-    .where(and(eq(products.active, true), or(like(products.name, pattern), like(products.sku, pattern))))
+    .where(and(...conditions))
     .limit(30);
 
   const withTiers = await attachTiers(db, productRows);
@@ -191,6 +238,7 @@ const productSchema = z.object({
   unit: z.string().trim().min(1),
   basePrice: z.number().positive(),
   imageUrl: z.string().trim().optional(),
+  brand: z.enum(PRODUCT_BRANDS).optional(),
   active: z.boolean().optional(),
   tiers: z.array(tierInputSchema).optional(),
 });
@@ -214,6 +262,7 @@ catalogRoutes.post('/admin/products', async (c) => {
       unit: productData.unit,
       basePrice: productData.basePrice,
       imageUrl: productData.imageUrl ?? null,
+      brand: productData.brand ?? 'others',
       active: productData.active ?? true,
     }),
     ...(tiers ?? []).map((tier) =>
@@ -300,6 +349,7 @@ catalogRoutes.post('/admin/products/bulk', async (c) => {
           unit: productData.unit,
           basePrice: productData.basePrice,
           imageUrl: productData.imageUrl ?? null,
+          brand: productData.brand ?? 'others',
           active: productData.active ?? true,
         }),
         ...(tiers ?? []).map((tier) =>

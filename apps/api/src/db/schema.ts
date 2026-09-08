@@ -5,6 +5,7 @@ import {
   ORDER_STATUSES,
   PAYMENT_METHODS,
   PAYMENT_STATUSES,
+  PRODUCT_BRANDS,
   USER_ROLES,
   WALLET_TXN_TYPES,
 } from '@matrizo/shared';
@@ -48,6 +49,7 @@ export const products = sqliteTable('products', {
   unit: text('unit').notNull(),
   basePrice: real('base_price').notNull(),
   imageUrl: text('image_url'),
+  brand: text('brand', { enum: PRODUCT_BRANDS }).notNull().default('others'),
   active: integer('active', { mode: 'boolean' }).notNull().default(true),
   createdAt: timestamp('created_at'),
 });

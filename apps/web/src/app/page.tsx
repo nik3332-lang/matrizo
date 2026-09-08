@@ -3,9 +3,15 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import { priceForQuantity } from '@matrizo/shared';
+import { priceForQuantity, type ProductBrand } from '@matrizo/shared';
 import { api } from '@/lib/api';
 import { categoryColor } from '@/lib/categoryColors';
+
+const BRAND_ACCENT: Record<ProductBrand, string> = {
+  raksha: 'from-brand-purple-500 to-brand-purple-800',
+  prince: 'from-brand-orange-500 to-brand-orange-700',
+  others: 'from-stone-400 to-stone-600',
+};
 
 type Category = {
   id: string;
@@ -13,6 +19,8 @@ type Category = {
   name: string;
   icon: string | null;
 };
+
+type Brand = { brand: ProductBrand; name: string; productCount: number };
 
 type Tier = { minQty: number; pricePerUnit: number };
 type Product = {
@@ -46,6 +54,7 @@ const STEPS = [
 
 export default function HomePage() {
   const [categories, setCategories] = useState<Category[] | null>(null);
+  const [brands, setBrands] = useState<Brand[] | null>(null);
   const [popular, setPopular] = useState<Product[] | null>(null);
   const [pincode, setPincode] = useState('');
   const [checking, setChecking] = useState(false);
@@ -65,6 +74,7 @@ export default function HomePage() {
       );
       setPopular(perCategory.flat().slice(0, 8));
     });
+    api.get<{ brands: Brand[] }>('/brands').then((res) => setBrands(res.brands));
   }, []);
 
   async function checkPincode(e: React.FormEvent) {
@@ -144,6 +154,30 @@ export default function HomePage() {
               </Link>
             );
           })}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold text-stone-900 mb-4">Shop by brand</h2>
+        {!brands && <p className="text-stone-500">Loading…</p>}
+        <div className="grid grid-cols-3 gap-4">
+          {brands
+            ?.filter((b) => b.productCount > 0)
+            .map((b) => (
+              <Link
+                key={b.brand}
+                href={`/brand/${b.brand}`}
+                className="glass rounded-xl p-5 text-center hover:-translate-y-0.5 hover:shadow-lg transition-all"
+              >
+                <div
+                  className={`mx-auto h-12 w-12 rounded-full bg-gradient-to-br ${BRAND_ACCENT[b.brand]} flex items-center justify-center text-white font-bold shadow-md`}
+                >
+                  {b.name[0]}
+                </div>
+                <div className="mt-3 font-semibold text-stone-900">{b.name}</div>
+                <div className="text-xs text-stone-500 mt-0.5">{b.productCount} products</div>
+              </Link>
+            ))}
         </div>
       </section>
 

@@ -8,9 +8,16 @@ export const runtime = 'edge';
 import { useRouter } from 'next/navigation';
 import { use, useEffect, useState } from 'react';
 
-import { ApiError, priceForQuantity } from '@matrizo/shared';
+import { ApiError, priceForQuantity, type ProductBrand } from '@matrizo/shared';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+
+const BRAND_LABELS: Record<ProductBrand, string> = { raksha: 'Raksha', prince: 'Prince', others: 'Others' };
+const BRAND_CHIP: Record<ProductBrand, string> = {
+  raksha: 'bg-brand-purple-100 text-brand-purple-800',
+  prince: 'bg-brand-orange-100 text-brand-orange-800',
+  others: 'bg-stone-200 text-stone-700',
+};
 
 type Tier = { minQty: number; pricePerUnit: number };
 type Product = {
@@ -19,6 +26,7 @@ type Product = {
   description: string | null;
   unit: string;
   basePrice: number;
+  brand: ProductBrand;
   tiers: Tier[];
 };
 
@@ -66,6 +74,9 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
   return (
     <div className="max-w-lg">
       <h1 className="text-xl font-bold text-stone-900">{product.name}</h1>
+      <span className={`inline-block mt-2 text-xs px-2.5 py-1 rounded-full font-medium ${BRAND_CHIP[product.brand]}`}>
+        {BRAND_LABELS[product.brand]}
+      </span>
       {product.description && <p className="mt-2 text-stone-600">{product.description}</p>}
 
       {product.tiers.length > 0 && (
