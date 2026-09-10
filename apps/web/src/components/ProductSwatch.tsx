@@ -1,3 +1,5 @@
+'use client';
+
 import { categoryIcon, Icon } from './Icon';
 
 // A colored header block standing in for a product photo (none of the
