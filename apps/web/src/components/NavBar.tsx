@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { useAuth } from '@/lib/auth';
+import { Icon } from '@/components/Icon';
 
 export function NavBar() {
   const { user, loading, logout } = useAuth();
@@ -23,31 +24,45 @@ export function NavBar() {
         <Link href="/" className="font-bold text-lg tracking-tight text-white shrink-0">
           Matrizo
         </Link>
-        <form onSubmit={submitSearch} className="flex-1 max-w-sm hidden sm:block">
+        <form onSubmit={submitSearch} className="relative flex-1 max-w-sm hidden sm:block">
+          <Icon name="search" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search products…"
-            className="w-full rounded-full px-4 py-1.5 text-sm text-stone-900 outline-none focus:ring-2 focus:ring-white bg-white/90"
+            className="w-full rounded-full pl-9 pr-4 py-1.5 text-sm text-stone-900 outline-none focus:ring-2 focus:ring-white bg-white/90"
           />
         </form>
         <nav className="flex items-center gap-1 text-sm">
-          <Link href="/cart" className="rounded-full px-3 py-1.5 font-medium text-brand-orange-50 hover:bg-white/10 hover:text-white transition-colors">
-            Cart
+          <Link
+            href="/cart"
+            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium text-brand-orange-50 hover:bg-white/10 hover:text-white transition-colors"
+          >
+            <Icon name="cart" className="h-4 w-4" />
+            <span className="hidden sm:inline">Cart</span>
           </Link>
           {!loading && user && (
             <>
-              <Link href="/orders" className="rounded-full px-3 py-1.5 font-medium text-brand-orange-50 hover:bg-white/10 hover:text-white transition-colors">
-                Orders
+              <Link
+                href="/orders"
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium text-brand-orange-50 hover:bg-white/10 hover:text-white transition-colors"
+              >
+                <Icon name="receipt" className="h-4 w-4" />
+                <span className="hidden sm:inline">Orders</span>
               </Link>
-              <Link href="/account" className="rounded-full px-3 py-1.5 font-medium text-brand-orange-50 hover:bg-white/10 hover:text-white transition-colors">
-                Account
+              <Link
+                href="/account"
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium text-brand-orange-50 hover:bg-white/10 hover:text-white transition-colors"
+              >
+                <Icon name="user" className="h-4 w-4" />
+                <span className="hidden sm:inline">Account</span>
               </Link>
               <button
                 onClick={logout}
-                className="rounded-full px-3 py-1.5 font-medium text-brand-orange-50 hover:bg-white/10 hover:text-white transition-colors"
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium text-brand-orange-50 hover:bg-white/10 hover:text-white transition-colors"
               >
-                Log out
+                <Icon name="logout" className="h-4 w-4" />
+                <span className="hidden sm:inline">Log out</span>
               </button>
             </>
           )}
@@ -58,12 +73,13 @@ export function NavBar() {
           )}
         </nav>
       </div>
-      <form onSubmit={submitSearch} className="sm:hidden px-4 pb-2">
+      <form onSubmit={submitSearch} className="relative sm:hidden px-4 pb-2">
+        <Icon name="search" className="pointer-events-none absolute left-7 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search products…"
-          className="w-full rounded-full px-4 py-1.5 text-sm text-stone-900 outline-none focus:ring-2 focus:ring-white bg-white/90"
+          className="w-full rounded-full pl-9 pr-4 py-1.5 text-sm text-stone-900 outline-none focus:ring-2 focus:ring-white bg-white/90"
         />
       </form>
     </header>

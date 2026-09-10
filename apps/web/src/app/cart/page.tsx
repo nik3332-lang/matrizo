@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { Icon } from '@/components/Icon';
 
 type CartItem = {
   id: string;
@@ -53,15 +54,14 @@ export default function CartPage() {
 
   if (cart.items.length === 0) {
     return (
-      <div>
-        <h1 className="text-xl font-bold text-stone-900 mb-4">Your cart</h1>
-        <p className="text-stone-500">
-          Your cart is empty.{' '}
-          <Link href="/" className="text-brand-orange-700 font-medium underline">
-            Browse categories
-          </Link>
-          .
-        </p>
+      <div className="text-center py-16">
+        <div className="mx-auto h-14 w-14 rounded-full bg-brand-orange-50 flex items-center justify-center">
+          <Icon name="cart" className="h-7 w-7 text-brand-orange-400" />
+        </div>
+        <p className="mt-4 text-stone-500">Your cart is empty.</p>
+        <Link href="/" className="mt-1 inline-block text-brand-orange-700 font-medium hover:underline">
+          Browse categories
+        </Link>
       </div>
     );
   }

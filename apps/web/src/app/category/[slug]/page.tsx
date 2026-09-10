@@ -10,6 +10,9 @@ import { use, useEffect, useState } from 'react';
 
 import { PRODUCT_BRANDS, type ProductBrand } from '@matrizo/shared';
 import { api } from '@/lib/api';
+import { categoryIcon, Icon } from '@/components/Icon';
+import { ProductSwatch } from '@/components/ProductSwatch';
+import { categoryColor } from '@/lib/categoryColors';
 
 const BRAND_LABELS: Record<ProductBrand, string> = { raksha: 'Raksha', prince: 'Prince', others: 'Others' };
 const BRAND_CHIP: Record<ProductBrand, string> = {
@@ -53,11 +56,16 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   const brandsPresent = PRODUCT_BRANDS.filter((b) => data.products.some((p) => p.brand === b));
   const visibleProducts = brandFilter === 'all' ? data.products : data.products.filter((p) => p.brand === brandFilter);
 
+  const accent = categoryColor(data.category.id).accent;
+
   return (
     <div>
-      <h1 className="text-xl font-bold text-stone-900 mb-1">
-        {data.category.icon} {data.category.name}
-      </h1>
+      <div className="flex items-center gap-3 mb-1">
+        <div className={`h-10 w-10 rounded-full bg-gradient-to-br ${accent} flex items-center justify-center shrink-0 shadow-sm`}>
+          <Icon name={categoryIcon(slug)} className="h-5 w-5 text-white" />
+        </div>
+        <h1 className="text-xl font-bold text-stone-900">{data.category.name}</h1>
+      </div>
 
       {brandsPresent.length > 1 && (
         <div className="mt-4 flex gap-2 flex-wrap">
@@ -96,11 +104,10 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
             <Link
               key={product.id}
               href={`/product/${product.slug}`}
-              className="glass rounded-xl p-4 hover:-translate-y-0.5 hover:shadow-lg transition-all"
+              className="glass rounded-xl p-4 hover:-translate-y-0.5 hover:shadow-lg transition-all overflow-hidden"
             >
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="font-semibold text-stone-900">{product.name}</div>
-              </div>
+              <ProductSwatch accent={accent} categorySlug={slug} />
+              <div className="font-semibold text-stone-900">{product.name}</div>
               <span className={`inline-block mt-1 text-[11px] px-2 py-0.5 rounded-full font-medium ${BRAND_CHIP[product.brand]}`}>
                 {BRAND_LABELS[product.brand]}
               </span>

@@ -12,6 +12,8 @@ import { useEffect, useState } from 'react';
 
 import { priceForQuantity, type ProductBrand } from '@matrizo/shared';
 import { api } from '@/lib/api';
+import { ProductSwatch } from '@/components/ProductSwatch';
+import { categoryColor } from '@/lib/categoryColors';
 
 const BRAND_LABELS: Record<ProductBrand, string> = { raksha: 'Raksha', prince: 'Prince', others: 'Others' };
 const BRAND_CHIP: Record<ProductBrand, string> = {
@@ -27,14 +29,21 @@ type Product = {
   name: string;
   unit: string;
   basePrice: number;
+  categoryId: string;
   brand: ProductBrand;
   tiers: Tier[];
 };
+type Category = { id: string; slug: string };
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
   const q = searchParams.get('q') ?? '';
   const [results, setResults] = useState<Product[] | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    api.get<{ categories: Category[] }>('/categories').then((res) => setCategories(res.categories));
+  }, []);
 
   useEffect(() => {
     if (!q) {
@@ -67,8 +76,12 @@ export default function SearchPage() {
             <Link
               key={product.id}
               href={`/product/${product.slug}`}
-              className="glass rounded-xl p-4 hover:-translate-y-0.5 hover:shadow-lg transition-all"
+              className="glass rounded-xl p-4 hover:-translate-y-0.5 hover:shadow-lg transition-all overflow-hidden"
             >
+              <ProductSwatch
+                accent={categoryColor(product.categoryId).accent}
+                categorySlug={categories.find((c) => c.id === product.categoryId)?.slug}
+              />
               <div className="font-medium text-stone-900">{product.name}</div>
               <span className={`inline-block mt-1 text-[11px] px-2 py-0.5 rounded-full font-medium ${BRAND_CHIP[product.brand]}`}>
                 {BRAND_LABELS[product.brand]}

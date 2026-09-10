@@ -110,8 +110,15 @@ catalogRoutes.get('/products/:slug', async (c) => {
   const [product] = await db.select().from(products).where(eq(products.slug, slug)).limit(1);
   if (!product) return c.json({ error: 'Product not found' }, 404);
 
+  const [category] = await db.select().from(categories).where(eq(categories.id, product.categoryId)).limit(1);
   const tiers = await db.select().from(bulkPricingTiers).where(eq(bulkPricingTiers.productId, product.id));
-  return c.json({ product: { ...product, tiers } });
+  return c.json({
+    product: {
+      ...product,
+      tiers,
+      category: category ? { id: category.id, slug: category.slug, name: category.name } : null,
+    },
+  });
 });
 
 // One bulk query for all products' tiers (rather than N+1 per product) — fine

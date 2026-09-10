@@ -114,7 +114,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center -m-6 bg-gradient-to-br from-brand-orange-500 via-brand-purple-500 to-brand-orange-400">
+    <div className="flex items-center justify-center -m-6 py-14 sm:py-20 bg-gradient-to-br from-brand-orange-500 via-brand-purple-500 to-brand-orange-400">
       <div className="glass w-full max-w-sm mx-4 rounded-2xl p-8">
         {stage === 'form' && (
           <>

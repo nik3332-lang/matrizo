@@ -10,6 +10,8 @@ import { use, useEffect, useState } from 'react';
 
 import { PRODUCT_BRANDS, type ProductBrand } from '@matrizo/shared';
 import { api } from '@/lib/api';
+import { ProductSwatch } from '@/components/ProductSwatch';
+import { categoryColor } from '@/lib/categoryColors';
 
 type Tier = { minQty: number; pricePerUnit: number };
 type Product = {
@@ -19,15 +21,22 @@ type Product = {
   unit: string;
   basePrice: number;
   imageUrl: string | null;
+  categoryId: string;
   brand: ProductBrand;
   tiers: Tier[];
 };
 type BrandInfo = { brand: ProductBrand; name: string };
+type Category = { id: string; slug: string };
 
 export default function BrandPage({ params }: { params: Promise<{ brand: string }> }) {
   const { brand: brandParam } = use(params);
   const [data, setData] = useState<{ brand: BrandInfo; products: Product[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    api.get<{ categories: Category[] }>('/categories').then((res) => setCategories(res.categories));
+  }, []);
 
   useEffect(() => {
     setData(null);
@@ -58,8 +67,12 @@ export default function BrandPage({ params }: { params: Promise<{ brand: string 
             <Link
               key={product.id}
               href={`/product/${product.slug}`}
-              className="glass rounded-xl p-4 hover:-translate-y-0.5 hover:shadow-lg transition-all"
+              className="glass rounded-xl p-4 hover:-translate-y-0.5 hover:shadow-lg transition-all overflow-hidden"
             >
+              <ProductSwatch
+                accent={categoryColor(product.categoryId).accent}
+                categorySlug={categories.find((c) => c.id === product.categoryId)?.slug}
+              />
               <div className="font-semibold text-stone-900">{product.name}</div>
               <div className="text-sm text-stone-500">per {product.unit}</div>
               <div className="mt-2 font-bold text-brand-orange-700">₹{product.basePrice}</div>
