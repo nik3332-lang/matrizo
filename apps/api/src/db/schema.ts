@@ -241,6 +241,44 @@ export const deliveryAssignments = sqliteTable('delivery_assignments', {
   proofPhotoKey: text('proof_photo_key'),
 });
 
+// --- sales employees / commission tracking ---------------------------------
+
+// One row per sales_employee user, holding the fields that don't belong on
+// the shared `users` table (which every role uses) — same pattern as
+// `addresses` being separate from `users`. `commissionRatePercent` is a
+// flat percentage of each day's sales amount (e.g. 5 = 5%), set by an admin
+// per employee — not slab-based, at least for now.
+export const employeeProfiles = sqliteTable('employee_profiles', {
+  userId: text('user_id')
+    .primaryKey()
+    .references(() => users.id),
+  phone: text('phone'),
+  contactAddress: text('contact_address'),
+  commissionRatePercent: real('commission_rate_percent').notNull().default(5),
+  joinedAt: timestamp('joined_at'),
+});
+
+// Day-wise sales entries a sales_employee logs themselves. `date` is a plain
+// 'YYYY-MM-DD' string (not a timestamp) since a sales day has no meaningful
+// time-of-day component and this keeps "one entry per employee per day"
+// trivial to enforce/query. The unique index is what makes entry "add/update"
+// a single upsert rather than needing separate create/edit flows.
+export const salesEntries = sqliteTable(
+  'sales_entries',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id),
+    date: text('date').notNull(),
+    amount: real('amount').notNull(),
+    notes: text('notes'),
+    createdAt: timestamp('created_at'),
+    updatedAt: timestamp('updated_at'),
+  },
+  (t) => [uniqueIndex('sales_entries_user_date_idx').on(t.userId, t.date)]
+);
+
 // --- wallet / cashback ledger ------------------------------------------
 
 // Append-only ledger (never UPDATE a balance in place) so the account

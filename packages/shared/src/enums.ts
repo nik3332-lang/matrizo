@@ -3,7 +3,7 @@
 // drift apart. Treat these arrays as append-only in production: removing or
 // reordering a value changes meaning for rows already written with it.
 
-export const USER_ROLES = ['customer', 'store_staff', 'delivery_partner', 'admin'] as const;
+export const USER_ROLES = ['customer', 'store_staff', 'delivery_partner', 'admin', 'sales_employee'] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
 // Mirrors the dark-store fulfillment pipeline: placed -> confirmed -> picked

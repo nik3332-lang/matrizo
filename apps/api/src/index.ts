@@ -6,6 +6,7 @@ import { analyticsRoutes } from './routes/analytics';
 import { authRoutes } from './routes/auth';
 import { cartRoutes } from './routes/cart';
 import { catalogRoutes } from './routes/catalog';
+import { employeeAdminRoutes, employeeRoutes } from './routes/employees';
 import { inventoryRoutes } from './routes/inventory';
 import { orderRoutes } from './routes/orders';
 import { serviceabilityRoutes } from './routes/serviceability';
@@ -42,5 +43,7 @@ v1.route('/inventory', inventoryRoutes);
 v1.route('/admin/stores', storeRoutes);
 v1.route('/admin/users', userRoutes);
 v1.route('/admin/analytics', analyticsRoutes);
+v1.route('/employees', employeeRoutes);
+v1.route('/admin/employees', employeeAdminRoutes);
 
 export default app;

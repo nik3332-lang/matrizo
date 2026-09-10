@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Sales-employee self-service + commission-tracking admin portal, hosted
+  // at emp.matrizo.com — a separate Workers project from matrizo-api,
+  // matrizo-web, and matrizo-admin. Same all-Cloudflare OpenNext path as
+  // matrizo-admin (no pre-existing Pages project to preserve here either).
+  "name": "matrizo-employees",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-08-04",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "vars": {
+    "NEXT_PUBLIC_API_URL": "https://matrizo-api.nikhilsinghal-official.workers.dev/api/v1"
+  }
+}

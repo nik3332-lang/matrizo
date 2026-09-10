@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #1c1917;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Same Matrizo brand colors as apps/web/apps/admin/apps/mobile — deep
+   purple + burnt orange, used sparingly (CTA color, heading accent, status
+   tags) against a clean white/neutral base. See apps/web/src/app/globals.css
+   for the full rationale (no gradients, no colored background blobs). */
+@theme {
+  --color-brand-orange-50: #fff3ea;
+  --color-brand-orange-100: #ffe1cc;
+  --color-brand-orange-200: #ffc299;
+  --color-brand-orange-300: #ffa35f;
+  --color-brand-orange-400: #fe8a3d;
+  --color-brand-orange-500: #fd7210;
+  --color-brand-orange-600: #e75924;
+  --color-brand-orange-700: #ef3d21;
+  --color-brand-orange-800: #c22f16;
+  --color-brand-orange-900: #9c2510;
+
+  --color-brand-purple-50: #f6eef9;
+  --color-brand-purple-100: #ebd9f0;
+  --color-brand-purple-200: #d3b0de;
+  --color-brand-purple-300: #b885cb;
+  --color-brand-purple-400: #9c5fb2;
+  --color-brand-purple-500: #85469b;
+  --color-brand-purple-600: #65346c;
+  --color-brand-purple-700: #582463;
+  --color-brand-purple-800: #4e1775;
+  --color-brand-purple-900: #3a0f5a;
+
+  --color-brand-cream: #faf9f7;
+}
+
+body {
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-brand-cream);
+  min-height: 100vh;
+}
+
+.glass {
+  background: #ffffff;
+  border: 1px solid #e7e5e4;
+}
