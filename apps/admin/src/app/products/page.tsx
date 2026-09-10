@@ -193,7 +193,7 @@ export default function ProductsPage() {
           {!creating && categories.length > 0 && (
             <button
               onClick={() => setCreating(true)}
-              className="rounded-full bg-gradient-to-r from-brand-orange-600 to-brand-purple-600 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:from-brand-orange-700 hover:to-brand-purple-700"
+              className="rounded-full bg-brand-orange-700 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:bg-brand-orange-800"
             >
               + Add product
             </button>

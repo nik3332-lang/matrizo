@@ -96,9 +96,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
       </nav>
 
       <div className="grid sm:grid-cols-[220px_1fr] gap-6">
-        <div
-          className={`h-44 sm:h-full rounded-2xl bg-gradient-to-br ${accent} flex items-center justify-center shadow-md shrink-0`}
-        >
+        <div className={`h-44 sm:h-full rounded-2xl ${accent} flex items-center justify-center shrink-0`}>
           <Icon name={categoryIcon(product.category?.slug ?? '')} className="h-16 w-16 text-white/90" />
         </div>
 
@@ -154,7 +152,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
           <button
             onClick={addToCart}
             disabled={adding}
-            className="mt-5 rounded-lg bg-gradient-to-r from-brand-orange-600 to-brand-purple-600 text-white px-5 py-2.5 font-semibold shadow-sm hover:from-brand-orange-700 hover:to-brand-purple-700 disabled:opacity-60"
+            className="mt-5 rounded-lg bg-brand-orange-700 text-white px-5 py-2.5 font-semibold shadow-sm hover:bg-brand-orange-800 disabled:opacity-60"
           >
             {adding ? 'Adding…' : added ? 'Added ✓' : 'Add to cart'}
           </button>

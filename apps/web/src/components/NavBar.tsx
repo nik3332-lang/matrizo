@@ -19,7 +19,7 @@ export function NavBar() {
   }
 
   return (
-    <header className="sticky top-0 z-10 bg-gradient-to-r from-brand-orange-700/95 via-brand-orange-600/95 to-brand-purple-600/95 backdrop-blur-xl shadow-lg shadow-brand-orange-900/10">
+    <header className="sticky top-0 z-10 bg-brand-purple-800 shadow-sm">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
         <Link href="/" className="font-bold text-lg tracking-tight text-white shrink-0">
           Matrizo
@@ -36,7 +36,7 @@ export function NavBar() {
         <nav className="flex items-center gap-1 text-sm">
           <Link
             href="/cart"
-            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium text-brand-orange-50 hover:bg-white/10 hover:text-white transition-colors"
+            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors"
           >
             <Icon name="cart" className="h-4 w-4" />
             <span className="hidden sm:inline">Cart</span>
@@ -45,21 +45,21 @@ export function NavBar() {
             <>
               <Link
                 href="/orders"
-                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium text-brand-orange-50 hover:bg-white/10 hover:text-white transition-colors"
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors"
               >
                 <Icon name="receipt" className="h-4 w-4" />
                 <span className="hidden sm:inline">Orders</span>
               </Link>
               <Link
                 href="/account"
-                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium text-brand-orange-50 hover:bg-white/10 hover:text-white transition-colors"
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors"
               >
                 <Icon name="user" className="h-4 w-4" />
                 <span className="hidden sm:inline">Account</span>
               </Link>
               <button
                 onClick={logout}
-                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium text-brand-orange-50 hover:bg-white/10 hover:text-white transition-colors"
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors"
               >
                 <Icon name="logout" className="h-4 w-4" />
                 <span className="hidden sm:inline">Log out</span>

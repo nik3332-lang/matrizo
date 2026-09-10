@@ -10,9 +10,9 @@ import { categoryIcon, Icon } from '@/components/Icon';
 import { ProductSwatch } from '@/components/ProductSwatch';
 
 const BRAND_ACCENT: Record<ProductBrand, string> = {
-  raksha: 'from-brand-purple-500 to-brand-purple-800',
-  prince: 'from-brand-orange-500 to-brand-orange-700',
-  others: 'from-stone-400 to-stone-600',
+  raksha: 'bg-brand-purple-800',
+  prince: 'bg-brand-orange-700',
+  others: 'bg-stone-500',
 };
 
 type Category = {
@@ -94,10 +94,10 @@ export default function HomePage() {
 
   return (
     <div className="space-y-14">
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-orange-700 via-brand-orange-600 to-brand-purple-600 text-white p-8 shadow-lg shadow-brand-orange-900/20">
+      <section className="relative overflow-hidden rounded-2xl bg-brand-purple-800 text-white p-8">
         <Icon name="mapPin" className="pointer-events-none absolute -right-6 -bottom-8 h-40 w-40 text-white/10" />
         <h1 className="relative text-2xl font-bold">Sanitary & paints — delivered fast.</h1>
-        <p className="relative mt-2 text-brand-orange-50">Check if we deliver to your pincode.</p>
+        <p className="relative mt-2 text-white/80">Check if we deliver to your pincode.</p>
         <form onSubmit={checkPincode} className="relative mt-4 flex gap-2 max-w-sm">
           <div className="relative flex-1">
             <Icon name="mapPin" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
@@ -122,7 +122,7 @@ export default function HomePage() {
             {result.serviceable ? (
               <span className="text-emerald-100 font-medium">✓ We deliver here — ETA ~{result.etaMinutes} min.</span>
             ) : (
-              <span className="text-brand-orange-100 font-medium">Not serviceable at this pincode yet.</span>
+              <span className="text-white/80 font-medium">Not serviceable at this pincode yet.</span>
             )}
           </p>
         )}
@@ -153,9 +153,7 @@ export default function HomePage() {
                 href={`/category/${cat.slug}`}
                 className="glass rounded-xl p-5 text-center hover:-translate-y-0.5 hover:shadow-lg transition-all"
               >
-                <div
-                  className={`mx-auto h-14 w-14 rounded-full bg-gradient-to-br ${color.accent} flex items-center justify-center shadow-md`}
-                >
+                <div className={`mx-auto h-14 w-14 rounded-full ${color.accent} flex items-center justify-center`}>
                   <Icon name={categoryIcon(cat.slug)} className="h-7 w-7 text-white" />
                 </div>
                 <div className="mt-3 font-semibold text-stone-900">{cat.name}</div>
@@ -177,9 +175,7 @@ export default function HomePage() {
                 href={`/brand/${b.brand}`}
                 className="glass rounded-xl p-5 text-center hover:-translate-y-0.5 hover:shadow-lg transition-all"
               >
-                <div
-                  className={`mx-auto h-12 w-12 rounded-full bg-gradient-to-br ${BRAND_ACCENT[b.brand]} flex items-center justify-center text-white font-bold shadow-md`}
-                >
+                <div className={`mx-auto h-12 w-12 rounded-full ${BRAND_ACCENT[b.brand]} flex items-center justify-center text-white font-bold`}>
                   {b.name[0]}
                 </div>
                 <div className="mt-3 font-semibold text-stone-900">{b.name}</div>
@@ -218,7 +214,7 @@ export default function HomePage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {STEPS.map((s) => (
             <div key={s.step} className="glass rounded-xl p-5">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-brand-orange-500 to-brand-purple-500 text-white flex items-center justify-center font-bold text-sm shadow-md">
+              <div className="h-8 w-8 rounded-full bg-brand-orange-700 text-white flex items-center justify-center font-bold text-sm">
                 {s.step}
               </div>
               <div className="mt-3 font-semibold text-stone-900">{s.title}</div>

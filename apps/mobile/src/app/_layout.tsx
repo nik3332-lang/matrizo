@@ -5,7 +5,7 @@ import { AuthProvider } from '@/lib/auth';
 import '../global.css';
 
 const HEADER_TINT = '#ef3d21';
-const HEADER_BG = '#fdf3f0';
+const HEADER_BG = '#ffffff';
 
 export default function RootLayout() {
   return (
@@ -16,7 +16,7 @@ export default function RootLayout() {
           headerStyle: { backgroundColor: HEADER_BG },
           headerTintColor: HEADER_TINT,
           headerTitleStyle: { color: '#1c1917', fontWeight: '700' },
-          contentStyle: { backgroundColor: '#f4eae0' },
+          contentStyle: { backgroundColor: '#faf9f7' },
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

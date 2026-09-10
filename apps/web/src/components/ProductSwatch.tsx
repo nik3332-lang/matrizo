@@ -9,7 +9,7 @@ import { categoryIcon, Icon } from './Icon';
 // of otherwise-identical fitting names.
 export function ProductSwatch({ accent, categorySlug }: { accent: string; categorySlug?: string }) {
   return (
-    <div className={`h-16 -m-4 mb-3 rounded-t-xl bg-gradient-to-br ${accent} flex items-center justify-center`}>
+    <div className={`h-16 -m-4 mb-3 rounded-t-xl ${accent} flex items-center justify-center`}>
       <Icon name={categoryIcon(categorySlug ?? '')} className="h-7 w-7 text-white/90" />
     </div>
   );

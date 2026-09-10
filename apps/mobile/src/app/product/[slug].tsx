@@ -6,7 +6,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ApiError, priceForQuantity, type ProductBrand } from '@matrizo/shared';
 import { Card, PressableCard } from '@/components/Card';
 import { categoryIcon, Icon } from '@/components/Icon';
-import { Gradient } from '@/components/Gradient';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { categoryColor } from '@/lib/categoryColors';
@@ -80,15 +79,15 @@ export default function ProductScreen() {
   }
 
   const unitPrice = priceForQuantity(product.tiers, quantity, product.basePrice);
-  const accent = categoryColor(product.categoryId).gradient;
+  const accent = categoryColor(product.categoryId).color;
 
   return (
     <SafeAreaView edges={['bottom']} className="flex-1 bg-brand-cream">
       <Stack.Screen options={{ title: product.name.length > 22 ? product.name.slice(0, 22) + '…' : product.name }} />
       <ScrollView className="flex-1 px-4" contentContainerClassName="pt-4 pb-8 gap-5">
-        <Gradient colors={accent} className="h-40 rounded-2xl items-center justify-center">
+        <View style={{ backgroundColor: accent }} className="h-40 rounded-2xl items-center justify-center">
           <Icon name={categoryIcon(product.category?.slug ?? '')} size={56} color="rgba(255,255,255,0.9)" />
-        </Gradient>
+        </View>
 
         <View>
           <Text className="text-xl font-bold text-stone-900">{product.name}</Text>

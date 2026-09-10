@@ -35,7 +35,7 @@ export default function CategoryScreen() {
     );
   }
 
-  const accent = categoryColor(data.category.id).gradient;
+  const accent = categoryColor(data.category.id).color;
   const brandsPresent = PRODUCT_BRANDS.filter((b) => data.products.some((p) => p.brand === b));
   const visible = brandFilter === 'all' ? data.products : data.products.filter((p) => p.brand === brandFilter);
 
@@ -75,7 +75,7 @@ export default function CategoryScreen() {
           return (
             <View className="flex-1 mb-3">
               <PressableCard onPress={() => router.push(`/product/${item.slug}`)}>
-                <ProductSwatch colors={accent} categorySlug={slug} />
+                <ProductSwatch color={accent} categorySlug={slug} />
                 <Text className="font-semibold text-stone-900" numberOfLines={2}>
                   {item.name}
                 </Text>

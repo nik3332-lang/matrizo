@@ -104,7 +104,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               <li key={status} className="flex-1 flex flex-col items-center">
                 <div
                   className={`h-3 w-3 rounded-full ${
-                    i <= currentIndex ? 'bg-gradient-to-br from-brand-orange-500 to-brand-purple-500' : 'bg-stone-200'
+                    i <= currentIndex ? 'bg-brand-orange-700' : 'bg-stone-200'
                   }`}
                 />
                 <span className={`mt-2 capitalize ${i <= currentIndex ? 'text-brand-orange-700 font-medium' : 'text-stone-400'}`}>

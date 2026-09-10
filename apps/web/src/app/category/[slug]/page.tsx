@@ -61,7 +61,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   return (
     <div>
       <div className="flex items-center gap-3 mb-1">
-        <div className={`h-10 w-10 rounded-full bg-gradient-to-br ${accent} flex items-center justify-center shrink-0 shadow-sm`}>
+        <div className={`h-10 w-10 rounded-full ${accent} flex items-center justify-center shrink-0`}>
           <Icon name={categoryIcon(slug)} className="h-5 w-5 text-white" />
         </div>
         <h1 className="text-xl font-bold text-stone-900">{data.category.name}</h1>

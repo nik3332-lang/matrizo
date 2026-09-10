@@ -5,16 +5,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { priceForQuantity, type ProductBrand } from '@matrizo/shared';
 import { Card, PressableCard } from '@/components/Card';
-import { Gradient } from '@/components/Gradient';
 import { Icon, categoryIcon } from '@/components/Icon';
 import { ProductSwatch } from '@/components/ProductSwatch';
 import { api } from '@/lib/api';
 import { categoryColor } from '@/lib/categoryColors';
 
-const BRAND_GRADIENT: Record<ProductBrand, readonly [string, string]> = {
-  raksha: ['#85469b', '#4e1775'],
-  prince: ['#fd7210', '#c22f16'],
-  others: ['#a8a29e', '#78716c'],
+const BRAND_COLOR: Record<ProductBrand, string> = {
+  raksha: '#4e1775',
+  prince: '#ef3d21',
+  others: '#78716c',
 };
 
 type Category = { id: string; slug: string; name: string };
@@ -70,12 +69,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView edges={['bottom']} className="flex-1 bg-brand-cream">
       <ScrollView className="flex-1 px-4" contentContainerClassName="pb-8 gap-6">
-        <Gradient
-          colors={['#ef3d21', '#e75924', '#65346c']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          className="mt-4 rounded-2xl p-5"
-        >
+        <View className="mt-4 rounded-2xl p-5 bg-brand-purple-800">
           <Text className="text-2xl font-bold text-white">Sanitary & paints — delivered fast.</Text>
           <Text className="mt-1 text-white/90">Check if we deliver to your pincode.</Text>
           <View className="mt-4 flex-row gap-2">
@@ -94,11 +88,11 @@ export default function HomeScreen() {
             </PressableCard>
           </View>
           {result && (
-            <Text className={`mt-3 font-medium ${result.serviceable ? 'text-emerald-100' : 'text-orange-100'}`}>
+            <Text className={`mt-3 font-medium ${result.serviceable ? 'text-emerald-100' : 'text-white/80'}`}>
               {result.serviceable ? `✓ We deliver here — ETA ~${result.etaMinutes} min.` : 'Not serviceable at this pincode yet.'}
             </Text>
           )}
-        </Gradient>
+        </View>
 
         <View className="flex-row flex-wrap -mx-1.5">
           {FEATURES.map((f) => (
@@ -122,9 +116,9 @@ export default function HomeScreen() {
               return (
                 <View key={cat.id} className="w-1/3 px-1.5 mb-3">
                   <PressableCard onPress={() => router.push(`/category/${cat.slug}`)} className="items-center">
-                    <Gradient colors={color.gradient} className="h-12 w-12 rounded-full items-center justify-center">
+                    <View style={{ backgroundColor: color.color }} className="h-12 w-12 rounded-full items-center justify-center">
                       <Icon name={categoryIcon(cat.slug)} size={22} color="#fff" />
-                    </Gradient>
+                    </View>
                     <Text className="mt-2 font-semibold text-stone-900 text-center text-xs">{cat.name}</Text>
                   </PressableCard>
                 </View>
@@ -141,9 +135,9 @@ export default function HomeScreen() {
               .map((b) => (
                 <View key={b.brand} className="w-1/3 px-1.5 mb-3">
                   <PressableCard onPress={() => router.push(`/brand/${b.brand}`)} className="items-center">
-                    <Gradient colors={BRAND_GRADIENT[b.brand]} className="h-10 w-10 rounded-full items-center justify-center">
+                    <View style={{ backgroundColor: BRAND_COLOR[b.brand] }} className="h-10 w-10 rounded-full items-center justify-center">
                       <Text className="text-white font-bold">{b.name[0]}</Text>
-                    </Gradient>
+                    </View>
                     <Text className="mt-2 font-semibold text-stone-900 text-xs">{b.name}</Text>
                     <Text className="text-[11px] text-stone-500">{b.productCount} products</Text>
                   </PressableCard>
@@ -162,7 +156,7 @@ export default function HomeScreen() {
                 return (
                   <View key={product.id} className="w-1/2 px-1.5 mb-3">
                     <PressableCard onPress={() => router.push(`/product/${product.slug}`)}>
-                      <ProductSwatch colors={color.gradient} />
+                      <ProductSwatch color={color.color} />
                       <Text className="font-medium text-sm text-stone-900" numberOfLines={2}>
                         {product.name}
                       </Text>

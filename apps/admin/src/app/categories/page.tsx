@@ -81,7 +81,7 @@ export default function CategoriesPage() {
         {!creating && (
           <button
             onClick={() => setCreating(true)}
-            className="rounded-full bg-gradient-to-r from-brand-orange-600 to-brand-purple-600 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:from-brand-orange-700 hover:to-brand-purple-700"
+            className="rounded-full bg-brand-orange-700 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:bg-brand-orange-800"
           >
             + Add category
           </button>
@@ -109,11 +109,7 @@ export default function CategoriesPage() {
             />
           ) : (
             <div key={cat.id} className={`glass rounded-xl p-4 flex items-center gap-3 border-l-4 ${color.border}`}>
-              <div
-                className={`h-10 w-10 shrink-0 rounded-full bg-gradient-to-br ${color.accent} flex items-center justify-center text-lg shadow-md`}
-              >
-                {cat.icon}
-              </div>
+              <div className={`h-10 w-10 shrink-0 rounded-full ${color.accent} flex items-center justify-center text-lg`}>{cat.icon}</div>
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-slate-900 truncate">{cat.name}</div>
                 <div className="text-xs text-slate-500">/{cat.slug}</div>

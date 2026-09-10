@@ -36,7 +36,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center -m-6 py-14 sm:py-24 bg-gradient-to-br from-brand-orange-500 via-brand-purple-500 to-brand-orange-400">
+    <div className="flex items-center justify-center -m-6 py-14 sm:py-24 bg-brand-purple-800">
       <div className="glass w-full max-w-sm mx-4 rounded-2xl p-8">
         <h1 className="text-xl font-bold text-slate-900 mb-1">Matrizo Ops</h1>
         <p className="text-sm text-slate-500 mb-6">Sign in to manage orders, catalog & inventory.</p>
@@ -69,7 +69,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={busy}
-            className="w-full rounded-lg bg-gradient-to-r from-brand-orange-600 to-brand-purple-600 text-white px-4 py-2.5 font-semibold shadow-sm hover:from-brand-orange-700 hover:to-brand-purple-700 disabled:opacity-60"
+            className="w-full rounded-lg bg-brand-orange-700 text-white px-4 py-2.5 font-semibold shadow-sm hover:bg-brand-orange-800 disabled:opacity-60"
           >
             {busy ? 'Signing in…' : 'Sign in'}
           </button>

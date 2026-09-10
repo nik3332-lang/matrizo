@@ -1,14 +1,14 @@
 // Deterministic color per category (by id), matching the same palette used
-// in the admin portal for a consistent brand feel. Built entirely from the
-// Matrizo brand scale (purple / orange / coral / cream) so every category
-// still reads as visually distinct without introducing off-brand hues.
+// in the admin portal for a consistent brand feel. `accent` is a single
+// solid fill (not a gradient) — flat, restrained color reads as a
+// professional B2B tool; gradients everywhere read as a hobby-project demo.
 const PALETTE = [
-  { chip: 'bg-brand-orange-100 text-brand-orange-800', accent: 'from-brand-orange-500 to-brand-orange-700' },
-  { chip: 'bg-brand-purple-100 text-brand-purple-800', accent: 'from-brand-purple-500 to-brand-purple-800' },
-  { chip: 'bg-brand-coral-100 text-brand-coral-800', accent: 'from-brand-coral-400 to-brand-orange-600' },
-  { chip: 'bg-stone-200 text-stone-700', accent: 'from-stone-400 to-brand-purple-400' },
-  { chip: 'bg-brand-purple-50 text-brand-purple-600', accent: 'from-brand-purple-300 to-brand-purple-600' },
-  { chip: 'bg-brand-orange-50 text-brand-orange-600', accent: 'from-brand-orange-300 to-brand-purple-500' },
+  { chip: 'bg-brand-orange-100 text-brand-orange-800', accent: 'bg-brand-orange-700' },
+  { chip: 'bg-brand-purple-100 text-brand-purple-800', accent: 'bg-brand-purple-800' },
+  { chip: 'bg-brand-coral-100 text-brand-coral-800', accent: 'bg-brand-coral-600' },
+  { chip: 'bg-stone-200 text-stone-700', accent: 'bg-stone-500' },
+  { chip: 'bg-brand-purple-50 text-brand-purple-600', accent: 'bg-brand-purple-500' },
+  { chip: 'bg-brand-orange-50 text-brand-orange-600', accent: 'bg-brand-orange-600' },
 ];
 
 function hashIndex(id: string): number {

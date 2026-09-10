@@ -52,7 +52,7 @@ module.exports = {
         'brand-orange': brandOrange,
         'brand-purple': brandPurple,
         'brand-coral': brandCoral,
-        'brand-cream': '#f4eae0',
+        'brand-cream': '#faf9f7',
       },
     },
   },

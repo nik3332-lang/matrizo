@@ -60,7 +60,7 @@ export default function BrandScreen() {
           return (
             <View className="flex-1 mb-3">
               <PressableCard onPress={() => router.push(`/product/${item.slug}`)}>
-                <ProductSwatch colors={color.gradient} />
+                <ProductSwatch color={color.color} />
                 <Text className="font-semibold text-stone-900" numberOfLines={2}>
                   {item.name}
                 </Text>

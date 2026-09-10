@@ -98,7 +98,7 @@ export default function CartPage() {
       </div>
       <Link
         href="/checkout"
-        className="mt-4 block text-center rounded-lg bg-gradient-to-r from-brand-orange-600 to-brand-purple-600 text-white px-5 py-2.5 font-semibold shadow-sm hover:from-brand-orange-700 hover:to-brand-purple-700"
+        className="mt-4 block text-center rounded-lg bg-brand-orange-700 text-white px-5 py-2.5 font-semibold shadow-sm hover:bg-brand-orange-800"
       >
         Proceed to checkout
       </Link>

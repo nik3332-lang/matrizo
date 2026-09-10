@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4eae0;
-  --foreground: #3d2b1f;
+  --background: #ffffff;
+  --foreground: #1c1917;
 }
 
 @theme inline {
@@ -12,20 +12,21 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Matrizo brand palette, extracted from the poster: purple + orange duo
-   (with a warm orange->red-orange gradient on the "roof") set against a
-   soft cream background, plus a muted purple/orange pair for banners and a
-   coral accent for texture. Same scale used in both apps for a consistent
-   brand feel. */
+/* Matrizo brand colors: deep purple + burnt orange, from the poster. Used
+   deliberately and sparingly now — as a solid CTA color, a heading accent,
+   status/category tags — against a clean white/neutral base, rather than as
+   full-bleed gradients and colored background blobs everywhere. The earlier
+   loud-gradient-on-every-surface treatment read as an unpolished hobby
+   project rather than a professional ops tool; this is the fix. */
 @theme {
   --color-brand-orange-50: #fff3ea;
   --color-brand-orange-100: #ffe1cc;
   --color-brand-orange-200: #ffc299;
   --color-brand-orange-300: #ffa35f;
   --color-brand-orange-400: #fe8a3d;
-  --color-brand-orange-500: #fd7210; /* primary orange (door icon) */
-  --color-brand-orange-600: #e75924; /* muted banner orange */
-  --color-brand-orange-700: #ef3d21; /* roof red-orange */
+  --color-brand-orange-500: #fd7210;
+  --color-brand-orange-600: #e75924;
+  --color-brand-orange-700: #ef3d21; /* primary CTA color */
   --color-brand-orange-800: #c22f16;
   --color-brand-orange-900: #9c2510;
 
@@ -35,23 +36,23 @@
   --color-brand-purple-300: #b885cb;
   --color-brand-purple-400: #9c5fb2;
   --color-brand-purple-500: #85469b;
-  --color-brand-purple-600: #65346c; /* muted banner purple */
+  --color-brand-purple-600: #65346c;
   --color-brand-purple-700: #582463;
-  --color-brand-purple-800: #4e1775; /* primary purple (logo text) */
+  --color-brand-purple-800: #4e1775; /* primary heading/logo color */
   --color-brand-purple-900: #3a0f5a;
 
   --color-brand-coral-50: #fdf3f0;
   --color-brand-coral-100: #fae2dc;
   --color-brand-coral-200: #f4c6bb;
   --color-brand-coral-300: #efac9e;
-  --color-brand-coral-400: #e99e8b; /* brush-stroke accent */
+  --color-brand-coral-400: #e99e8b;
   --color-brand-coral-500: #dc7e68;
   --color-brand-coral-600: #c75f47;
   --color-brand-coral-700: #a8452f;
   --color-brand-coral-800: #85331f;
   --color-brand-coral-900: #642514;
 
-  --color-brand-cream: #f4eae0;
+  --color-brand-cream: #faf9f7;
 }
 
 body {
@@ -59,33 +60,13 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   background: var(--color-brand-cream);
   min-height: 100vh;
-  position: relative;
-  isolation: isolate;
 }
 
-/* Cream background with soft purple/orange/coral blobs behind the content —
-   visible through the translucent .glass cards, same technique as the
-   customer app, for a consistent brand feel across both apps. */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background:
-    radial-gradient(650px circle at 10% 10%, rgba(78, 23, 117, 0.16), transparent 60%),
-    radial-gradient(700px circle at 90% 15%, rgba(253, 114, 16, 0.22), transparent 60%),
-    radial-gradient(650px circle at 15% 90%, rgba(233, 158, 139, 0.35), transparent 60%),
-    radial-gradient(600px circle at 88% 90%, rgba(101, 52, 108, 0.14), transparent 60%),
-    radial-gradient(900px circle at 50% 50%, rgba(244, 234, 224, 0.6), transparent 65%);
-  filter: blur(10px);
-}
-
-/* Reusable "glass" surface — white, translucent, softly blurred so the
-   purple/orange/coral blobs above show through. */
+/* Plain elevated card — a clean white surface with a hairline border, no
+   blur/translucency/glow. Kept the .glass name used throughout the app's
+   markup so this didn't require a mass rename; it no longer does anything
+   glass-like on purpose. */
 .glass {
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(24px) saturate(140%);
-  -webkit-backdrop-filter: blur(24px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.85);
-  box-shadow: 0 8px 32px -10px rgba(78, 23, 117, 0.2);
+  background: #ffffff;
+  border: 1px solid #e7e5e4;
 }

@@ -29,7 +29,7 @@ export function NavBar() {
     user?.role === 'admin' ? ADMIN_LINKS : user?.role === 'store_staff' ? STORE_STAFF_LINKS : DELIVERY_PARTNER_LINKS;
 
   return (
-    <header className="sticky top-0 z-10 bg-gradient-to-r from-brand-orange-700/95 via-brand-orange-600/95 to-brand-purple-600/95 backdrop-blur-xl shadow-lg shadow-brand-orange-900/10">
+    <header className="sticky top-0 z-10 bg-stone-900 shadow-sm">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
         <Link href="/" className="font-bold text-lg tracking-tight text-white">
           Matrizo Ops
@@ -41,19 +41,14 @@ export function NavBar() {
                 key={link.href}
                 href={link.href}
                 className={`rounded-full px-3 py-1.5 font-medium transition-colors ${
-                  pathname === link.href
-                    ? 'bg-white text-brand-orange-700'
-                    : 'text-brand-orange-50 hover:bg-white/10 hover:text-white'
+                  pathname === link.href ? 'bg-brand-orange-700 text-white' : 'text-stone-300 hover:bg-white/10 hover:text-white'
                 }`}
               >
                 {link.label}
               </Link>
             ))}
-            <span className="ml-3 text-brand-orange-100 text-xs hidden sm:inline">{user.email}</span>
-            <button
-              onClick={logout}
-              className="ml-1 rounded-full px-3 py-1.5 font-medium text-brand-orange-50 hover:bg-white/10 hover:text-white"
-            >
+            <span className="ml-3 text-stone-400 text-xs hidden sm:inline">{user.email}</span>
+            <button onClick={logout} className="ml-1 rounded-full px-3 py-1.5 font-medium text-stone-300 hover:bg-white/10 hover:text-white">
               Log out
             </button>
           </nav>

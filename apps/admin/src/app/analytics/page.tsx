@@ -82,7 +82,7 @@ export default function AnalyticsPage() {
               </div>
               <div className="h-2 rounded-full bg-stone-100 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-brand-orange-500 to-brand-purple-500"
+                  className="h-full rounded-full bg-brand-orange-700"
                   style={{ width: `${(p.quantity / maxTopQty) * 100}%` }}
                 />
               </div>

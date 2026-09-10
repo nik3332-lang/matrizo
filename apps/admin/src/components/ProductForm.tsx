@@ -235,7 +235,7 @@ export function ProductForm({
         <button
           type="submit"
           disabled={busy}
-          className="rounded-lg bg-gradient-to-r from-brand-orange-600 to-brand-purple-600 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:from-brand-orange-700 hover:to-brand-purple-700 disabled:opacity-60"
+          className="rounded-lg bg-brand-orange-700 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:bg-brand-orange-800 disabled:opacity-60"
         >
           {busy ? 'Saving…' : 'Save product'}
         </button>
