@@ -206,7 +206,7 @@ const createEmployeeSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
   name: z.string().trim().min(1),
   phone: z.string().trim().optional(),
-  commissionRatePercent: z.number().positive().optional(),
+  commissionRatePercent: z.number().nonnegative().optional(),
 });
 
 employeeAdminRoutes.post('/', async (c) => {
@@ -271,7 +271,7 @@ const updateEmployeeSchema = z.object({
   name: z.string().trim().min(1).optional(),
   phone: z.string().trim().optional(),
   contactAddress: z.string().trim().optional(),
-  commissionRatePercent: z.number().positive().optional(),
+  commissionRatePercent: z.number().nonnegative().optional(),
   active: z.boolean().optional(),
   password: z.string().min(8).optional(),
 });

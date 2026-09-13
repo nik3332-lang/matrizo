@@ -74,7 +74,10 @@ export default function EmployeeDetailPage() {
         name: form.name.trim() || undefined,
         phone: form.phone.trim(),
         contactAddress: form.contactAddress.trim(),
-        commissionRatePercent: parseFloat(form.commissionRatePercent) || undefined,
+        commissionRatePercent: (() => {
+          const parsed = parseFloat(form.commissionRatePercent);
+          return Number.isNaN(parsed) ? undefined : parsed;
+        })(),
         password: form.password.trim() || undefined,
       });
       setEditing(false);

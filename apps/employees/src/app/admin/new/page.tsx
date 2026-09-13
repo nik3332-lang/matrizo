@@ -37,7 +37,10 @@ export default function NewEmployeePage() {
         password,
         name: name.trim(),
         phone: phone.trim() || undefined,
-        commissionRatePercent: parseFloat(commissionRatePercent) || 5,
+        commissionRatePercent: (() => {
+          const parsed = parseFloat(commissionRatePercent);
+          return Number.isNaN(parsed) ? 5 : parsed;
+        })(),
       });
       router.push(`/admin/${res.employee.id}`);
     } catch (err) {
