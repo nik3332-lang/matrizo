@@ -114,16 +114,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center -m-6 py-14 sm:py-20 bg-brand-purple-800">
-      <div className="glass w-full max-w-sm mx-4 rounded-2xl p-8">
+    <div className="flex items-center justify-center -m-6 py-14 sm:py-20">
+      <div className="glass w-full max-w-sm mx-4 rounded-card p-8">
         {stage === 'form' && (
           <>
-            <div className="flex gap-1 mb-6 rounded-full bg-stone-100 p-1">
+            <div className="flex gap-1 mb-6 rounded-card bg-stone-100 p-1">
               <button
                 type="button"
                 onClick={() => setMode('login')}
-                className={`flex-1 rounded-full py-1.5 text-sm font-semibold transition-colors ${
-                  mode === 'login' ? 'bg-white text-brand-orange-700 shadow-sm' : 'text-stone-500'
+                className={`flex-1 min-h-11 rounded-card text-sm font-medium transition-colors ${
+                  mode === 'login' ? 'bg-white text-accent' : 'text-stone-500'
                 }`}
               >
                 Log in
@@ -131,8 +131,8 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setMode('signup')}
-                className={`flex-1 rounded-full py-1.5 text-sm font-semibold transition-colors ${
-                  mode === 'signup' ? 'bg-white text-brand-orange-700 shadow-sm' : 'text-stone-500'
+                className={`flex-1 min-h-11 rounded-card text-sm font-medium transition-colors ${
+                  mode === 'signup' ? 'bg-white text-accent' : 'text-stone-500'
                 }`}
               >
                 Sign up
@@ -141,7 +141,7 @@ export default function LoginPage() {
 
             {mode === 'login' && (
               <form onSubmit={submitLogin} className="space-y-3">
-                <h1 className="text-xl font-bold text-stone-900 mb-1">Welcome back</h1>
+                <h1 className="text-xl font-medium text-stone-900 mb-1">Welcome back</h1>
                 <p className="text-sm text-stone-500 mb-4">Enter your phone number to continue.</p>
                 <label className="block text-sm font-medium text-stone-700">
                   Phone number
@@ -149,16 +149,16 @@ export default function LoginPage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="9876543210"
-                    className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
+                    className="mt-1 w-full min-h-11 rounded-card border border-line px-3 outline-none"
                     inputMode="tel"
                     required
                   />
                 </label>
-                {error && <p className="text-sm text-rose-600">{error}</p>}
+                {error && <p className="text-sm text-danger">{error}</p>}
                 <button
                   type="submit"
                   disabled={busy}
-                  className="w-full rounded-lg bg-brand-orange-700 text-white px-4 py-2.5 font-semibold shadow-sm hover:bg-brand-orange-800 disabled:opacity-60"
+                  className="w-full min-h-11 rounded-card bg-accent text-white px-4 font-medium hover:bg-accent-hover disabled:opacity-60"
                 >
                   {busy ? 'Logging in…' : 'Log in'}
                 </button>
@@ -167,7 +167,7 @@ export default function LoginPage() {
 
             {mode === 'signup' && (
               <form onSubmit={submitSignup} className="space-y-3">
-                <h1 className="text-xl font-bold text-stone-900 mb-1">Create your account</h1>
+                <h1 className="text-xl font-medium text-stone-900 mb-1">Create your account</h1>
                 <p className="text-sm text-stone-500 mb-4">Tell us where to deliver and you&apos;re in.</p>
                 <label className="block text-sm font-medium text-stone-700">
                   Phone number
@@ -175,7 +175,7 @@ export default function LoginPage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="9876543210"
-                    className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
+                    className="mt-1 w-full min-h-11 rounded-card border border-line px-3 outline-none"
                     inputMode="tel"
                     required
                   />
@@ -186,7 +186,7 @@ export default function LoginPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Your name"
-                    className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
+                    className="mt-1 w-full min-h-11 rounded-card border border-line px-3 outline-none"
                     required
                   />
                 </label>
@@ -197,7 +197,7 @@ export default function LoginPage() {
                       value={line1}
                       onChange={(e) => setLine1(e.target.value)}
                       placeholder="Address line"
-                      className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
+                      className="w-full min-h-11 rounded-card border border-line px-3 outline-none"
                       required
                     />
                     <div className="flex gap-2">
@@ -205,14 +205,14 @@ export default function LoginPage() {
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
                         placeholder="City"
-                        className="w-1/2 rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
+                        className="w-1/2 min-h-11 rounded-card border border-line px-3 outline-none"
                         required
                       />
                       <input
                         value={state}
                         onChange={(e) => setState(e.target.value)}
                         placeholder="State"
-                        className="w-1/2 rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
+                        className="w-1/2 min-h-11 rounded-card border border-line px-3 outline-none"
                         required
                       />
                     </div>
@@ -220,17 +220,17 @@ export default function LoginPage() {
                       value={pincode}
                       onChange={(e) => setPincode(e.target.value)}
                       placeholder="Pincode"
-                      className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
+                      className="w-full min-h-11 rounded-card border border-line px-3 outline-none"
                       inputMode="numeric"
                       required
                     />
                   </div>
                 </div>
-                {error && <p className="text-sm text-rose-600">{error}</p>}
+                {error && <p className="text-sm text-danger">{error}</p>}
                 <button
                   type="submit"
                   disabled={busy}
-                  className="w-full rounded-lg bg-brand-orange-700 text-white px-4 py-2.5 font-semibold shadow-sm hover:bg-brand-orange-800 disabled:opacity-60"
+                  className="w-full min-h-11 rounded-card bg-accent text-white px-4 font-medium hover:bg-accent-hover disabled:opacity-60"
                 >
                   {busy ? 'Creating account…' : 'Sign up'}
                 </button>
@@ -241,7 +241,7 @@ export default function LoginPage() {
 
         {stage === 'complete-profile' && (
           <form onSubmit={submitProfile} className="space-y-3">
-            <h1 className="text-xl font-bold text-stone-900 mb-1">You&apos;re logged in — one more step</h1>
+            <h1 className="text-xl font-medium text-stone-900 mb-1">You&apos;re logged in — one more step</h1>
             <p className="text-sm text-stone-500 mb-4">We don&apos;t have your name and address yet.</p>
             <label className="block text-sm font-medium text-stone-700">
               Name
@@ -249,7 +249,7 @@ export default function LoginPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Your name"
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
+                className="mt-1 w-full min-h-11 rounded-card border border-line px-3 outline-none"
                 required
               />
             </label>
@@ -260,7 +260,7 @@ export default function LoginPage() {
                   value={line1}
                   onChange={(e) => setLine1(e.target.value)}
                   placeholder="Address line"
-                  className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
+                  className="w-full min-h-11 rounded-card border border-line px-3 outline-none"
                   required
                 />
                 <div className="flex gap-2">
@@ -268,14 +268,14 @@ export default function LoginPage() {
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     placeholder="City"
-                    className="w-1/2 rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
+                    className="w-1/2 min-h-11 rounded-card border border-line px-3 outline-none"
                     required
                   />
                   <input
                     value={state}
                     onChange={(e) => setState(e.target.value)}
                     placeholder="State"
-                    className="w-1/2 rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
+                    className="w-1/2 min-h-11 rounded-card border border-line px-3 outline-none"
                     required
                   />
                 </div>
@@ -283,17 +283,17 @@ export default function LoginPage() {
                   value={pincode}
                   onChange={(e) => setPincode(e.target.value)}
                   placeholder="Pincode"
-                  className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
+                  className="w-full min-h-11 rounded-card border border-line px-3 outline-none"
                   inputMode="numeric"
                   required
                 />
               </div>
             </div>
-            {error && <p className="text-sm text-rose-600">{error}</p>}
+            {error && <p className="text-sm text-danger">{error}</p>}
             <button
               type="submit"
               disabled={busy}
-              className="w-full rounded-lg bg-brand-orange-700 text-white px-4 py-2.5 font-semibold shadow-sm hover:bg-brand-orange-800 disabled:opacity-60"
+              className="w-full min-h-11 rounded-card bg-accent text-white px-4 font-medium hover:bg-accent-hover disabled:opacity-60"
             >
               {busy ? 'Saving…' : 'Continue'}
             </button>

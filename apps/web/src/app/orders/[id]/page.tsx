@@ -77,37 +77,33 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   return (
     <div className="max-w-lg">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-stone-900">Order #{order.id.slice(0, 8)}</h1>
-        <span className={`text-xs font-medium ${live ? 'text-emerald-600' : 'text-stone-400'}`}>
+        <h1 className="text-xl font-medium text-stone-900">Order #{order.id.slice(0, 8)}</h1>
+        <span className={`text-xs font-medium ${live ? 'text-success' : 'text-stone-400'}`}>
           {live ? '● live' : '○ connecting…'}
         </span>
       </div>
 
-      {error && <p className="mt-2 text-sm text-rose-600">{error}</p>}
+      {error && <p className="mt-2 text-sm text-danger">{error}</p>}
 
       {canCancel && (
         <button
           onClick={cancelOrder}
           disabled={cancelling}
-          className="mt-3 text-sm font-medium text-rose-600 hover:underline disabled:opacity-60"
+          className="mt-3 min-h-11 text-sm font-medium text-danger hover:underline disabled:opacity-60"
         >
           {cancelling ? 'Cancelling…' : 'Cancel order'}
         </button>
       )}
 
       {order.status === 'cancelled' ? (
-        <p className="mt-4 text-rose-600 font-medium">This order was cancelled.</p>
+        <p className="mt-4 text-danger font-medium">This order was cancelled.</p>
       ) : (
-        <div className="glass mt-6 rounded-xl p-4">
+        <div className="glass mt-6 rounded-card p-4">
           <ol className="flex justify-between text-xs">
             {TRACKABLE_STATUSES.map((status, i) => (
               <li key={status} className="flex-1 flex flex-col items-center">
-                <div
-                  className={`h-3 w-3 rounded-full ${
-                    i <= currentIndex ? 'bg-brand-orange-700' : 'bg-stone-200'
-                  }`}
-                />
-                <span className={`mt-2 capitalize ${i <= currentIndex ? 'text-brand-orange-700 font-medium' : 'text-stone-400'}`}>
+                <div className={`h-3 w-3 rounded-full ${i <= currentIndex ? 'bg-accent' : 'bg-stone-200'}`} />
+                <span className={`mt-2 capitalize ${i <= currentIndex ? 'text-accent font-medium' : 'text-stone-400'}`}>
                   {status.replace('_', ' ')}
                 </span>
               </li>
@@ -116,7 +112,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         </div>
       )}
 
-      <div className="glass mt-8 divide-y divide-stone-200/70 rounded-xl">
+      <div className="glass mt-8 divide-y divide-line rounded-card">
         {items.map((item) => (
           <div key={item.id} className="p-3 flex justify-between text-sm">
             <span>
@@ -125,9 +121,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             <span>₹{item.unitPrice * item.quantity}</span>
           </div>
         ))}
-        <div className="p-3 flex justify-between font-semibold text-stone-900">
+        <div className="p-3 flex justify-between font-medium text-stone-900">
           <span>Total ({order.paymentMethod.toUpperCase()})</span>
-          <span className="text-brand-orange-700">₹{order.totalAmount}</span>
+          <span className="text-accent">₹{order.totalAmount}</span>
         </div>
       </div>
 

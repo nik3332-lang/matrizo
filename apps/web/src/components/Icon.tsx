@@ -143,10 +143,9 @@ export function Icon({ name, className = 'h-6 w-6' }: { name: IconName; classNam
   );
 }
 
-// Category slug -> icon, with a generic fallback for any category an admin
-// adds later that isn't one of these three yet.
-export function categoryIcon(slug: string): IconName {
-  if (slug === 'upvc' || slug === 'cpvc') return 'pipe';
-  if (slug === 'paints') return 'paintRoller';
-  return 'box';
-}
+// categoryIcon() (slug -> IconName) moved to lib/categoryIcon.ts — this
+// file is 'use client', which makes every export from it, functions
+// included, unusable from a server component. Re-exported here so
+// existing `import { categoryIcon, Icon } from '@/components/Icon'`
+// call sites in client components don't all need touching.
+export { categoryIcon } from '@/lib/categoryIcon';

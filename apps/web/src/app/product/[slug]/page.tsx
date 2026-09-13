@@ -1,26 +1,23 @@
-'use client';
-
-// Required by the old Pages/next-on-pages deploy path only (Workers'
-// matrizo-web deploy doesn't need this) — every dynamic route must opt
-// into the Edge runtime or that pipeline's build fails outright.
+// Server component (STAGE 6) — no 'use client'. Fetched at request time on
+// the server so a cold WhatsApp-shared link resolves to real content and
+// real <title>/OG tags immediately, instead of the blank shell + client
+// fetch the whole app used to do. The `runtime = 'edge'` export below
+// stays for the old next-on-pages path per the existing comment on the
+// other dynamic routes; the api.get() call below works here because
+// lib/api.ts's getAccessToken() returns null when `window` is undefined,
+// so this is just an unauthenticated GET either way.
 export const runtime = 'edge';
 
+import type { Metadata } from 'next';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { use, useEffect, useState } from 'react';
 
-import { ApiError, priceForQuantity, type ProductBrand } from '@matrizo/shared';
+import { priceForQuantity, type ProductBrand } from '@matrizo/shared';
 import { api } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
-import { categoryIcon, Icon } from '@/components/Icon';
-import { categoryColor } from '@/lib/categoryColors';
+import { categoryIcon } from '@/lib/categoryIcon';
+import { Icon } from '@/components/Icon';
+import { AddToCartPanel } from './AddToCartPanel';
 
 const BRAND_LABELS: Record<ProductBrand, string> = { raksha: 'Raksha', prince: 'Prince', others: 'Others' };
-const BRAND_CHIP: Record<ProductBrand, string> = {
-  raksha: 'bg-brand-purple-100 text-brand-purple-800',
-  prince: 'bg-brand-orange-100 text-brand-orange-800',
-  others: 'bg-stone-200 text-stone-700',
-};
 
 type Tier = { minQty: number; pricePerUnit: number };
 type Category = { id: string; slug: string; name: string };
@@ -37,58 +34,71 @@ type Product = {
   tiers: Tier[];
 };
 
-export default function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = use(params);
-  const router = useRouter();
-  const { user, loading } = useAuth();
-
-  const [product, setProduct] = useState<Product | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [quantity, setQuantity] = useState(1);
-  const [adding, setAdding] = useState(false);
-  const [added, setAdded] = useState(false);
-
-  useEffect(() => {
-    api
-      .get<{ product: Product }>(`/products/${slug}`)
-      .then((res) => setProduct(res.product))
-      .catch(() => setError('Product not found.'));
-  }, [slug]);
-
-  async function addToCart() {
-    if (!product) return;
-    if (!loading && !user) {
-      router.push('/login');
-      return;
-    }
-    setAdding(true);
-    setAdded(false);
-    try {
-      await api.post('/cart/items', { productId: product.id, quantity });
-      setAdded(true);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not add to cart.');
-    } finally {
-      setAdding(false);
-    }
+async function getProduct(slug: string): Promise<Product | null> {
+  try {
+    const res = await api.get<{ product: Product }>(`/products/${slug}`);
+    return res.product;
+  } catch {
+    return null;
   }
+}
 
-  if (error) return <p className="text-stone-500">{error}</p>;
-  if (!product) return <p className="text-stone-500">Loading…</p>;
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await getProduct(slug);
+  if (!product) return { title: 'Product not found — Matrizo' };
 
-  const unitPrice = priceForQuantity(product.tiers, quantity, product.basePrice);
-  const accent = categoryColor(product.categoryId).accent;
+  const price = priceForQuantity(product.tiers, 1, product.basePrice);
+  const description =
+    product.description?.trim() ||
+    `${product.name} — ₹${price} / ${product.unit}. Genuine ${BRAND_LABELS[product.brand]}, delivered fast from your nearest Matrizo dark store.`;
+
+  return {
+    title: `${product.name} — Matrizo`,
+    description,
+    openGraph: { title: product.name, description, type: 'website' },
+  };
+}
+
+export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const product = await getProduct(slug);
+
+  if (!product) return <p className="text-stone-500">Product not found.</p>;
+
+  const unitPrice = priceForQuantity(product.tiers, 1, product.basePrice);
+
+  // Product/Offer schema.org markup (STAGE 6) — availability is
+  // deliberately omitted rather than guessed: there's no customer-facing
+  // stock check yet (see the STAGE 4 note on the product's spec/stock
+  // gap), and asserting InStock/OutOfStock without real data would be
+  // worse than saying nothing.
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    sku: product.sku,
+    ...(product.description ? { description: product.description } : {}),
+    brand: { '@type': 'Brand', name: BRAND_LABELS[product.brand] },
+    offers: {
+      '@type': 'Offer',
+      priceCurrency: 'INR',
+      price: unitPrice,
+    },
+  };
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl pb-24 sm:pb-0">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+
       <nav className="flex items-center gap-1.5 text-sm text-stone-500 mb-4">
-        <Link href="/" className="hover:text-brand-orange-700">
+        <Link href="/" className="hover:text-accent">
           Home
         </Link>
         {product.category && (
           <>
             <Icon name="chevronLeft" className="h-3 w-3 rotate-180" />
-            <Link href={`/category/${product.category.slug}`} className="hover:text-brand-orange-700">
+            <Link href={`/category/${product.category.slug}`} className="hover:text-accent">
               {product.category.name}
             </Link>
           </>
@@ -96,72 +106,38 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
       </nav>
 
       <div className="grid sm:grid-cols-[220px_1fr] gap-6">
-        <div className={`h-44 sm:h-full rounded-2xl ${accent} flex items-center justify-center shrink-0`}>
-          <Icon name={categoryIcon(product.category?.slug ?? '')} className="h-16 w-16 text-white/90" />
+        {/* Stand-in for product photography until real images are wired
+           in (STAGE 4/5 — blocked on real photos, see project notes). */}
+        <div className="h-44 sm:h-full rounded-card bg-stone-100 flex items-center justify-center shrink-0">
+          <Icon name={categoryIcon(product.category?.slug ?? '')} className="h-16 w-16 text-stone-400" />
         </div>
 
         <div>
-          <div className="flex items-start justify-between gap-3">
-            <h1 className="text-2xl font-bold text-stone-900">{product.name}</h1>
-          </div>
+          <h1 className="text-2xl font-medium text-stone-900">{product.name}</h1>
           <div className="mt-2 flex items-center gap-2 flex-wrap">
-            <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${BRAND_CHIP[product.brand]}`}>
+            <span className="text-xs px-2.5 py-1 rounded-card border border-line text-stone-600 font-medium">
               {BRAND_LABELS[product.brand]}
             </span>
             <span className="text-xs text-stone-400">SKU {product.sku}</span>
           </div>
           {product.description && <p className="mt-3 text-stone-600">{product.description}</p>}
 
-          <div className="mt-5 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-brand-orange-700">₹{unitPrice}</span>
-            <span className="text-sm text-stone-500">/ {product.unit}</span>
+          {/* Brand authenticity + warranty — relocated here from the old
+             homepage "Genuine products" benefit tile (STAGE 3), same
+             claim the site already made, just where the doubt actually
+             occurs: on the product itself. */}
+          <div className="mt-3 flex items-center gap-1.5 text-xs text-stone-500">
+            <Icon name="badgeCheck" className="h-3.5 w-3.5 text-success shrink-0" />
+            Genuine product, sourced directly from {BRAND_LABELS[product.brand]} — brand warranty applies.
           </div>
 
-          <div className="mt-5 flex items-center gap-3">
-            <label className="text-sm font-medium text-stone-700">Quantity</label>
-            <div className="flex items-center rounded-lg border border-stone-300 overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="px-3 py-2 text-stone-600 hover:bg-stone-100"
-                aria-label="Decrease quantity"
-              >
-                −
-              </button>
-              <input
-                type="number"
-                min={1}
-                value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                className="w-14 text-center py-2 outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => q + 1)}
-                className="px-3 py-2 text-stone-600 hover:bg-stone-100"
-                aria-label="Increase quantity"
-              >
-                +
-              </button>
-            </div>
-            <div className="font-bold text-stone-900">₹{unitPrice * quantity} total</div>
-          </div>
-
-          {error && <p className="mt-3 text-sm text-rose-600">{error}</p>}
-
-          <button
-            onClick={addToCart}
-            disabled={adding}
-            className="mt-5 rounded-lg bg-brand-orange-700 text-white px-5 py-2.5 font-semibold shadow-sm hover:bg-brand-orange-800 disabled:opacity-60"
-          >
-            {adding ? 'Adding…' : added ? 'Added ✓' : 'Add to cart'}
-          </button>
+          <AddToCartPanel productId={product.id} unit={product.unit} basePrice={product.basePrice} tiers={product.tiers} />
         </div>
       </div>
 
       {product.tiers.length > 0 && (
-        <div className="glass mt-8 rounded-xl divide-y divide-stone-200/70 text-sm overflow-hidden max-w-md">
-          <div className="px-4 py-2.5 flex justify-between font-semibold text-stone-700 bg-brand-orange-50/60">
+        <div className="glass mt-8 rounded-card divide-y divide-line text-sm overflow-hidden max-w-md">
+          <div className="px-4 py-2.5 flex justify-between font-medium text-stone-700 bg-stone-50">
             <span>Quantity</span>
             <span>Price / {product.unit}</span>
           </div>
@@ -177,7 +153,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                   {tier.minQty}
                   {arr[i + 1] ? ` – ${arr[i + 1].minQty - 1}` : '+'}
                 </span>
-                <span className="font-medium text-emerald-700">₹{tier.pricePerUnit}</span>
+                <span className="font-medium text-accent">₹{tier.pricePerUnit}</span>
               </div>
             ))}
         </div>

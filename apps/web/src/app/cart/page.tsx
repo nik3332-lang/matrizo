@@ -42,7 +42,7 @@ export default function CartPage() {
   if (!authLoading && !user) {
     return (
       <p className="text-stone-600">
-        <Link href="/login" className="text-brand-orange-700 font-medium underline">
+        <Link href="/login" className="text-accent font-medium underline">
           Log in
         </Link>{' '}
         to view your cart.
@@ -55,11 +55,11 @@ export default function CartPage() {
   if (cart.items.length === 0) {
     return (
       <div className="text-center py-16">
-        <div className="mx-auto h-14 w-14 rounded-full bg-brand-orange-50 flex items-center justify-center">
-          <Icon name="cart" className="h-7 w-7 text-brand-orange-400" />
+        <div className="mx-auto h-14 w-14 rounded-full bg-stone-100 flex items-center justify-center">
+          <Icon name="cart" className="h-7 w-7 text-stone-400" />
         </div>
         <p className="mt-4 text-stone-500">Your cart is empty.</p>
-        <Link href="/" className="mt-1 inline-block text-brand-orange-700 font-medium hover:underline">
+        <Link href="/" className="mt-1 inline-block text-accent font-medium hover:underline">
           Browse categories
         </Link>
       </div>
@@ -68,12 +68,12 @@ export default function CartPage() {
 
   return (
     <div className="max-w-lg">
-      <h1 className="text-xl font-bold text-stone-900 mb-4">Your cart</h1>
-      <div className="glass divide-y divide-stone-200/70 rounded-xl">
+      <h1 className="text-xl font-medium text-stone-900 mb-4">Your cart</h1>
+      <div className="glass divide-y divide-line rounded-card">
         {cart.items.map((item) => (
           <div key={item.id} className="p-4 flex items-center justify-between gap-4">
             <div>
-              <div className="font-semibold text-stone-900">{item.product.name}</div>
+              <div className="font-medium text-stone-900">{item.product.name}</div>
               <div className="text-sm text-stone-500">
                 ₹{item.unitPrice} / {item.product.unit}
               </div>
@@ -85,20 +85,20 @@ export default function CartPage() {
                 value={item.quantity}
                 disabled={busyProductId === item.product.id}
                 onChange={(e) => updateQuantity(item.product.id, Math.max(0, parseInt(e.target.value, 10) || 0))}
-                className="w-16 rounded-lg border border-stone-300 px-2 py-1 text-center focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
+                className="w-16 min-h-11 rounded-card border border-line px-2 text-center outline-none"
               />
-              <div className="w-20 text-right font-semibold text-brand-orange-700">₹{item.lineTotal}</div>
+              <div className="w-20 text-right font-medium text-accent">₹{item.lineTotal}</div>
             </div>
           </div>
         ))}
       </div>
-      <div className="glass mt-4 rounded-xl p-4 flex items-center justify-between">
+      <div className="glass mt-4 rounded-card p-4 flex items-center justify-between">
         <span className="text-stone-600 font-medium">Subtotal</span>
-        <span className="text-lg font-bold text-brand-orange-700">₹{cart.subtotal}</span>
+        <span className="text-lg font-medium text-accent">₹{cart.subtotal}</span>
       </div>
       <Link
         href="/checkout"
-        className="mt-4 block text-center rounded-lg bg-brand-orange-700 text-white px-5 py-2.5 font-semibold shadow-sm hover:bg-brand-orange-800"
+        className="mt-4 flex items-center justify-center min-h-11 rounded-card bg-accent text-white px-5 font-medium hover:bg-accent-hover"
       >
         Proceed to checkout
       </Link>

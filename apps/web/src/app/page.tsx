@@ -5,15 +5,9 @@ import { useEffect, useState } from 'react';
 
 import { priceForQuantity, type ProductBrand } from '@matrizo/shared';
 import { api } from '@/lib/api';
-import { categoryColor } from '@/lib/categoryColors';
 import { categoryIcon, Icon } from '@/components/Icon';
 import { ProductCard } from '@/components/ProductCard';
-
-const BRAND_ACCENT: Record<ProductBrand, string> = {
-  raksha: 'bg-brand-purple-800',
-  prince: 'bg-brand-orange-700',
-  others: 'bg-stone-500',
-};
+import { ProductCardSkeleton, TileSkeleton } from '@/components/Skeleton';
 
 type Category = {
   id: string;
@@ -35,19 +29,6 @@ type Product = {
   tiers: Tier[];
 };
 
-type Serviceability = {
-  pincode: string;
-  serviceable: boolean;
-  etaMinutes: number | null;
-};
-
-const FEATURES = [
-  { icon: 'truck', title: 'Fast delivery', body: 'Straight from your nearest dark store, usually under an hour.' },
-  { icon: 'badgeCheck', title: 'Genuine products', body: 'Trusted brands, real specs — no substitutes.' },
-  { icon: 'package', title: 'Bulk pricing', body: 'Order more, pay less — tiered pricing built in.' },
-  { icon: 'cash', title: 'Pay on delivery', body: 'Cash on delivery, no payment details needed upfront.' },
-] as const;
-
 const STEPS = [
   { step: '1', title: 'Check your pincode', body: 'See if we deliver to your address in seconds.' },
   { step: '2', title: 'Browse & order', body: 'Pick what you need — bulk pricing applies automatically.' },
@@ -58,9 +39,6 @@ export default function HomePage() {
   const [categories, setCategories] = useState<Category[] | null>(null);
   const [brands, setBrands] = useState<Brand[] | null>(null);
   const [popular, setPopular] = useState<Product[] | null>(null);
-  const [pincode, setPincode] = useState('');
-  const [checking, setChecking] = useState(false);
-  const [result, setResult] = useState<Serviceability | null>(null);
 
   useEffect(() => {
     api.get<{ categories: Category[] }>('/categories').then(async (res) => {
@@ -79,115 +57,81 @@ export default function HomePage() {
     api.get<{ brands: Brand[] }>('/brands').then((res) => setBrands(res.brands));
   }, []);
 
-  async function checkPincode(e: React.FormEvent) {
-    e.preventDefault();
-    if (!pincode.trim()) return;
-    setChecking(true);
-    setResult(null);
-    try {
-      const res = await api.get<Serviceability>(`/serviceability/${encodeURIComponent(pincode.trim())}`);
-      setResult(res);
-    } finally {
-      setChecking(false);
-    }
-  }
-
   return (
     <div className="space-y-14">
-      <section className="relative overflow-hidden rounded-2xl bg-brand-purple-800 text-white p-8">
-        <Icon name="mapPin" className="pointer-events-none absolute -right-6 -bottom-8 h-40 w-40 text-white/10" />
-        <h1 className="relative text-2xl font-bold">Sanitary & paints — delivered fast.</h1>
-        <p className="relative mt-2 text-white/80">Check if we deliver to your pincode.</p>
-        <form onSubmit={checkPincode} className="relative mt-4 flex gap-2 max-w-sm">
-          <div className="relative flex-1">
-            <Icon name="mapPin" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
-            <input
-              value={pincode}
-              onChange={(e) => setPincode(e.target.value)}
-              placeholder="Enter pincode"
-              className="w-full rounded-lg pl-9 pr-3 py-2 text-stone-900 outline-none focus:ring-2 focus:ring-white"
-              inputMode="numeric"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={checking}
-            className="rounded-lg bg-white text-brand-orange-700 px-4 py-2 font-semibold shadow-sm disabled:opacity-60"
-          >
-            {checking ? 'Checking…' : 'Check'}
-          </button>
-        </form>
-        {result && (
-          <p className="relative mt-3 text-sm">
-            {result.serviceable ? (
-              <span className="text-emerald-100 font-medium">✓ We deliver here — ETA ~{result.etaMinutes} min.</span>
-            ) : (
-              <span className="text-white/80 font-medium">Not serviceable at this pincode yet.</span>
-            )}
-          </p>
-        )}
-      </section>
-
-      <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {FEATURES.map((f) => (
-          <div key={f.title} className="glass rounded-xl p-4 text-center">
-            <div className="mx-auto h-10 w-10 rounded-full bg-brand-orange-50 flex items-center justify-center">
-              <Icon name={f.icon} className="h-5 w-5 text-brand-orange-700" />
-            </div>
-            <div className="mt-2 font-semibold text-stone-900 text-sm">{f.title}</div>
-            <div className="mt-1 text-xs text-stone-500">{f.body}</div>
-          </div>
-        ))}
-      </section>
-
+      {/* Catalog first — category grid, then brand row, then frequently-
+         ordered products. The old pincode-check hero and four benefit
+         tiles are gone: ETA now lives in the persistent header location
+         bar, bulk tiers are on each product card, COD is on the checkout
+         button, and warranty/authenticity moved to the product page. */}
       <section>
-        <h2 className="text-lg font-semibold text-stone-900 mb-4">Shop by category</h2>
-        {!categories && <p className="text-stone-500">Loading…</p>}
+        <h2 className="text-lg font-medium text-stone-900 mb-4">Shop by category</h2>
+        {!categories && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <TileSkeleton key={i} />
+            ))}
+          </div>
+        )}
         {categories && categories.length === 0 && <p className="text-stone-500">No categories yet.</p>}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {categories?.map((cat) => {
-            const color = categoryColor(cat.id);
-            return (
+        {categories && categories.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {categories.map((cat) => (
               <Link
                 key={cat.id}
                 href={`/category/${cat.slug}`}
-                className="glass rounded-xl p-5 text-center hover:-translate-y-0.5 hover:shadow-lg transition-all"
+                className="glass rounded-card p-5 text-center transition-colors hover:border-stone-300"
               >
-                <div className={`mx-auto h-14 w-14 rounded-full ${color.accent} flex items-center justify-center`}>
-                  <Icon name={categoryIcon(cat.slug)} className="h-7 w-7 text-white" />
+                <div className="mx-auto h-14 w-14 rounded-full bg-stone-100 flex items-center justify-center">
+                  <Icon name={categoryIcon(cat.slug)} className="h-7 w-7 text-stone-500" />
                 </div>
-                <div className="mt-3 font-semibold text-stone-900">{cat.name}</div>
+                <div className="mt-3 font-medium text-stone-900">{cat.name}</div>
               </Link>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section>
-        <h2 className="text-lg font-semibold text-stone-900 mb-4">Shop by brand</h2>
-        {!brands && <p className="text-stone-500">Loading…</p>}
-        <div className="grid grid-cols-3 gap-4">
-          {brands
-            ?.filter((b) => b.productCount > 0)
-            .map((b) => (
-              <Link
-                key={b.brand}
-                href={`/brand/${b.brand}`}
-                className="glass rounded-xl p-5 text-center hover:-translate-y-0.5 hover:shadow-lg transition-all"
-              >
-                <div className={`mx-auto h-12 w-12 rounded-full ${BRAND_ACCENT[b.brand]} flex items-center justify-center text-white font-bold`}>
-                  {b.name[0]}
-                </div>
-                <div className="mt-3 font-semibold text-stone-900">{b.name}</div>
-                <div className="text-xs text-stone-500 mt-0.5">{b.productCount} products</div>
-              </Link>
+        <h2 className="text-lg font-medium text-stone-900 mb-4">Shop by brand</h2>
+        {!brands && (
+          <div className="grid grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <TileSkeleton key={i} />
             ))}
-        </div>
+          </div>
+        )}
+        {brands && (
+          <div className="grid grid-cols-3 gap-4">
+            {brands
+              .filter((b) => b.productCount > 0)
+              .map((b) => (
+                <Link
+                  key={b.brand}
+                  href={`/brand/${b.brand}`}
+                  className="glass rounded-card p-5 text-center transition-colors hover:border-stone-300"
+                >
+                  <div className="mx-auto h-12 w-12 rounded-full bg-stone-100 flex items-center justify-center text-stone-700 font-medium">
+                    {b.name[0]}
+                  </div>
+                  <div className="mt-3 font-medium text-stone-900">{b.name}</div>
+                  <div className="text-xs text-stone-500 mt-0.5">{b.productCount} products</div>
+                </Link>
+              ))}
+          </div>
+        )}
       </section>
 
-      {popular && popular.length > 0 && (
-        <section>
-          <h2 className="text-lg font-semibold text-stone-900 mb-4">Popular right now</h2>
+      <section>
+        <h2 className="text-lg font-medium text-stone-900 mb-4">Frequently ordered</h2>
+        {!popular && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <ProductCardSkeleton key={i} />
+            ))}
+          </div>
+        )}
+        {popular && popular.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {popular.map((product) => {
               const price = priceForQuantity(product.tiers, 1, product.basePrice);
@@ -203,18 +147,18 @@ export default function HomePage() {
               );
             })}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       <section>
-        <h2 className="text-lg font-semibold text-stone-900 mb-4">How it works</h2>
+        <h2 className="text-lg font-medium text-stone-900 mb-4">How it works</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {STEPS.map((s) => (
-            <div key={s.step} className="glass rounded-xl p-5">
-              <div className="h-8 w-8 rounded-full bg-brand-orange-700 text-white flex items-center justify-center font-bold text-sm">
+            <div key={s.step} className="glass rounded-card p-5">
+              <div className="h-8 w-8 rounded-full bg-stone-900 text-white flex items-center justify-center font-medium text-sm">
                 {s.step}
               </div>
-              <div className="mt-3 font-semibold text-stone-900">{s.title}</div>
+              <div className="mt-3 font-medium text-stone-900">{s.title}</div>
               <div className="mt-1 text-sm text-stone-500">{s.body}</div>
             </div>
           ))}

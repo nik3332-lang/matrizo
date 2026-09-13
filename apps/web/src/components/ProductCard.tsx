@@ -23,11 +23,17 @@ export function ProductCard({
   price,
   tiers = [],
   categoryIconName,
+  brandLabel,
 }: {
   product: ProductCardData;
   price: number;
   tiers?: Tier[];
   categoryIconName: IconName;
+  /** Optional manufacturer brand (Raksha/Prince/Others) — a plain neutral
+   * badge, not a colored one. Brand used to get its own hue per value,
+   * which was decoration outside the one-accent rule; the name alone
+   * still reads fine as an outlined chip. */
+  brandLabel?: string;
 }) {
   const bestTier = [...tiers].sort((a, b) => b.minQty - a.minQty)[0];
 
@@ -44,11 +50,16 @@ export function ProductCard({
       </div>
       <div className="p-4">
         <div className="font-medium text-stone-900 line-clamp-2">{product.name}</div>
+        {brandLabel && (
+          <span className="inline-block mt-1 text-[11px] px-2 py-0.5 rounded-card border border-line text-stone-600">
+            {brandLabel}
+          </span>
+        )}
         <div className="mt-1 text-sm text-stone-500">per {product.unit}</div>
         <div className="mt-2 font-medium text-accent">₹{price}</div>
         {bestTier && (
           <div className="mt-1 text-xs text-stone-500">
-            <span className="font-medium text-accent">₹{bestTier.pricePerUnit}</span> for {bestTier.minQty}+
+            {bestTier.minQty} or more: <span className="font-medium text-accent">₹{bestTier.pricePerUnit}</span> each
           </div>
         )}
       </div>

@@ -75,20 +75,20 @@ export default function CheckoutPage() {
 
   return (
     <div className="max-w-lg">
-      <h1 className="text-xl font-bold text-stone-900 mb-4">Delivery address</h1>
+      <h1 className="text-xl font-medium text-stone-900 mb-4">Delivery address</h1>
 
       <div className="space-y-2">
         {addresses.map((addr) => (
           <label
             key={addr.id}
-            className={`glass block rounded-xl p-3 cursor-pointer transition-all ${
-              selectedId === addr.id ? 'ring-2 ring-brand-orange-500' : ''
+            className={`glass block rounded-card p-3 cursor-pointer transition-colors ${
+              selectedId === addr.id ? 'ring-2 ring-accent' : ''
             }`}
           >
             <input
               type="radio"
               name="address"
-              className="mr-2 accent-brand-orange-600"
+              className="mr-2 accent-accent"
               checked={selectedId === addr.id}
               onChange={() => setSelectedId(addr.id)}
             />
@@ -98,19 +98,19 @@ export default function CheckoutPage() {
       </div>
 
       {!showNewForm && (
-        <button onClick={() => setShowNewForm(true)} className="mt-3 text-sm font-medium text-brand-orange-700 underline">
+        <button onClick={() => setShowNewForm(true)} className="mt-3 min-h-11 text-sm font-medium text-accent underline">
           + Add a new address
         </button>
       )}
 
       {showNewForm && (
-        <form onSubmit={saveAddress} className="glass mt-4 space-y-3 rounded-xl p-4">
+        <form onSubmit={saveAddress} className="glass mt-4 space-y-3 rounded-card p-4">
           <input
             required
             placeholder="Address line"
             value={newAddress.line1}
             onChange={(e) => setNewAddress((a) => ({ ...a, line1: e.target.value }))}
-            className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
+            className="w-full min-h-11 rounded-card border border-line px-3 outline-none"
           />
           <div className="flex gap-2">
             <input
@@ -118,14 +118,14 @@ export default function CheckoutPage() {
               placeholder="City"
               value={newAddress.city}
               onChange={(e) => setNewAddress((a) => ({ ...a, city: e.target.value }))}
-              className="w-1/2 rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
+              className="w-1/2 min-h-11 rounded-card border border-line px-3 outline-none"
             />
             <input
               required
               placeholder="State"
               value={newAddress.state}
               onChange={(e) => setNewAddress((a) => ({ ...a, state: e.target.value }))}
-              className="w-1/2 rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
+              className="w-1/2 min-h-11 rounded-card border border-line px-3 outline-none"
             />
           </div>
           <input
@@ -133,31 +133,28 @@ export default function CheckoutPage() {
             placeholder="Pincode"
             value={newAddress.pincode}
             onChange={(e) => setNewAddress((a) => ({ ...a, pincode: e.target.value }))}
-            className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
+            className="w-full min-h-11 rounded-card border border-line px-3 outline-none"
             inputMode="numeric"
           />
-          <button
-            type="submit"
-            className="rounded-lg bg-brand-orange-700 text-white px-4 py-2 font-semibold shadow-sm hover:bg-brand-orange-800"
-          >
+          <button type="submit" className="min-h-11 rounded-card bg-accent text-white px-4 font-medium hover:bg-accent-hover">
             Save address
           </button>
         </form>
       )}
 
-      <div className="glass mt-6 rounded-xl p-4">
-        <div className="font-semibold text-stone-900">Payment method</div>
+      <div className="glass mt-6 rounded-card p-4">
+        <div className="font-medium text-stone-900">Payment method</div>
         <div className="text-sm text-stone-500">Cash on delivery (online payment coming soon)</div>
       </div>
 
-      {error && <p className="mt-3 text-sm text-rose-600">{error}</p>}
+      {error && <p className="mt-3 text-sm text-danger">{error}</p>}
 
       <button
         onClick={placeOrder}
         disabled={!selectedId || placing}
-        className="mt-4 w-full rounded-lg bg-brand-orange-700 text-white px-5 py-2.5 font-semibold shadow-sm hover:bg-brand-orange-800 disabled:opacity-60"
+        className="mt-4 w-full min-h-11 rounded-card bg-accent text-white px-5 font-medium hover:bg-accent-hover disabled:opacity-60"
       >
-        {placing ? 'Placing order…' : 'Place order'}
+        {placing ? 'Placing order…' : 'Place order — pay cash on delivery'}
       </button>
     </div>
   );

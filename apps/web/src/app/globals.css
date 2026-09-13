@@ -26,7 +26,7 @@
   --color-brand-orange-400: #fe8a3d;
   --color-brand-orange-500: #fd7210;
   --color-brand-orange-600: #e75924;
-  --color-brand-orange-700: #ef3d21; /* primary CTA color */
+  --color-brand-orange-700: #ef3d21; /* raw ramp step — not the CTA color; see --color-accent below */
   --color-brand-orange-800: #c22f16;
   --color-brand-orange-900: #9c2510;
 
@@ -38,7 +38,7 @@
   --color-brand-purple-500: #85469b;
   --color-brand-purple-600: #65346c;
   --color-brand-purple-700: #582463;
-  --color-brand-purple-800: #4e1775; /* primary heading/logo color */
+  --color-brand-purple-800: #4e1775; /* raw ramp step — retired from UI chrome; kept for reference only */
   --color-brand-purple-900: #3a0f5a;
 
   --color-brand-coral-50: #fdf3f0;
@@ -111,7 +111,10 @@
 body {
   background: var(--color-page);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* Was hardcoded to Arial/Helvetica, silently overriding the Geist font
+     next/font already loads in layout.tsx — var(--font-sans) picks that
+     up; Arial/Helvetica stay as the fallback before it loads. */
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   min-height: 100vh;
 }
 
