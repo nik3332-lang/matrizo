@@ -7,7 +7,7 @@ import { priceForQuantity, type ProductBrand } from '@matrizo/shared';
 import { api } from '@/lib/api';
 import { categoryColor } from '@/lib/categoryColors';
 import { categoryIcon, Icon } from '@/components/Icon';
-import { ProductSwatch } from '@/components/ProductSwatch';
+import { ProductCard } from '@/components/ProductCard';
 
 const BRAND_ACCENT: Record<ProductBrand, string> = {
   raksha: 'bg-brand-purple-800',
@@ -193,16 +193,13 @@ export default function HomePage() {
               const price = priceForQuantity(product.tiers, 1, product.basePrice);
               const cat = categories?.find((c) => c.id === product.categoryId);
               return (
-                <Link
+                <ProductCard
                   key={product.id}
-                  href={`/product/${product.slug}`}
-                  className="glass rounded-xl p-4 hover:-translate-y-0.5 hover:shadow-lg transition-all overflow-hidden"
-                >
-                  <ProductSwatch accent={categoryColor(product.categoryId).accent} categorySlug={cat?.slug} />
-                  <div className="font-medium text-sm text-stone-900 line-clamp-2">{product.name}</div>
-                  <div className="text-xs text-stone-500 mt-1">per {product.unit}</div>
-                  <div className="mt-2 font-bold text-brand-orange-700">₹{price}</div>
-                </Link>
+                  product={product}
+                  price={price}
+                  tiers={product.tiers}
+                  categoryIconName={categoryIcon(cat?.slug ?? '')}
+                />
               );
             })}
           </div>
