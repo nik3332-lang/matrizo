@@ -37,6 +37,26 @@ export const categories = sqliteTable('categories', {
   createdAt: timestamp('created_at'),
 });
 
+// Spec attributes vary by category (a paint's finish/coverage has no
+// equivalent on a pipe fitting, and vice versa) — one flexible JSON bag
+// rather than a column per possible attribute, most of them null on any
+// given row. Every field optional and admin-entered; nothing here is
+// inferred or defaulted from the product name. Existing rows have no specs
+// until an admin fills them in — the web app renders the spec line only
+// when present, rather than showing blanks or guessed values.
+export type ProductSpecs = {
+  // paints
+  volumeLitres?: number;
+  finish?: 'matt' | 'satin' | 'gloss' | 'enamel' | 'primer';
+  surface?: 'interior' | 'exterior' | 'both';
+  coverageSqFtPerLitre?: number;
+  // sanitary / plumbing
+  size?: string;
+  material?: string;
+  classOrStandard?: string;
+  packQuantity?: number;
+};
+
 export const products = sqliteTable('products', {
   id: text('id').primaryKey(),
   sku: text('sku').notNull().unique(),
@@ -50,6 +70,10 @@ export const products = sqliteTable('products', {
   basePrice: real('base_price').notNull(),
   imageUrl: text('image_url'),
   brand: text('brand', { enum: PRODUCT_BRANDS }).notNull().default('others'),
+  specs: text('specs', { mode: 'json' }).$type<ProductSpecs>(),
+  // Admin-set, defaults false rather than assumed — GST registration
+  // status isn't derivable from anything else on the product.
+  gstInvoiceEligible: integer('gst_invoice_eligible', { mode: 'boolean' }).notNull().default(false),
   active: integer('active', { mode: 'boolean' }).notNull().default(true),
   createdAt: timestamp('created_at'),
 });

@@ -1,35 +1,62 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { ApiError, priceForQuantity } from '@matrizo/shared';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { useLocation } from '@/lib/location';
 
 type Tier = { minQty: number; pricePerUnit: number };
+type Stock = { storeName: string; stockQty: number; etaMinutes: number };
 
 // The only interactive part of the product page — quantity + add-to-cart —
 // split out so the page itself can be a server component (STAGE 6: real
 // SSR for a link that gets opened cold from WhatsApp) while this still
-// reads auth state and posts to the cart client-side.
+// reads auth state and posts to the cart client-side. Also owns the
+// stock/store line (STAGE 4): unlike name/price/description, "is this in
+// stock near me" genuinely depends on the customer's location, which the
+// server doesn't know on a cold load — it's only knowable client-side,
+// from the header location bar (lib/location.tsx).
 export function AddToCartPanel({
   productId,
+  productSlug,
   unit,
   basePrice,
   tiers,
 }: {
   productId: string;
+  productSlug: string;
   unit: string;
   basePrice: number;
   tiers: Tier[];
 }) {
   const router = useRouter();
   const { user, loading } = useAuth();
+  const { pincode } = useLocation();
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [stock, setStock] = useState<Stock | null>(null);
+  const [stockChecked, setStockChecked] = useState(false);
+
+  useEffect(() => {
+    // Reset before the pincode-keyed re-fetch below so a stale result from
+    // the previous pincode never lingers on screen.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setStockChecked(false);
+    if (!pincode) {
+      setStock(null);
+      return;
+    }
+    api
+      .get<{ stock: Stock | null }>(`/products/${productSlug}/stock?pincode=${encodeURIComponent(pincode)}`)
+      .then((res) => setStock(res.stock))
+      .catch(() => setStock(null))
+      .finally(() => setStockChecked(true));
+  }, [pincode, productSlug]);
 
   const unitPrice = priceForQuantity(tiers, quantity, basePrice);
   const total = unitPrice * quantity;
@@ -60,6 +87,20 @@ export function AddToCartPanel({
         <span className="text-2xl font-medium text-accent">₹{unitPrice}</span>
         <span className="text-sm text-stone-500">/ {unit}</span>
       </div>
+
+      {/* Stock/store line — only shown once we actually know (a pincode is
+         set and the check has come back); no placeholder guess otherwise. */}
+      {pincode && stockChecked && (
+        <p className="mt-1 text-sm">
+          {stock && stock.stockQty > 0 ? (
+            <span className="text-success">
+              {stock.stockQty} in stock, {stock.storeName}
+            </span>
+          ) : (
+            <span className="text-danger">Out of stock at {pincode} right now</span>
+          )}
+        </p>
+      )}
 
       <div className="mt-5 flex items-center gap-3 flex-wrap">
         <label className="text-sm font-medium text-stone-700">Quantity ({unit}s)</label>

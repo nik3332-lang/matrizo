@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import { categoryIcon, Icon } from '@/components/Icon';
 import { ProductCard } from '@/components/ProductCard';
 import { ProductCardSkeleton, TileSkeleton } from '@/components/Skeleton';
+import type { ProductSpecs } from '@/lib/specs';
 
 type Category = {
   id: string;
@@ -27,6 +28,8 @@ type Product = {
   basePrice: number;
   categoryId: string;
   tiers: Tier[];
+  specs: ProductSpecs | null;
+  gstInvoiceEligible: boolean;
 };
 
 const STEPS = [
@@ -143,6 +146,8 @@ export default function HomePage() {
                   price={price}
                   tiers={product.tiers}
                   categoryIconName={categoryIcon(cat?.slug ?? '')}
+                  specs={product.specs}
+                  gstInvoiceEligible={product.gstInvoiceEligible}
                 />
               );
             })}

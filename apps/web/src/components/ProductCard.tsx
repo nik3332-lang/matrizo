@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 
+import { specLine, type ProductSpecs } from '@/lib/specs';
 import { Icon, type IconName } from './Icon';
 
 type Tier = { minQty: number; pricePerUnit: number };
@@ -24,6 +25,8 @@ export function ProductCard({
   tiers = [],
   categoryIconName,
   brandLabel,
+  specs,
+  gstInvoiceEligible,
 }: {
   product: ProductCardData;
   price: number;
@@ -34,8 +37,11 @@ export function ProductCard({
    * which was decoration outside the one-accent rule; the name alone
    * still reads fine as an outlined chip. */
   brandLabel?: string;
+  specs?: ProductSpecs | null;
+  gstInvoiceEligible?: boolean;
 }) {
   const bestTier = [...tiers].sort((a, b) => b.minQty - a.minQty)[0];
+  const spec = specLine(specs);
 
   return (
     <Link
@@ -50,11 +56,16 @@ export function ProductCard({
       </div>
       <div className="p-4">
         <div className="font-medium text-stone-900 line-clamp-2">{product.name}</div>
-        {brandLabel && (
-          <span className="inline-block mt-1 text-[11px] px-2 py-0.5 rounded-card border border-line text-stone-600">
-            {brandLabel}
-          </span>
-        )}
+        <div className="mt-1 flex items-center gap-1 flex-wrap">
+          {brandLabel && (
+            <span className="text-[11px] px-2 py-0.5 rounded-card border border-line text-stone-600">{brandLabel}</span>
+          )}
+          {gstInvoiceEligible && (
+            <span className="text-[11px] px-2 py-0.5 rounded-card border border-line text-stone-600">GST invoice</span>
+          )}
+        </div>
+        {/* Dense spec line, before price — only when real specs exist. */}
+        {spec && <div className="mt-1 text-xs text-stone-500">{spec}</div>}
         <div className="mt-1 text-sm text-stone-500">per {product.unit}</div>
         <div className="mt-2 font-medium text-accent">₹{price}</div>
         {bestTier && (

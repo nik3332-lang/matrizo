@@ -5,23 +5,12 @@ export const runtime = 'edge';
 
 import type { Metadata } from 'next';
 
-import { PRODUCT_BRANDS, type ProductBrand } from '@matrizo/shared';
+import { PRODUCT_BRANDS } from '@matrizo/shared';
 import { api } from '@/lib/api';
 import { categoryIcon } from '@/lib/categoryIcon';
 import { Icon } from '@/components/Icon';
-import { BrandFilterGrid } from './BrandFilterGrid';
+import { BrandFilterGrid, type Product } from './BrandFilterGrid';
 
-type Tier = { minQty: number; pricePerUnit: number };
-type Product = {
-  id: string;
-  slug: string;
-  name: string;
-  unit: string;
-  basePrice: number;
-  imageUrl: string | null;
-  brand: ProductBrand;
-  tiers: Tier[];
-};
 type Category = { id: string; slug: string; name: string; icon: string | null };
 
 async function getCategory(slug: string): Promise<{ category: Category; products: Product[] } | null> {

@@ -6,7 +6,20 @@ import { PRODUCT_BRANDS, type ProductBrand } from '@matrizo/shared';
 
 const BRAND_LABELS: Record<ProductBrand, string> = { raksha: 'Raksha', prince: 'Prince', others: 'Others' };
 
+const FINISH_OPTIONS = ['matt', 'satin', 'gloss', 'enamel', 'primer'] as const;
+const SURFACE_OPTIONS = ['interior', 'exterior', 'both'] as const;
+
 type Tier = { minQty: number; pricePerUnit: number };
+type ProductSpecs = {
+  volumeLitres?: number;
+  finish?: (typeof FINISH_OPTIONS)[number];
+  surface?: (typeof SURFACE_OPTIONS)[number];
+  coverageSqFtPerLitre?: number;
+  size?: string;
+  material?: string;
+  classOrStandard?: string;
+  packQuantity?: number;
+};
 type ProductFormValues = {
   sku: string;
   slug: string;
@@ -17,6 +30,8 @@ type ProductFormValues = {
   basePrice: number;
   imageUrl: string;
   brand: ProductBrand;
+  specs: ProductSpecs;
+  gstInvoiceEligible: boolean;
   active: boolean;
   tiers: Tier[];
 };
@@ -31,6 +46,8 @@ const EMPTY: ProductFormValues = {
   basePrice: 0,
   imageUrl: '',
   brand: 'others',
+  specs: {},
+  gstInvoiceEligible: false,
   active: true,
   tiers: [],
 };
@@ -42,7 +59,7 @@ export function ProductForm({
   onCancel,
   busy,
 }: {
-  categories: { id: string; name: string }[];
+  categories: { id: string; name: string; slug: string }[];
   initial?: Partial<ProductFormValues>;
   onSubmit: (values: ProductFormValues) => void;
   onCancel: () => void;
@@ -60,6 +77,15 @@ export function ProductForm({
       tiers: v.tiers.map((t, i) => (i === index ? { ...t, ...patch } : t)),
     }));
   }
+
+  function updateSpec<K extends keyof ProductSpecs>(key: K, value: ProductSpecs[K]) {
+    setValues((v) => ({ ...v, specs: { ...v.specs, [key]: value } }));
+  }
+
+  // Which spec fields apply depends on the category — a paint has no
+  // material/size, a pipe fitting has no finish/coverage. Decided by slug,
+  // not name text, since slugs are the stable admin-facing identifier.
+  const isPaint = categories.find((c) => c.id === values.categoryId)?.slug === 'paints';
 
   return (
     <form
@@ -176,15 +202,131 @@ export function ProductForm({
         </label>
       </div>
 
-      <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
-        <input
-          type="checkbox"
-          checked={values.active}
-          onChange={(e) => setValues((v) => ({ ...v, active: e.target.checked }))}
-          className="h-4 w-4 rounded border-slate-300 text-brand-orange-700 focus:ring-brand-orange-400"
-        />
-        Active (visible to customers)
-      </label>
+      <div className="flex flex-wrap gap-5">
+        <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+          <input
+            type="checkbox"
+            checked={values.active}
+            onChange={(e) => setValues((v) => ({ ...v, active: e.target.checked }))}
+            className="h-4 w-4 rounded border-slate-300 text-brand-orange-700 focus:ring-brand-orange-400"
+          />
+          Active (visible to customers)
+        </label>
+        <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+          <input
+            type="checkbox"
+            checked={values.gstInvoiceEligible}
+            onChange={(e) => setValues((v) => ({ ...v, gstInvoiceEligible: e.target.checked }))}
+            className="h-4 w-4 rounded border-slate-300 text-brand-orange-700 focus:ring-brand-orange-400"
+          />
+          GST invoice available
+        </label>
+      </div>
+
+      {/* Spec attributes — the customer-facing spec line on the product
+         card/page reads directly from these. Left blank, the site shows
+         no spec line rather than guessing, so this is the only place a
+         real one gets set. */}
+      <div className="rounded-lg border border-slate-200 p-3 space-y-3">
+        <div className="text-sm font-medium text-slate-700">Specs {isPaint ? '(paint)' : '(sanitary / plumbing)'}</div>
+        {isPaint ? (
+          <div className="grid grid-cols-2 gap-3">
+            <label className="text-xs font-medium text-slate-600">
+              Volume (litres)
+              <input
+                type="number"
+                min={0}
+                step="0.1"
+                value={values.specs.volumeLitres ?? ''}
+                onChange={(e) => updateSpec('volumeLitres', e.target.value ? parseFloat(e.target.value) : undefined)}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200"
+              />
+            </label>
+            <label className="text-xs font-medium text-slate-600">
+              Finish
+              <select
+                value={values.specs.finish ?? ''}
+                onChange={(e) => updateSpec('finish', (e.target.value || undefined) as ProductSpecs['finish'])}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200"
+              >
+                <option value="">—</option>
+                {FINISH_OPTIONS.map((f) => (
+                  <option key={f} value={f}>
+                    {f}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs font-medium text-slate-600">
+              Surface
+              <select
+                value={values.specs.surface ?? ''}
+                onChange={(e) => updateSpec('surface', (e.target.value || undefined) as ProductSpecs['surface'])}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200"
+              >
+                <option value="">—</option>
+                {SURFACE_OPTIONS.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs font-medium text-slate-600">
+              Coverage (sq ft / litre)
+              <input
+                type="number"
+                min={0}
+                step="1"
+                value={values.specs.coverageSqFtPerLitre ?? ''}
+                onChange={(e) => updateSpec('coverageSqFtPerLitre', e.target.value ? parseFloat(e.target.value) : undefined)}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200"
+              />
+            </label>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            <label className="text-xs font-medium text-slate-600">
+              Size
+              <input
+                placeholder={'e.g. 3/4"'}
+                value={values.specs.size ?? ''}
+                onChange={(e) => updateSpec('size', e.target.value || undefined)}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200"
+              />
+            </label>
+            <label className="text-xs font-medium text-slate-600">
+              Material
+              <input
+                placeholder="e.g. UPVC, brass"
+                value={values.specs.material ?? ''}
+                onChange={(e) => updateSpec('material', e.target.value || undefined)}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200"
+              />
+            </label>
+            <label className="text-xs font-medium text-slate-600">
+              Class / standard
+              <input
+                placeholder="e.g. IS 4985"
+                value={values.specs.classOrStandard ?? ''}
+                onChange={(e) => updateSpec('classOrStandard', e.target.value || undefined)}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200"
+              />
+            </label>
+            <label className="text-xs font-medium text-slate-600">
+              Pack quantity
+              <input
+                type="number"
+                min={1}
+                step="1"
+                value={values.specs.packQuantity ?? ''}
+                onChange={(e) => updateSpec('packQuantity', e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200"
+              />
+            </label>
+          </div>
+        )}
+      </div>
 
       <div>
         <div className="flex items-center justify-between mb-2">

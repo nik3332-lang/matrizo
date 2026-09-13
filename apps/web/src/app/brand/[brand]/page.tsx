@@ -12,6 +12,7 @@ import { api } from '@/lib/api';
 import { ProductCard } from '@/components/ProductCard';
 import { ProductCardSkeleton } from '@/components/Skeleton';
 import { categoryIcon } from '@/components/Icon';
+import type { ProductSpecs } from '@/lib/specs';
 
 type Tier = { minQty: number; pricePerUnit: number };
 type Product = {
@@ -24,6 +25,8 @@ type Product = {
   categoryId: string;
   brand: ProductBrand;
   tiers: Tier[];
+  specs: ProductSpecs | null;
+  gstInvoiceEligible: boolean;
 };
 type BrandInfo = { brand: ProductBrand; name: string };
 type Category = { id: string; slug: string };
@@ -76,6 +79,8 @@ export default function BrandPage({ params }: { params: Promise<{ brand: string 
             price={priceForQuantity(product.tiers, 1, product.basePrice)}
             tiers={product.tiers}
             categoryIconName={categoryIcon(categories.find((c) => c.id === product.categoryId)?.slug ?? '')}
+            specs={product.specs}
+            gstInvoiceEligible={product.gstInvoiceEligible}
           />
         ))}
       </div>

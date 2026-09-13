@@ -14,6 +14,7 @@ import { api } from '@/lib/api';
 import { ProductCard } from '@/components/ProductCard';
 import { ProductCardSkeleton } from '@/components/Skeleton';
 import { categoryIcon } from '@/components/Icon';
+import type { ProductSpecs } from '@/lib/specs';
 
 const BRAND_LABELS: Record<ProductBrand, string> = { raksha: 'Raksha', prince: 'Prince', others: 'Others' };
 
@@ -27,6 +28,8 @@ type Product = {
   categoryId: string;
   brand: ProductBrand;
   tiers: Tier[];
+  specs: ProductSpecs | null;
+  gstInvoiceEligible: boolean;
 };
 type Category = { id: string; slug: string };
 
@@ -74,6 +77,8 @@ export default function SearchPage() {
             tiers={product.tiers}
             categoryIconName={categoryIcon(categories.find((c) => c.id === product.categoryId)?.slug ?? '')}
             brandLabel={BRAND_LABELS[product.brand]}
+            specs={product.specs}
+            gstInvoiceEligible={product.gstInvoiceEligible}
           />
         ))}
       </div>

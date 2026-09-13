@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { priceForQuantity, type ProductBrand } from '@matrizo/shared';
 import { api } from '@/lib/api';
 import { categoryIcon } from '@/lib/categoryIcon';
+import { specEntries, type ProductSpecs } from '@/lib/specs';
 import { Icon } from '@/components/Icon';
 import { AddToCartPanel } from './AddToCartPanel';
 
@@ -32,6 +33,8 @@ type Product = {
   brand: ProductBrand;
   category: Category | null;
   tiers: Tier[];
+  specs: ProductSpecs | null;
+  gstInvoiceEligible: boolean;
 };
 
 async function getProduct(slug: string): Promise<Product | null> {
@@ -67,6 +70,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   if (!product) return <p className="text-stone-500">Product not found.</p>;
 
   const unitPrice = priceForQuantity(product.tiers, 1, product.basePrice);
+  const specs = specEntries(product.specs);
 
   // Product/Offer schema.org markup (STAGE 6) — availability is
   // deliberately omitted rather than guessed: there's no customer-facing
@@ -118,8 +122,25 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <span className="text-xs px-2.5 py-1 rounded-card border border-line text-stone-600 font-medium">
               {BRAND_LABELS[product.brand]}
             </span>
+            {product.gstInvoiceEligible && (
+              <span className="text-xs px-2.5 py-1 rounded-card border border-line text-stone-600 font-medium">
+                GST invoice
+              </span>
+            )}
             <span className="text-xs text-stone-400">SKU {product.sku}</span>
           </div>
+
+          {specs.length > 0 && (
+            <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+              {specs.map((s) => (
+                <div key={s.label} className="flex gap-1.5">
+                  <dt className="text-stone-500">{s.label}:</dt>
+                  <dd className="text-stone-900 font-medium">{s.value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+
           {product.description && <p className="mt-3 text-stone-600">{product.description}</p>}
 
           {/* Brand authenticity + warranty — relocated here from the old
@@ -131,7 +152,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             Genuine product, sourced directly from {BRAND_LABELS[product.brand]} — brand warranty applies.
           </div>
 
-          <AddToCartPanel productId={product.id} unit={product.unit} basePrice={product.basePrice} tiers={product.tiers} />
+          <AddToCartPanel
+            productId={product.id}
+            productSlug={slug}
+            unit={product.unit}
+            basePrice={product.basePrice}
+            tiers={product.tiers}
+          />
         </div>
       </div>
 

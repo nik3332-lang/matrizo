@@ -16,7 +16,17 @@ const BRAND_CHIP: Record<ProductBrand, string> = {
 };
 
 type Tier = { minQty: number; pricePerUnit: number };
-type Category = { id: string; name: string };
+type Category = { id: string; name: string; slug: string };
+type ProductSpecs = {
+  volumeLitres?: number;
+  finish?: 'matt' | 'satin' | 'gloss' | 'enamel' | 'primer';
+  surface?: 'interior' | 'exterior' | 'both';
+  coverageSqFtPerLitre?: number;
+  size?: string;
+  material?: string;
+  classOrStandard?: string;
+  packQuantity?: number;
+};
 type Product = {
   id: string;
   sku: string;
@@ -28,6 +38,8 @@ type Product = {
   basePrice: number;
   imageUrl: string | null;
   brand: ProductBrand;
+  specs: ProductSpecs | null;
+  gstInvoiceEligible: boolean;
   active: boolean;
   tiers: Tier[];
 };
@@ -291,6 +303,8 @@ export default function ProductsPage() {
                 basePrice: product.basePrice,
                 imageUrl: product.imageUrl ?? '',
                 brand: product.brand,
+                specs: product.specs ?? {},
+                gstInvoiceEligible: product.gstInvoiceEligible,
                 active: product.active,
                 tiers: product.tiers,
               }}
@@ -322,6 +336,12 @@ export default function ProductsPage() {
                       {product.tiers.length} bulk tier(s)
                     </span>
                   )}
+                  {product.gstInvoiceEligible && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-sky-100 text-sky-700 font-medium">GST invoice</span>
+                  )}
+                  {!product.specs || Object.keys(product.specs).length === 0 ? (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">No specs yet</span>
+                  ) : null}
                 </div>
                 <div className="text-xs text-slate-500 mt-1">
                   {product.sku} · ₹{product.basePrice}/{product.unit}

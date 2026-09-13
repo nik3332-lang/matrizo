@@ -5,7 +5,8 @@ import { z } from 'zod';
 
 import { PRODUCT_BRANDS, type ProductBrand } from '@matrizo/shared';
 import { getDb } from '../db/client';
-import { bulkPricingTiers, cartItems, categories, inventory, orderItems, products } from '../db/schema';
+import { bulkPricingTiers, cartItems, categories, inventory, orderItems, products, stores } from '../db/schema';
+import { findServiceableStore } from '../lib/serviceability';
 import { requireAuth, requireRole, type AuthEnv } from '../middleware/auth';
 import type { Env } from '../env';
 
@@ -103,22 +104,70 @@ catalogRoutes.get('/products/search', async (c) => {
   return c.json({ products: withTiers });
 });
 
+// Stock is deliberately only returned when a `pincode` is given: without
+// one there's no way to know which store would fulfil the order, and
+// guessing (e.g. "in stock somewhere") would be worse than saying
+// nothing. The web app passes the pincode it already has from the header
+// location bar (lib/location.tsx) once one is set.
 catalogRoutes.get('/products/:slug', async (c) => {
   const db = getDb(c.env.DB);
   const slug = c.req.param('slug');
+  const pincode = c.req.query('pincode');
 
   const [product] = await db.select().from(products).where(eq(products.slug, slug)).limit(1);
   if (!product) return c.json({ error: 'Product not found' }, 404);
 
   const [category] = await db.select().from(categories).where(eq(categories.id, product.categoryId)).limit(1);
   const tiers = await db.select().from(bulkPricingTiers).where(eq(bulkPricingTiers.productId, product.id));
+
+  let stock: { storeName: string; stockQty: number; etaMinutes: number } | null = null;
+  if (pincode) {
+    const match = await findServiceableStore(db, pincode);
+    if (match) {
+      const [row] = await db
+        .select({ stockQty: inventory.stockQty, storeName: stores.name })
+        .from(inventory)
+        .innerJoin(stores, eq(stores.id, inventory.storeId))
+        .where(and(eq(inventory.storeId, match.storeId), eq(inventory.productId, product.id)))
+        .limit(1);
+      if (row) stock = { storeName: row.storeName, stockQty: row.stockQty, etaMinutes: match.etaMinutes };
+    }
+  }
+
   return c.json({
     product: {
       ...product,
       tiers,
       category: category ? { id: category.id, slug: category.slug, name: category.name } : null,
+      stock,
     },
   });
+});
+
+// Separate from the main product GET so the client-side "what's in stock
+// near me" check (apps/web's AddToCartPanel, which only knows the
+// customer's pincode after the page has already hydrated) doesn't need to
+// re-fetch and re-send the whole product payload just to learn this.
+catalogRoutes.get('/products/:slug/stock', async (c) => {
+  const slug = c.req.param('slug');
+  const pincode = c.req.query('pincode');
+  if (!pincode) return c.json({ stock: null });
+
+  const db = getDb(c.env.DB);
+  const [product] = await db.select({ id: products.id }).from(products).where(eq(products.slug, slug)).limit(1);
+  if (!product) return c.json({ stock: null });
+
+  const match = await findServiceableStore(db, pincode);
+  if (!match) return c.json({ stock: null });
+
+  const [row] = await db
+    .select({ stockQty: inventory.stockQty, storeName: stores.name })
+    .from(inventory)
+    .innerJoin(stores, eq(stores.id, inventory.storeId))
+    .where(and(eq(inventory.storeId, match.storeId), eq(inventory.productId, product.id)))
+    .limit(1);
+
+  return c.json({ stock: row ? { storeName: row.storeName, stockQty: row.stockQty, etaMinutes: match.etaMinutes } : null });
 });
 
 // One bulk query for all products' tiers (rather than N+1 per product) — fine
@@ -236,6 +285,25 @@ catalogRoutes.delete('/admin/categories/:id', async (c) => {
 });
 
 const tierInputSchema = z.object({ minQty: z.number().int().positive(), pricePerUnit: z.number().positive() });
+
+// Mirrors ProductSpecs in db/schema.ts — every field optional, since
+// which ones apply depends on the category (a paint has no `material`, a
+// pipe fitting has no `finish`/`coverageSqFtPerLitre`). The admin form
+// decides which subset to show per category; the API just validates
+// whatever's sent.
+const productSpecsSchema = z
+  .object({
+    volumeLitres: z.number().positive().optional(),
+    finish: z.enum(['matt', 'satin', 'gloss', 'enamel', 'primer']).optional(),
+    surface: z.enum(['interior', 'exterior', 'both']).optional(),
+    coverageSqFtPerLitre: z.number().positive().optional(),
+    size: z.string().trim().optional(),
+    material: z.string().trim().optional(),
+    classOrStandard: z.string().trim().optional(),
+    packQuantity: z.number().int().positive().optional(),
+  })
+  .optional();
+
 const productSchema = z.object({
   sku: z.string().trim().min(1),
   slug: z.string().trim().min(1),
@@ -246,6 +314,8 @@ const productSchema = z.object({
   basePrice: z.number().positive(),
   imageUrl: z.string().trim().optional(),
   brand: z.enum(PRODUCT_BRANDS).optional(),
+  specs: productSpecsSchema,
+  gstInvoiceEligible: z.boolean().optional(),
   active: z.boolean().optional(),
   tiers: z.array(tierInputSchema).optional(),
 });
@@ -270,6 +340,8 @@ catalogRoutes.post('/admin/products', async (c) => {
       basePrice: productData.basePrice,
       imageUrl: productData.imageUrl ?? null,
       brand: productData.brand ?? 'others',
+      specs: productData.specs ?? null,
+      gstInvoiceEligible: productData.gstInvoiceEligible ?? false,
       active: productData.active ?? true,
     }),
     ...(tiers ?? []).map((tier) =>
@@ -357,6 +429,8 @@ catalogRoutes.post('/admin/products/bulk', async (c) => {
           basePrice: productData.basePrice,
           imageUrl: productData.imageUrl ?? null,
           brand: productData.brand ?? 'others',
+          specs: productData.specs ?? null,
+          gstInvoiceEligible: productData.gstInvoiceEligible ?? false,
           active: productData.active ?? true,
         }),
         ...(tiers ?? []).map((tier) =>

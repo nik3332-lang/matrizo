@@ -5,11 +5,12 @@ import { useState } from 'react';
 import { priceForQuantity, type ProductBrand } from '@matrizo/shared';
 import { ProductCard } from '@/components/ProductCard';
 import { categoryIcon } from '@/components/Icon';
+import type { ProductSpecs } from '@/lib/specs';
 
 const BRAND_LABELS: Record<ProductBrand, string> = { raksha: 'Raksha', prince: 'Prince', others: 'Others' };
 
 type Tier = { minQty: number; pricePerUnit: number };
-type Product = {
+export type Product = {
   id: string;
   slug: string;
   name: string;
@@ -17,6 +18,8 @@ type Product = {
   basePrice: number;
   brand: ProductBrand;
   tiers: Tier[];
+  specs: ProductSpecs | null;
+  gstInvoiceEligible: boolean;
 };
 
 // The one client-side piece of an otherwise server-rendered category page
@@ -98,6 +101,8 @@ export function BrandFilterGrid({
               tiers={product.tiers}
               categoryIconName={categoryIcon(categorySlug)}
               brandLabel={BRAND_LABELS[product.brand]}
+              specs={product.specs}
+              gstInvoiceEligible={product.gstInvoiceEligible}
             />
           ))}
         </div>
