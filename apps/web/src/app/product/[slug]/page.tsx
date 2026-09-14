@@ -1,12 +1,19 @@
 // Server component (STAGE 6) — no 'use client'. Fetched at request time on
 // the server so a cold WhatsApp-shared link resolves to real content and
 // real <title>/OG tags immediately, instead of the blank shell + client
-// fetch the whole app used to do. The `runtime = 'edge'` export below
-// stays for the old next-on-pages path per the existing comment on the
-// other dynamic routes; the api.get() call below works here because
-// lib/api.ts's getAccessToken() returns null when `window` is undefined,
-// so this is just an unauthenticated GET either way.
-export const runtime = 'edge';
+// fetch the whole app used to do. The api.get() call below works here
+// because lib/api.ts's getAccessToken() returns null when `window` is
+// undefined, so this is just an unauthenticated GET either way.
+//
+// Deliberately NOT `export const runtime = 'edge'` (unlike the older
+// fully-client dynamic routes, which set it only for the legacy
+// next-on-pages deploy path per their own comments — irrelevant, but
+// harmless, there since those pages have no server-side module graph).
+// This page does, and forcing edge runtime here hit the exact OpenNext/
+// Cloudflare Workers bug documented in components/Icon.tsx's comment
+// ("Cannot read properties of undefined (reading 'default')", production-
+// only) — confirmed live: this page 500'd until the edge export was
+// removed. The Workers deploy (nodejs_compat) doesn't need it either way.
 
 import type { Metadata } from 'next';
 import Link from 'next/link';

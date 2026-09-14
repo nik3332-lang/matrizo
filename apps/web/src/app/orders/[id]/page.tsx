@@ -1,9 +1,10 @@
 'use client';
 
-// Required by the old Pages/next-on-pages deploy path only (Workers'
-// matrizo-web deploy doesn't need this) — every dynamic route must opt
-// into the Edge runtime or that pipeline's build fails outright.
-export const runtime = 'edge';
+// `runtime = 'edge'` removed — see brand/[brand]/page.tsx's comment. It
+// 500s this route live on matrizo-web (the OpenNext/Cloudflare Workers
+// "Cannot read properties of undefined (reading 'default')" bug also
+// documented in components/Icon.tsx), not merely unneeded as previously
+// assumed.
 
 import { use, useEffect, useState } from 'react';
 

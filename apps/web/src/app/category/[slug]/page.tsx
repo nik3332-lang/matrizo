@@ -1,7 +1,8 @@
 // Server component (STAGE 6) — same reasoning as the product page: a
 // category link shared cold needs real content and real metadata on
-// first paint, not a client fetch behind a skeleton.
-export const runtime = 'edge';
+// first paint, not a client fetch behind a skeleton. Deliberately NOT
+// `export const runtime = 'edge'` — see the product page's comment on
+// why that broke this exact kind of page in production.
 
 import type { Metadata } from 'next';
 

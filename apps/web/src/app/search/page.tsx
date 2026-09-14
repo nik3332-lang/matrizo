@@ -1,13 +1,19 @@
 'use client';
 
-// Required by the old Pages/next-on-pages deploy path only (Workers'
-// matrizo-web deploy doesn't need this) — a page reading search params is
-// dynamic, and that pipeline needs every dynamic route on the Edge runtime
-// or its build fails outright.
-export const runtime = 'edge';
+// `runtime = 'edge'` removed — see brand/[brand]/page.tsx's comment. It
+// 500s this route live on matrizo-web (the OpenNext/Cloudflare Workers
+// "Cannot read properties of undefined (reading 'default')" bug also
+// documented in components/Icon.tsx), not merely unneeded as previously
+// assumed. Removing it surfaced a second, separate build error: Next
+// requires useSearchParams() to sit inside a <Suspense> boundary
+// regardless of runtime/dynamic settings ("should be wrapped in a
+// suspense boundary" / missing-suspense-with-csr-bailout) — the edge
+// runtime export had been masking that too. Fixed properly below by
+// splitting the part that calls useSearchParams() into its own component
+// under <Suspense>, rather than reaching for force-dynamic again.
 
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 
 import { priceForQuantity, type ProductBrand } from '@matrizo/shared';
 import { api } from '@/lib/api';
@@ -33,7 +39,17 @@ type Product = {
 };
 type Category = { id: string; slug: string };
 
-export default function SearchPage() {
+function ResultsSkeleton() {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <ProductCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
+
+function SearchResults() {
   const searchParams = useSearchParams();
   const q = searchParams.get('q') ?? '';
   const [results, setResults] = useState<Product[] | null>(null);
@@ -66,22 +82,32 @@ export default function SearchPage() {
 
       {results && results.length === 0 && <p className="text-stone-500">No products matched.</p>}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        {!results &&
-          Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />)}
-        {results?.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            price={priceForQuantity(product.tiers, 1, product.basePrice)}
-            tiers={product.tiers}
-            categoryIconName={categoryIcon(categories.find((c) => c.id === product.categoryId)?.slug ?? '')}
-            brandLabel={BRAND_LABELS[product.brand]}
-            specs={product.specs}
-            gstInvoiceEligible={product.gstInvoiceEligible}
-          />
-        ))}
-      </div>
+      {!results ? (
+        <ResultsSkeleton />
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {results.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              price={priceForQuantity(product.tiers, 1, product.basePrice)}
+              tiers={product.tiers}
+              categoryIconName={categoryIcon(categories.find((c) => c.id === product.categoryId)?.slug ?? '')}
+              brandLabel={BRAND_LABELS[product.brand]}
+              specs={product.specs}
+              gstInvoiceEligible={product.gstInvoiceEligible}
+            />
+          ))}
+        </div>
+      )}
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<ResultsSkeleton />}>
+      <SearchResults />
+    </Suspense>
   );
 }
