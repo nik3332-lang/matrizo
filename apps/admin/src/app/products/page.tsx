@@ -83,6 +83,8 @@ export default function ProductsPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [importResult, setImportResult] = useState<BulkImportResult | null>(null);
   const [importing, setImporting] = useState(false);
+  const [savingPriceId, setSavingPriceId] = useState<string | null>(null);
+  const [savedPriceId, setSavedPriceId] = useState<string | null>(null);
 
   function load() {
     api.get<{ categories: Category[] }>('/categories').then((res) => setCategories(res.categories));
@@ -118,6 +120,25 @@ export default function ProductsPage() {
       setError(err instanceof ApiError ? err.message : 'Could not update product.');
     } finally {
       setBusy(false);
+    }
+  }
+
+  // Fast per-row price edit — the full form (Edit button) still covers
+  // everything else, but bumping just the price shouldn't need opening
+  // the whole thing. Same inline-save pattern as the inventory page's
+  // stock quantity field.
+  async function updatePrice(id: string, basePrice: number) {
+    setSavingPriceId(id);
+    setError(null);
+    try {
+      await api.patch(`/admin/products/${id}`, { basePrice });
+      setProducts((prev) => prev?.map((p) => (p.id === id ? { ...p, basePrice } : p)) ?? null);
+      setSavedPriceId(id);
+      setTimeout(() => setSavedPriceId(null), 1500);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not update price.');
+    } finally {
+      setSavingPriceId(null);
     }
   }
 
@@ -351,9 +372,28 @@ export default function ProductsPage() {
                     <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">No specs yet</span>
                   ) : null}
                 </div>
-                <div className="text-xs text-slate-500 mt-1">
-                  {product.sku} · ₹{product.basePrice}/{product.unit}
-                </div>
+                <div className="text-xs text-slate-500 mt-1">{product.sku}</div>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {savedPriceId === product.id && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">
+                    Saved ✓
+                  </span>
+                )}
+                <span className="text-slate-400 text-sm">₹</span>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  defaultValue={product.basePrice}
+                  disabled={savingPriceId === product.id}
+                  onBlur={(e) => {
+                    const value = Math.max(0, parseFloat(e.target.value) || 0);
+                    if (value !== product.basePrice) updatePrice(product.id, value);
+                  }}
+                  className="w-24 rounded-lg border border-slate-300 px-2 py-1.5 text-right focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
+                />
+                <span className="text-slate-400 text-xs">/{product.unit}</span>
               </div>
               <button
                 onClick={() => setEditingId(product.id)}
