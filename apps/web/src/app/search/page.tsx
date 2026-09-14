@@ -10,7 +10,7 @@
 // suspense boundary" / missing-suspense-with-csr-bailout) — the edge
 // runtime export had been masking that too. Fixed properly below by
 // splitting the part that calls useSearchParams() into its own component
-// under <Suspense>, rather than reaching for force-dynamic again.
+// under <Suspense>.
 
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
