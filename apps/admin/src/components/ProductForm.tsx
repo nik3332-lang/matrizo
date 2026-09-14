@@ -4,7 +4,13 @@ import { useState } from 'react';
 
 import { PRODUCT_BRANDS, type ProductBrand } from '@matrizo/shared';
 
-const BRAND_LABELS: Record<ProductBrand, string> = { raksha: 'Raksha', prince: 'Prince', others: 'Others' };
+const BRAND_LABELS: Record<ProductBrand, string> = {
+  raksha: 'Raksha',
+  prince: 'Prince',
+  asian_paints: 'Asian Paints',
+  birla_opus: 'Birla Opus',
+  others: 'Others',
+};
 
 const FINISH_OPTIONS = ['matt', 'satin', 'gloss', 'enamel', 'primer'] as const;
 const SURFACE_OPTIONS = ['interior', 'exterior', 'both'] as const;

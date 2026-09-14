@@ -22,7 +22,13 @@ import { ProductCardSkeleton } from '@/components/Skeleton';
 import { categoryIcon } from '@/components/Icon';
 import type { ProductSpecs } from '@/lib/specs';
 
-const BRAND_LABELS: Record<ProductBrand, string> = { raksha: 'Raksha', prince: 'Prince', others: 'Others' };
+const BRAND_LABELS: Record<ProductBrand, string> = {
+  raksha: 'Raksha',
+  prince: 'Prince',
+  asian_paints: 'Asian Paints',
+  birla_opus: 'Birla Opus',
+  others: 'Others',
+};
 
 type Tier = { minQty: number; pricePerUnit: number };
 type Product = {

@@ -25,7 +25,13 @@ import { specEntries, type ProductSpecs } from '@/lib/specs';
 import { Icon } from '@/components/Icon';
 import { AddToCartPanel } from './AddToCartPanel';
 
-const BRAND_LABELS: Record<ProductBrand, string> = { raksha: 'Raksha', prince: 'Prince', others: 'Others' };
+const BRAND_LABELS: Record<ProductBrand, string> = {
+  raksha: 'Raksha',
+  prince: 'Prince',
+  asian_paints: 'Asian Paints',
+  birla_opus: 'Birla Opus',
+  others: 'Others',
+};
 
 type Tier = { minQty: number; pricePerUnit: number };
 type Category = { id: string; slug: string; name: string };

@@ -29,6 +29,8 @@ export type WalletTxnType = (typeof WALLET_TXN_TYPES)[number];
 // Manufacturer brand, independent of category (a UPVC fitting and a CPVC
 // fitting can both be Prince, say) — lets both apps filter/browse by brand
 // as a second axis alongside category. 'others' covers any manufacturer
-// without its own dedicated bucket.
-export const PRODUCT_BRANDS = ['raksha', 'prince', 'others'] as const;
+// without its own dedicated bucket. asian_paints/birla_opus added for the
+// paints category — real manufacturer names, same pattern as raksha/prince
+// for pipes.
+export const PRODUCT_BRANDS = ['raksha', 'prince', 'asian_paints', 'birla_opus', 'others'] as const;
 export type ProductBrand = (typeof PRODUCT_BRANDS)[number];

@@ -17,6 +17,8 @@ export const catalogRoutes = new Hono<AuthEnv>();
 const BRAND_LABELS: Record<ProductBrand, string> = {
   raksha: 'Raksha',
   prince: 'Prince',
+  asian_paints: 'Asian Paints',
+  birla_opus: 'Birla Opus',
   others: 'Others',
 };
 

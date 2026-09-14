@@ -68,18 +68,24 @@
    * photography carries color; the UI stays quiet around it.
    */
   --color-surface: #ffffff;
-  --color-page: var(--color-brand-cream);
+  /* Was the warm cream ramp above — switched to a barely-there cool tint
+     to match the sky-blue accent instead of clashing warm-vs-cool
+     against it. Still reads as "white" at a glance; just enough to
+     separate the page from white cards. */
+  --color-page: #f0f9ff;
   --color-line: #e7e5e4; /* hairline border, stone-200 */
 
-  /* The one accent: orange-800, not orange-700. -700 (#ef3d21) reads
-     warm but is ~3.9:1 on white — short of the 4.5:1 AA minimum for
-     normal text, which also means white button labels on a -700 fill
-     fail the same check. -800 clears 5.6:1 both directions (text-on-
-     white and white-on-accent), so it's the one used everywhere text,
-     a price, a link, or a button label needs to read as "actionable". */
-  --color-accent: #c22f16;
-  --color-accent-hover: #9c2510;
-  --color-accent-subtle: #fff3ea; /* light tint fill, e.g. a selected chip */
+  /* The one accent: sky blue, requested in place of the earlier orange.
+     Picked a deep-enough sky blue (not the pale, airy "sky blue" it's
+     named for) on purpose — a pale blue reads clean but fails contrast
+     outright; this one clears 5.9:1 on white in both directions (text-
+     on-white and white-on-accent), same AA bar the orange version was
+     held to. --color-accent-subtle is the pale sky tint for backgrounds
+     (icon circles, selected chips) — that's where "light sky blue"
+     actually shows up. */
+  --color-accent: #0369a1;
+  --color-accent-hover: #075985;
+  --color-accent-subtle: #e0f2fe; /* light tint fill, e.g. a selected chip */
 
   /* Functional-only exceptions, not decoration — order status has to
      communicate delivered-vs-cancelled at a glance. Nothing else uses
