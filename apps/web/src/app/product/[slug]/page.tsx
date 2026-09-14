@@ -1,9 +1,9 @@
 // Server component (STAGE 6) — no 'use client'. Fetched at request time on
 // the server so a cold WhatsApp-shared link resolves to real content and
 // real <title>/OG tags immediately, instead of the blank shell + client
-// fetch the whole app used to do. The api.get() call below works here
-// because lib/api.ts's getAccessToken() returns null when `window` is
-// undefined, so this is just an unauthenticated GET either way.
+// fetch the whole app used to do. Uses lib/serverApi.ts's serverApiGet()
+// (a Cloudflare service-binding call to matrizo-api), not the regular
+// URL-based lib/api.ts client — see that file's comment for why.
 //
 // Deliberately NOT `export const runtime = 'edge'` (unlike the older
 // fully-client dynamic routes, which set it only for the legacy
@@ -19,7 +19,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { priceForQuantity, type ProductBrand } from '@matrizo/shared';
-import { api } from '@/lib/api';
+import { serverApiGet } from '@/lib/serverApi';
 import { categoryIcon } from '@/lib/categoryIcon';
 import { specEntries, type ProductSpecs } from '@/lib/specs';
 import { Icon } from '@/components/Icon';
@@ -46,7 +46,7 @@ type Product = {
 
 async function getProduct(slug: string): Promise<Product | null> {
   try {
-    const res = await api.get<{ product: Product }>(`/products/${slug}`);
+    const res = await serverApiGet<{ product: Product }>(`/products/${slug}`);
     return res.product;
   } catch {
     return null;
@@ -119,8 +119,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <div className="grid sm:grid-cols-[220px_1fr] gap-6">
         {/* Stand-in for product photography until real images are wired
            in (STAGE 4/5 — blocked on real photos, see project notes). */}
-        <div className="h-44 sm:h-full rounded-card bg-stone-100 flex items-center justify-center shrink-0">
-          <Icon name={categoryIcon(product.category?.slug ?? '')} className="h-16 w-16 text-stone-400" />
+        <div className="h-44 sm:h-full rounded-card bg-accent-subtle flex items-center justify-center shrink-0">
+          <Icon name={categoryIcon(product.category?.slug ?? '')} className="h-16 w-16 text-accent" />
         </div>
 
         <div>

@@ -85,8 +85,8 @@ export default function HomePage() {
                 href={`/category/${cat.slug}`}
                 className="glass rounded-card p-5 text-center transition-colors hover:border-stone-300"
               >
-                <div className="mx-auto h-14 w-14 rounded-full bg-stone-100 flex items-center justify-center">
-                  <Icon name={categoryIcon(cat.slug)} className="h-7 w-7 text-stone-500" />
+                <div className="mx-auto h-14 w-14 rounded-full bg-accent-subtle flex items-center justify-center">
+                  <Icon name={categoryIcon(cat.slug)} className="h-7 w-7 text-accent" />
                 </div>
                 <div className="mt-3 font-medium text-stone-900">{cat.name}</div>
               </Link>
@@ -114,7 +114,7 @@ export default function HomePage() {
                   href={`/brand/${b.brand}`}
                   className="glass rounded-card p-5 text-center transition-colors hover:border-stone-300"
                 >
-                  <div className="mx-auto h-12 w-12 rounded-full bg-stone-100 flex items-center justify-center text-stone-700 font-medium">
+                  <div className="mx-auto h-12 w-12 rounded-full bg-accent-subtle flex items-center justify-center text-accent font-medium">
                     {b.name[0]}
                   </div>
                   <div className="mt-3 font-medium text-stone-900">{b.name}</div>
@@ -160,7 +160,7 @@ export default function HomePage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {STEPS.map((s) => (
             <div key={s.step} className="glass rounded-card p-5">
-              <div className="h-8 w-8 rounded-full bg-stone-900 text-white flex items-center justify-center font-medium text-sm">
+              <div className="h-8 w-8 rounded-full bg-accent text-white flex items-center justify-center font-medium text-sm">
                 {s.step}
               </div>
               <div className="mt-3 font-medium text-stone-900">{s.title}</div>

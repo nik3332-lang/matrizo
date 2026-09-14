@@ -18,5 +18,14 @@
   },
   "vars": {
     "NEXT_PUBLIC_API_URL": "https://matrizo-api.nikhilsinghal-official.workers.dev/api/v1"
-  }
+  },
+  // Direct Worker-to-Worker binding to matrizo-api, used by server-side
+  // code (lib/serverApi.ts) instead of a public fetch() to its
+  // workers.dev URL — that path hits Cloudflare error 1042 (blocked/
+  // unreliable Worker-to-Worker requests between two *.workers.dev
+  // subdomains), confirmed live: product/category pages 500'd/"not
+  // found"'d consistently in production, retries included, until this
+  // was added. NEXT_PUBLIC_API_URL above stays as-is for client-side
+  // (browser) fetches, which aren't Worker-to-Worker and aren't affected.
+  "services": [{ "binding": "API", "service": "matrizo-api" }]
 }

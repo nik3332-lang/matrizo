@@ -49,10 +49,11 @@ export function ProductCard({
       className="block rounded-card border border-line bg-surface overflow-hidden transition-colors hover:border-stone-300"
     >
       {/* Stand-in for product photography until real images are wired in
-         (STAGE 4/5) — deliberately neutral: color belongs to the photo
-         that replaces this block, not to the placeholder. */}
-      <div className="h-28 bg-stone-100 flex items-center justify-center">
-        <Icon name={categoryIconName} className="h-7 w-7 text-stone-400" />
+         (STAGE 4/5). A flat neutral-gray version of this read as dull
+         with no real photos anywhere yet to carry color — tinted with
+         the one accent instead, swapped for the real photo later. */}
+      <div className="h-28 bg-accent-subtle flex items-center justify-center">
+        <Icon name={categoryIconName} className="h-7 w-7 text-accent" />
       </div>
       <div className="p-4">
         <div className="font-medium text-stone-900 line-clamp-2">{product.name}</div>

@@ -2,12 +2,15 @@
 // category link shared cold needs real content and real metadata on
 // first paint, not a client fetch behind a skeleton. Deliberately NOT
 // `export const runtime = 'edge'` — see the product page's comment on
-// why that broke this exact kind of page in production.
+// why that broke this exact kind of page in production. Uses
+// lib/serverApi.ts's serverApiGet() (a Cloudflare service-binding call
+// to matrizo-api) rather than the URL-based lib/api.ts client — see that
+// file's comment for why.
 
 import type { Metadata } from 'next';
 
 import { PRODUCT_BRANDS } from '@matrizo/shared';
-import { api } from '@/lib/api';
+import { serverApiGet } from '@/lib/serverApi';
 import { categoryIcon } from '@/lib/categoryIcon';
 import { Icon } from '@/components/Icon';
 import { BrandFilterGrid, type Product } from './BrandFilterGrid';
@@ -16,7 +19,7 @@ type Category = { id: string; slug: string; name: string; icon: string | null };
 
 async function getCategory(slug: string): Promise<{ category: Category; products: Product[] } | null> {
   try {
-    return await api.get<{ category: Category; products: Product[] }>(`/categories/${slug}/products`);
+    return await serverApiGet<{ category: Category; products: Product[] }>(`/categories/${slug}/products`);
   } catch {
     return null;
   }
@@ -43,8 +46,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <div className="h-10 w-10 rounded-full bg-stone-100 flex items-center justify-center shrink-0">
-          <Icon name={categoryIcon(slug)} className="h-5 w-5 text-stone-500" />
+        <div className="h-10 w-10 rounded-full bg-accent-subtle flex items-center justify-center shrink-0">
+          <Icon name={categoryIcon(slug)} className="h-5 w-5 text-accent" />
         </div>
         <h1 className="text-xl font-medium text-stone-900">{data.category.name}</h1>
       </div>

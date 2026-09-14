@@ -15,10 +15,19 @@ export type ApiClientConfig = {
   getAccessToken?: () => string | null | undefined;
 };
 
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function createApiClient({ baseUrl, getAccessToken }: ApiClientConfig) {
-  async function request<T = unknown>(path: string, init?: RequestInit): Promise<T> {
+  async function requestOnce<T = unknown>(path: string, init?: RequestInit): Promise<T> {
     const token = getAccessToken?.();
     const res = await fetch(`${baseUrl}${path}`, {
+      // Explicit no-store: a bare fetch() from a Next.js Server Component
+      // defaults to force-cache and gets cached in Next's Data Cache —
+      // this data (prices, stock, specs) should never be cached at this
+      // layer regardless.
+      cache: 'no-store',
       ...init,
       headers: {
         'Content-Type': 'application/json',
@@ -34,6 +43,37 @@ export function createApiClient({ baseUrl, getAccessToken }: ApiClientConfig) {
       throw new ApiError((body && body.error) || `Request failed (${res.status})`, res.status);
     }
     return body as T;
+  }
+
+  // Retries GETs a couple of times on a network-level failure (fetch
+  // throwing, or a non-JSON/non-2xx response from an intermediary rather
+  // than the API itself) before giving up. Hit in production: Cloudflare
+  // error 1042 on Worker-to-Worker fetches between two *.workers.dev
+  // subdomains (apps/web's server-rendered pages calling matrizo-api) —
+  // intermittent, not a hard platform rule (the same code path worked
+  // cleanly earlier the same session), consistent with the Cloudflare
+  // control-plane flakiness seen all session during deploys. A GET is
+  // safe to retry; writes (POST/PATCH/etc.) are deliberately not retried
+  // here since a failure after the write landed shouldn't resubmit it.
+  async function request<T = unknown>(path: string, init?: RequestInit): Promise<T> {
+    const method = init?.method?.toUpperCase() ?? 'GET';
+    if (method !== 'GET') return requestOnce<T>(path, init);
+
+    const attempts = 3;
+    let lastErr: unknown;
+    for (let i = 0; i < attempts; i++) {
+      try {
+        return await requestOnce<T>(path, init);
+      } catch (err) {
+        lastErr = err;
+        // Don't retry a real API error response (4xx/5xx from the API
+        // itself, e.g. "not found") — only network-level/transport
+        // failures, which surface as something other than ApiError.
+        if (err instanceof ApiError) throw err;
+        if (i < attempts - 1) await delay(150 * 2 ** i);
+      }
+    }
+    throw lastErr;
   }
 
   return {
