@@ -1,7 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
+import { useAuth } from '@/lib/auth';
+import { useCart } from '@/lib/cart';
 import { specLine, type ProductSpecs } from '@/lib/specs';
 import { Icon, type IconName } from './Icon';
 
@@ -42,6 +45,24 @@ export function ProductCard({
 }) {
   const bestTier = [...tiers].sort((a, b) => b.minQty - a.minQty)[0];
   const spec = specLine(specs);
+  const { user } = useAuth();
+  const { quantityOf, addItem, setQuantity } = useCart();
+  const router = useRouter();
+  const quantity = quantityOf(product.id);
+
+  /** Every quick-add control sits inside the card's <Link> and needs to
+   * both stop navigation and, for a signed-out visitor, redirect to /login
+   * instead of hitting the cart API (which requires auth). Returns whether
+   * the caller should go ahead with its cart mutation. */
+  function guard(e: React.MouseEvent): boolean {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      router.push('/login');
+      return false;
+    }
+    return true;
+  }
 
   return (
     <Link
@@ -68,7 +89,35 @@ export function ProductCard({
         {/* Dense spec line, before price — only when real specs exist. */}
         {spec && <div className="mt-1 text-xs text-stone-500">{spec}</div>}
         <div className="mt-1 text-sm text-stone-500">per {product.unit}</div>
-        <div className="mt-2 font-medium text-accent">₹{price}</div>
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <span className="font-medium text-accent">₹{price}</span>
+          {quantity === 0 ? (
+            <button
+              onClick={(e) => guard(e) && addItem(product.id)}
+              className="min-h-9 min-w-16 rounded-card border border-accent text-accent text-sm font-medium px-3 hover:bg-accent-subtle"
+            >
+              ADD
+            </button>
+          ) : (
+            <div className="flex items-center gap-1 rounded-card bg-accent text-white h-9">
+              <button
+                onClick={(e) => guard(e) && setQuantity(product.id, quantity - 1)}
+                className="h-9 w-8 flex items-center justify-center"
+                aria-label="Decrease quantity"
+              >
+                <Icon name="minus" className="h-3.5 w-3.5" />
+              </button>
+              <span className="text-sm font-medium min-w-4 text-center">{quantity}</span>
+              <button
+                onClick={(e) => guard(e) && addItem(product.id)}
+                className="h-9 w-8 flex items-center justify-center"
+                aria-label="Increase quantity"
+              >
+                <Icon name="plus" className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
         {bestTier && (
           <div className="mt-1 text-xs text-stone-500">
             {bestTier.minQty} or more: <span className="font-medium text-accent">₹{bestTier.pricePerUnit}</span> each

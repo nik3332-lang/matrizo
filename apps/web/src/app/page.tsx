@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { priceForQuantity, type ProductBrand } from '@matrizo/shared';
 import { api } from '@/lib/api';
 import { categoryIcon, Icon } from '@/components/Icon';
+import { HeroBanner } from '@/components/HeroBanner';
 import { ProductCard } from '@/components/ProductCard';
 import { ProductCardSkeleton, TileSkeleton } from '@/components/Skeleton';
 import type { ProductSpecs } from '@/lib/specs';
@@ -62,6 +63,12 @@ export default function HomePage() {
 
   return (
     <div className="space-y-14">
+      {categories && categories.length > 0 && (
+        <section>
+          <HeroBanner availableSlugs={categories.map((c) => c.slug)} />
+        </section>
+      )}
+
       {/* Catalog first — category grid, then brand row, then frequently-
          ordered products. The old pincode-check hero and four benefit
          tiles are gone: ETA now lives in the persistent header location

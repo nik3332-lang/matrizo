@@ -8,5 +8,6 @@ import type { IconName } from '@/components/Icon';
 export function categoryIcon(slug: string): IconName {
   if (slug === 'upvc' || slug === 'cpvc') return 'pipe';
   if (slug === 'paints') return 'paintRoller';
+  if (slug === 'sanitary') return 'droplet';
   return 'box';
 }

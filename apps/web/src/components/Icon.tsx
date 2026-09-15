@@ -18,6 +18,7 @@ export type IconName =
   | 'cash'
   | 'pipe'
   | 'paintRoller'
+  | 'droplet'
   | 'box'
   | 'mapPin'
   | 'chevronLeft'
@@ -25,7 +26,9 @@ export type IconName =
   | 'user'
   | 'receipt'
   | 'logout'
-  | 'search';
+  | 'search'
+  | 'plus'
+  | 'minus';
 
 function iconPath(name: IconName) {
   switch (name) {
@@ -78,6 +81,8 @@ function iconPath(name: IconName) {
           <rect x="9.5" y="14.5" width="4" height="3" rx="0.8" />
         </>
       );
+    case 'droplet':
+      return <path d="M12 3s6.5 7.2 6.5 11.5a6.5 6.5 0 01-13 0C5.5 10.2 12 3 12 3z" />;
     case 'box':
       return (
         <>
@@ -132,6 +137,15 @@ function iconPath(name: IconName) {
           <path d="M20 20l-5-5" />
         </>
       );
+    case 'plus':
+      return (
+        <>
+          <path d="M12 4.5v15" />
+          <path d="M4.5 12h15" />
+        </>
+      );
+    case 'minus':
+      return <path d="M4.5 12h15" />;
   }
 }
 

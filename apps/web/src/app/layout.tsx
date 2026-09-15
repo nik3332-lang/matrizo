@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 
 import { AuthProvider } from '@/lib/auth';
+import { CartProvider } from '@/lib/cart';
 import { LocationProvider } from '@/lib/location';
+import { CartBar } from '@/components/CartBar';
 import { Footer } from '@/components/Footer';
 import { NavBar } from '@/components/NavBar';
 import './globals.css';
@@ -39,11 +41,16 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col text-stone-900">
         <AuthProvider>
-          <LocationProvider>
-            <NavBar />
-            <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-6">{children}</main>
-            <Footer />
-          </LocationProvider>
+          <CartProvider>
+            <LocationProvider>
+              <NavBar />
+              {/* pb-20 always reserved (not just when CartBar renders) so
+                 content doesn't jump when the first item gets added. */}
+              <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-6 pb-20">{children}</main>
+              <Footer />
+              <CartBar />
+            </LocationProvider>
+          </CartProvider>
         </AuthProvider>
       </body>
     </html>
