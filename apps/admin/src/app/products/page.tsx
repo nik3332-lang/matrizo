@@ -13,6 +13,7 @@ const BRAND_LABELS: Record<ProductBrand, string> = {
   prince: 'Prince',
   asian_paints: 'Asian Paints',
   birla_opus: 'Birla Opus',
+  padmavati: 'Padmavati',
   others: 'Others',
 };
 const BRAND_CHIP: Record<ProductBrand, string> = {
@@ -20,6 +21,7 @@ const BRAND_CHIP: Record<ProductBrand, string> = {
   prince: 'bg-brand-orange-100 text-brand-orange-800',
   asian_paints: 'bg-sky-100 text-sky-800',
   birla_opus: 'bg-emerald-100 text-emerald-800',
+  padmavati: 'bg-amber-100 text-amber-800',
   others: 'bg-stone-200 text-stone-700',
 };
 
