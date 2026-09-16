@@ -25,12 +25,14 @@ export async function requireAuth(c: Context<AuthEnv>, next: Next) {
     .from(users)
     .where(eq(users.id, claims.sub))
     .limit(1);
-  if (!user?.active)
-    return c.json(
-      { error: "Your account is inactive. Please contact your administrator." },
-      401,
-    );
-  c.set("auth", { sub: user.id, role: user.role, storeId: user.storeId });
+  if (!user?.active || user.sessionVersion !== (claims.sessionVersion ?? 0))
+    return c.json({ error: "Session expired. Please sign in again." }, 401);
+  c.set("auth", {
+    sub: user.id,
+    role: user.role,
+    storeId: user.storeId,
+    sessionVersion: user.sessionVersion,
+  });
   await next();
 }
 

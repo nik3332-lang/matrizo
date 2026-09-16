@@ -19,7 +19,7 @@ Matrizo brings sanitary ware, bathroom fittings, plumbing supplies, and paints i
 
 ## What works
 
-Customers can browse the actual active catalog, search, filter by category/brand, inspect product details and quantity pricing, check delivery pincodes, create an email/password account, save addresses, order with cash on delivery, and track orders. New accounts include a delivery contact number. Uploaded product URLs take precedence over category illustrations.
+Customers can browse the actual active catalog, search, filter by category/brand, inspect product details and quantity pricing, check delivery pincodes, create an account and sign in with email or mobile number plus password, save addresses, order with cash on delivery, and track orders. New accounts include a delivery contact number. Uploaded product URLs take precedence over category illustrations.
 
 Admins can create/edit/remove products and nested categories, manage inventory and orders, add/edit/remove/restore employees, and review daily sales by date or employee. Daily review includes submitted/missing reports, totals, estimated commission, notes, and CSV export. A removed employee loses access immediately; historic sales stay in the business records. Categories containing products or subcategories must be emptied before removal.
 
@@ -80,12 +80,13 @@ pnpm --filter @matrizo/admin exec opennextjs-cloudflare deploy
 pnpm --filter @matrizo/employees exec opennextjs-cloudflare deploy
 ```
 
-Deploy API compatibility changes before the websites. `NEXT_PUBLIC_API_URL` is public and baked into the frontend at build time; production builds must use the production API URL. The storefront's `API` service binding handles server-side requests directly to the API Worker. This release does not change D1 schema or require a migration.
+Deploy API compatibility changes before the websites. `NEXT_PUBLIC_API_URL` is public and baked into the frontend at build time; production builds must use the production API URL. The storefront's `API` service binding handles server-side requests directly to the API Worker. For the authentication update, apply `pnpm api:db:migrate:remote` before deploying the API. Migration `0004` adds recovery challenges, rate limits and session versions; existing sessions remain valid until a password reset.
 
 ## Operational configuration still needed
 
 - Cash on delivery is the checkout payment option. Razorpay keys and production payment/webhook integration are not configured.
-- Email/password sign-in is available for new customer accounts. SMS sign-in stays disabled until MSG91 is configured, and OTP codes are never returned to the browser. Existing phone-only accounts need SMS service restored or a verified account-recovery process; there is no self-service password reset yet.
+- Customers can sign in with email or an Indian mobile number and password. `/forgot-password` supports Resend email codes from `Matrizo <info@matrizo.com>`, gated until the API has both `RESEND_API_KEY` and `RESEND_FROM_EMAIL`. Sender activation requires the DNS verification described in [email setup](docs/email-setup.md). Codes expire after five minutes, allow five guesses, and can be used once. Resetting a password revokes prior access and refresh sessions. Staff accounts use their separate sign-in flow.
+- SMS sign-in/recovery remains optional and disabled until MSG91 credentials and a template are configured. OTP endpoints now require the `challengeId` returned by the request endpoint; they only authenticate existing active customers. Legacy phone-only accounts need SMS service restored, since they have no email address for email recovery.
 - Existing product data, product-specific images, store stock, and delivery coverage must be maintained by the business. Category illustrations and the bathroom hero are editorial imagery, not a guarantee of a particular SKU's appearance. The live sanitary category currently needs real products added by an admin.
 - R2/Queues bindings remain disabled in the current infrastructure; product images use supplied URLs or bundled assets.
 

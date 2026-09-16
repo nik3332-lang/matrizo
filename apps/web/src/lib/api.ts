@@ -60,6 +60,9 @@ export const api = createApiClient({
   refreshAccessToken,
 });
 
+// Authentication failures must not refresh and replay a code or password guess.
+export const authApi = createApiClient({ baseUrl: API_BASE_URL });
+
 export function wsUrl(path: string): string {
   return API_BASE_URL.replace(/^http/, "ws") + path;
 }

@@ -1,8 +1,9 @@
 "use client";
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { ApiError } from "@matrizo/shared";
-import { api, setRefreshToken } from "@/lib/api";
+import { authApi as api, setRefreshToken } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Icon } from "@/components/Icon";
 type LoginResponse = {
@@ -34,7 +35,9 @@ function LoginForm() {
     try {
       const result = await api.post<LoginResponse>(
         signup ? "/auth/customer-register" : "/auth/customer-login",
-        { email, name, phone, password },
+        signup
+          ? { email, name, phone, password }
+          : { identifier: email, password },
       );
       setRefreshToken(result.refreshToken);
       login(result.accessToken, result.user);
@@ -113,12 +116,18 @@ function LoginForm() {
             </label>
           )}
           <label>
-            Email address
+            {signup ? "Email address" : "Email or mobile number"}
             <input
-              type="email"
+              type={signup ? "email" : "text"}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
+              autoComplete={signup ? "email" : "username"}
+              autoCapitalize="none"
+              spellCheck={false}
+              maxLength={254}
+              placeholder={
+                signup ? "you@example.com" : "Email or 10-digit mobile number"
+              }
               required
             />
           </label>
@@ -135,6 +144,14 @@ function LoginForm() {
               required
             />
           </label>
+          {!signup && (
+            <Link
+              href={`/forgot-password${params.get("next") ? `?next=${encodeURIComponent(params.get("next")!)}` : ""}`}
+              className="auth-forgot"
+            >
+              Forgot password?
+            </Link>
+          )}
           {error && (
             <p className="text-sm text-danger mb-3" role="alert">
               {error}

@@ -14,7 +14,7 @@ export function CartBar() {
 
   if (
     itemCount === 0 ||
-    ["/cart", "/checkout", "/login"].includes(pathname) ||
+    ["/cart", "/checkout", "/login", "/forgot-password"].includes(pathname) ||
     pathname.startsWith("/orders")
   )
     return null;

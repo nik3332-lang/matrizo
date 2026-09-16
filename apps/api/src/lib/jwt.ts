@@ -16,6 +16,7 @@ export type AuthClaims = {
   sub: string;
   role: UserRole;
   storeId: string | null;
+  sessionVersion?: number;
 };
 
 async function signToken(
@@ -24,7 +25,12 @@ async function signToken(
   type: TokenType,
   ttl: string,
 ): Promise<string> {
-  return new SignJWT({ type, role: claims.role, storeId: claims.storeId })
+  return new SignJWT({
+    type,
+    role: claims.role,
+    storeId: claims.storeId,
+    sessionVersion: claims.sessionVersion ?? 0,
+  })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(claims.sub)
     .setIssuedAt()
@@ -51,11 +57,16 @@ export async function verifyToken(
   token: string,
   expectedType: TokenType,
 ): Promise<AuthClaims> {
-  const { payload } = await jwtVerify(token, getSecretKey(env));
+  const { payload } = await jwtVerify(token, getSecretKey(env), {
+    algorithms: ["HS256"],
+  });
   if (
     payload.type !== expectedType ||
     typeof payload.sub !== "string" ||
-    typeof payload.role !== "string"
+    typeof payload.role !== "string" ||
+    (payload.sessionVersion !== undefined &&
+      (!Number.isSafeInteger(payload.sessionVersion) ||
+        Number(payload.sessionVersion) < 0))
   ) {
     throw new Error("Invalid token");
   }
@@ -63,5 +74,7 @@ export async function verifyToken(
     sub: payload.sub,
     role: payload.role as UserRole,
     storeId: typeof payload.storeId === "string" ? payload.storeId : null,
+    sessionVersion:
+      typeof payload.sessionVersion === "number" ? payload.sessionVersion : 0,
   };
 }

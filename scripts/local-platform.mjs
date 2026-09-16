@@ -7,7 +7,7 @@ import { SignJWT } from "jose";
 export const TEST_SECRET =
   "matrizo-isolated-test-secret-never-use-in-production";
 export const TEST_PASSWORD = "Matrizo-local-test-2026";
-export async function startFixture(port = 0) {
+export async function startFixture(port = 0, options = {}) {
   const root = fileURLToPath(new URL("../", import.meta.url));
   const bundle = await build({
     entryPoints: [root + "apps/api/src/index.ts"],
@@ -31,7 +31,10 @@ export async function startFixture(port = 0) {
       durableObjects: {
         ORDER_TRACKER: { className: "OrderTrackerDO", useSQLite: true },
       },
-      bindings: { JWT_SECRET: TEST_SECRET },
+      bindings: { JWT_SECRET: TEST_SECRET, ...options.bindings },
+      ...(options.outboundService
+        ? { outboundService: options.outboundService }
+        : {}),
       cf: false,
       host: "127.0.0.1",
       port,

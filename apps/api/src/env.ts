@@ -4,6 +4,8 @@
 // aren't declared there, so they're typed here instead.
 export type Env = CloudflareBindings & {
   JWT_SECRET?: string;
+  RESEND_API_KEY?: string;
+  RESEND_FROM_EMAIL?: string;
   MSG91_AUTH_KEY?: string;
   MSG91_SENDER_ID?: string;
   MSG91_TEMPLATE_ID?: string;

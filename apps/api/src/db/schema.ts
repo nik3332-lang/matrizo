@@ -136,9 +136,8 @@ export const inventory = sqliteTable(
 
 // --- users -------------------------------------------------------------
 
-// One table for every role. Customers authenticate via phone OTP and always
-// have `phone` set; store_staff/delivery_partner/admin authenticate via
-// email+password and always have `email` + `passwordHash` set. `storeId`
+// One table for every role. Customers use email/mobile plus password, with
+// SMS recovery when configured. Staff use separate email/password sign-in. `storeId`
 // scopes staff/delivery_partner to the one dark store they work out of
 // (null for customers and for admin, who isn't store-scoped).
 export const users = sqliteTable(
@@ -149,6 +148,7 @@ export const users = sqliteTable(
     phone: text('phone'),
     email: text('email'),
     passwordHash: text('password_hash'),
+    sessionVersion: integer('session_version').notNull().default(0),
     name: text('name'),
     storeId: text('store_id').references(() => stores.id),
     active: integer('active', { mode: 'boolean' }).notNull().default(true),
@@ -159,6 +159,26 @@ export const users = sqliteTable(
     uniqueIndex('users_email_idx').on(t.email),
   ]
 );
+
+// Codes are keyed HMACs, never plaintext. One current challenge per destination/purpose.
+export const authChallenges = sqliteTable('auth_challenges', {
+  id: text('id').primaryKey(),
+  destination: text('destination').notNull(),
+  purpose: text('purpose', { enum: ['password_reset', 'password_reset_email', 'customer_login'] }).notNull(),
+  userId: text('user_id').references(() => users.id),
+  sessionVersion: integer('session_version').notNull().default(0),
+  codeHash: text('code_hash').notNull(),
+  expiresAt: integer('expires_at').notNull(),
+  attempts: integer('attempts').notNull().default(0),
+  consumedAt: integer('consumed_at'),
+  redemptionId: text('redemption_id'),
+}, (t) => [uniqueIndex('auth_challenges_destination_purpose_idx').on(t.destination, t.purpose)]);
+
+export const authRateLimits = sqliteTable('auth_rate_limits', {
+  key: text('key').primaryKey(),
+  count: integer('count').notNull(),
+  expiresAt: integer('expires_at').notNull(),
+});
 
 export const addresses = sqliteTable('addresses', {
   id: text('id').primaryKey(),
