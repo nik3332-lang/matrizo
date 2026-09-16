@@ -1,9 +1,15 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 
-import { ApiError } from '@matrizo/shared';
-import { api, getStoredToken, setStoredToken } from './api';
+import { ApiError } from "@matrizo/shared";
+import { api, getStoredToken, setStoredToken } from "./api";
 
 // Only two roles ever reach this portal: 'admin' (the same shared admin
 // account used across matrizo-admin too — commission/employee management is
@@ -12,7 +18,7 @@ import { api, getStoredToken, setStoredToken } from './api';
 // rejected below, same as a logged-out visitor.
 export type PortalUser = {
   id: string;
-  role: 'admin' | 'sales_employee';
+  role: "admin" | "sales_employee";
   email: string | null;
   name: string | null;
 };
@@ -33,13 +39,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const token = getStoredToken();
     if (!token) {
-      setLoading(false);
+      void Promise.resolve().then(() => setLoading(false));
       return;
     }
     api
-      .get<{ user: { id: string; role: string; email: string | null; name: string | null } }>('/account/me')
+      .get<{
+        user: {
+          id: string;
+          role: string;
+          email: string | null;
+          name: string | null;
+        };
+      }>("/account/me")
       .then((res) => {
-        if (res.user.role === 'admin' || res.user.role === 'sales_employee') setUser(res.user as PortalUser);
+        if (res.user.role === "admin" || res.user.role === "sales_employee")
+          setUser(res.user as PortalUser);
         else setStoredToken(null);
       })
       .catch((err) => {
@@ -58,11 +72,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }
 
-  return <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }

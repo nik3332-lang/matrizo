@@ -1,305 +1,170 @@
-'use client';
-
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-
-import { ApiError } from '@matrizo/shared';
-import { api } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
-
-type OtpRequestResponse = { sent: true; devOtp?: string; note?: string };
-type OtpVerifyResponse = {
+"use client";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ApiError } from "@matrizo/shared";
+import { api, setRefreshToken } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { Icon } from "@/components/Icon";
+type LoginResponse = {
   accessToken: string;
-  user: { id: string; role: 'customer'; phone: string | null; name: string | null };
+  refreshToken: string;
+  user: {
+    id: string;
+    role: "customer";
+    phone: string | null;
+    email: string | null;
+    name: string | null;
+  };
 };
-
-// OTP is skipped for now — MSG91 isn't wired up yet, so /auth/otp/request
-// already returns the code directly (dev mode) instead of texting it.
-// Rather than show that code and make someone type it back in, request +
-// verify are chained invisibly. Explicitly temporary: once real SMS is
-// live, this response stops carrying devOtp and a visible code-entry step
-// needs to come back.
-async function authenticate(phone: string): Promise<OtpVerifyResponse> {
-  const requestRes = await api.post<OtpRequestResponse>('/auth/otp/request', { phone });
-  if (!requestRes.devOtp) {
-    throw new ApiError('OTP was sent via SMS — enter it to continue (not implemented in this UI yet).', 500);
-  }
-  return api.post<OtpVerifyResponse>('/auth/otp/verify', { phone, code: requestRes.devOtp });
-}
-
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const params = useSearchParams();
   const { login } = useAuth();
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
-  // 'complete-profile': a "Log in" attempt turned out to be a brand-new
-  // phone number — already authenticated at this point, just missing a
-  // name/address, so ask for those instead of erroring out.
-  const [stage, setStage] = useState<'form' | 'complete-profile'>('form');
-
-  const [phone, setPhone] = useState('');
-  const [name, setName] = useState('');
-  const [line1, setLine1] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
-  const [pincode, setPincode] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [signup, setSignup] = useState(false);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-
-  async function saveProfileAndContinue() {
-    await Promise.all([
-      api.patch('/account/me', { name }),
-      api.post('/account/addresses', { line1, city, state, pincode, isDefault: true }),
-    ]).catch(() => {
-      // Already logged in — don't block on this failing, they can fix it
-      // later from checkout.
-    });
-    router.push('/');
-  }
-
-  async function submitLogin(e: React.FormEvent) {
+  const [error, setError] = useState("");
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
     setBusy(true);
+    setError("");
     try {
-      const res = await authenticate(phone);
-      login(res.accessToken, res.user);
-      if (res.user.name) {
-        router.push('/');
-      } else {
-        // New phone number — logged in, but there's no profile yet.
-        setStage('complete-profile');
-      }
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong');
+      const result = await api.post<LoginResponse>(
+        signup ? "/auth/customer-register" : "/auth/customer-login",
+        { email, name, phone, password },
+      );
+      setRefreshToken(result.refreshToken);
+      login(result.accessToken, result.user);
+      const next = params.get("next");
+      router.push(
+        next &&
+          next.startsWith("/") &&
+          !next.startsWith("//") &&
+          !next.includes("\\")
+          ? next
+          : "/",
+      );
+    } catch (e) {
+      setError(
+        e instanceof ApiError
+          ? e.message
+          : "We couldn’t sign you in. Please try again.",
+      );
     } finally {
       setBusy(false);
     }
   }
-
-  async function submitSignup(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setBusy(true);
-    try {
-      const res = await authenticate(phone);
-      login(res.accessToken, res.user);
-      // Only fill in profile if it's genuinely new — a returning customer
-      // who lands on the signup tab by mistake shouldn't get their name/
-      // address overwritten.
-      if (!res.user.name) {
-        await Promise.all([
-          api.patch('/account/me', { name }),
-          api.post('/account/addresses', { line1, city, state, pincode, isDefault: true }),
-        ]).catch(() => {});
-      }
-      router.push('/');
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function submitProfile(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setBusy(true);
-    try {
-      await saveProfileAndContinue();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong');
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
-    <div className="flex items-center justify-center -m-6 py-14 sm:py-20">
-      <div className="glass w-full max-w-sm mx-4 rounded-card p-8">
-        {stage === 'form' && (
-          <>
-            <div className="flex gap-1 mb-6 rounded-card bg-stone-100 p-1">
-              <button
-                type="button"
-                onClick={() => setMode('login')}
-                className={`flex-1 min-h-11 rounded-card text-sm font-medium transition-colors ${
-                  mode === 'login' ? 'bg-white text-accent' : 'text-stone-500'
-                }`}
-              >
-                Log in
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode('signup')}
-                className={`flex-1 min-h-11 rounded-card text-sm font-medium transition-colors ${
-                  mode === 'signup' ? 'bg-white text-accent' : 'text-stone-500'
-                }`}
-              >
-                Sign up
-              </button>
-            </div>
-
-            {mode === 'login' && (
-              <form onSubmit={submitLogin} className="space-y-3">
-                <h1 className="text-xl font-medium text-stone-900 mb-1">Welcome back</h1>
-                <p className="text-sm text-stone-500 mb-4">Enter your phone number to continue.</p>
-                <label className="block text-sm font-medium text-stone-700">
-                  Phone number
-                  <input
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="9876543210"
-                    className="mt-1 w-full min-h-11 rounded-card border border-line px-3 outline-none"
-                    inputMode="tel"
-                    required
-                  />
-                </label>
-                {error && <p className="text-sm text-danger">{error}</p>}
-                <button
-                  type="submit"
-                  disabled={busy}
-                  className="w-full min-h-11 rounded-card bg-accent text-white px-4 font-medium hover:bg-accent-hover disabled:opacity-60"
-                >
-                  {busy ? 'Logging in…' : 'Log in'}
-                </button>
-              </form>
-            )}
-
-            {mode === 'signup' && (
-              <form onSubmit={submitSignup} className="space-y-3">
-                <h1 className="text-xl font-medium text-stone-900 mb-1">Create your account</h1>
-                <p className="text-sm text-stone-500 mb-4">Tell us where to deliver and you&apos;re in.</p>
-                <label className="block text-sm font-medium text-stone-700">
-                  Phone number
-                  <input
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="9876543210"
-                    className="mt-1 w-full min-h-11 rounded-card border border-line px-3 outline-none"
-                    inputMode="tel"
-                    required
-                  />
-                </label>
-                <label className="block text-sm font-medium text-stone-700">
-                  Name
-                  <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Your name"
-                    className="mt-1 w-full min-h-11 rounded-card border border-line px-3 outline-none"
-                    required
-                  />
-                </label>
-                <div className="pt-1">
-                  <p className="text-sm text-stone-500 mb-2">Delivery address</p>
-                  <div className="space-y-2">
-                    <input
-                      value={line1}
-                      onChange={(e) => setLine1(e.target.value)}
-                      placeholder="Address line"
-                      className="w-full min-h-11 rounded-card border border-line px-3 outline-none"
-                      required
-                    />
-                    <div className="flex gap-2">
-                      <input
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        placeholder="City"
-                        className="w-1/2 min-h-11 rounded-card border border-line px-3 outline-none"
-                        required
-                      />
-                      <input
-                        value={state}
-                        onChange={(e) => setState(e.target.value)}
-                        placeholder="State"
-                        className="w-1/2 min-h-11 rounded-card border border-line px-3 outline-none"
-                        required
-                      />
-                    </div>
-                    <input
-                      value={pincode}
-                      onChange={(e) => setPincode(e.target.value)}
-                      placeholder="Pincode"
-                      className="w-full min-h-11 rounded-card border border-line px-3 outline-none"
-                      inputMode="numeric"
-                      required
-                    />
-                  </div>
-                </div>
-                {error && <p className="text-sm text-danger">{error}</p>}
-                <button
-                  type="submit"
-                  disabled={busy}
-                  className="w-full min-h-11 rounded-card bg-accent text-white px-4 font-medium hover:bg-accent-hover disabled:opacity-60"
-                >
-                  {busy ? 'Creating account…' : 'Sign up'}
-                </button>
-              </form>
-            )}
-          </>
-        )}
-
-        {stage === 'complete-profile' && (
-          <form onSubmit={submitProfile} className="space-y-3">
-            <h1 className="text-xl font-medium text-stone-900 mb-1">You&apos;re logged in — one more step</h1>
-            <p className="text-sm text-stone-500 mb-4">We don&apos;t have your name and address yet.</p>
-            <label className="block text-sm font-medium text-stone-700">
-              Name
+    <div className="auth-layout">
+      <div className="auth-story">
+        <span className="eyebrow text-sky-200">MAKE YOURSELF AT HOME</span>
+        <h1>
+          Your next great
+          <br />
+          space starts here.
+        </h1>
+        <p>
+          Save your address, build your basket and follow every order. A little
+          less effort. A little more Matrizo.
+        </p>
+        <div className="hero-note">
+          <Icon name="package" className="h-5 w-5" />
+          One account. Every project.
+        </div>
+      </div>
+      <div className="auth-form">
+        <h2>{signup ? "Welcome to Matrizo." : "Good to see you again."}</h2>
+        <p>
+          {signup
+            ? "Create an account to start your next project."
+            : "Sign in to pick up where you left off."}
+        </p>
+        <form onSubmit={submit}>
+          {signup && (
+            <label>
+              Your name
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
-                className="mt-1 w-full min-h-11 rounded-card border border-line px-3 outline-none"
+                autoComplete="name"
+                minLength={2}
+                maxLength={100}
                 required
               />
             </label>
-            <div className="pt-1">
-              <p className="text-sm text-stone-500 mb-2">Delivery address</p>
-              <div className="space-y-2">
-                <input
-                  value={line1}
-                  onChange={(e) => setLine1(e.target.value)}
-                  placeholder="Address line"
-                  className="w-full min-h-11 rounded-card border border-line px-3 outline-none"
-                  required
-                />
-                <div className="flex gap-2">
-                  <input
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    placeholder="City"
-                    className="w-1/2 min-h-11 rounded-card border border-line px-3 outline-none"
-                    required
-                  />
-                  <input
-                    value={state}
-                    onChange={(e) => setState(e.target.value)}
-                    placeholder="State"
-                    className="w-1/2 min-h-11 rounded-card border border-line px-3 outline-none"
-                    required
-                  />
-                </div>
-                <input
-                  value={pincode}
-                  onChange={(e) => setPincode(e.target.value)}
-                  placeholder="Pincode"
-                  className="w-full min-h-11 rounded-card border border-line px-3 outline-none"
-                  inputMode="numeric"
-                  required
-                />
-              </div>
-            </div>
-            {error && <p className="text-sm text-danger">{error}</p>}
-            <button
-              type="submit"
-              disabled={busy}
-              className="w-full min-h-11 rounded-card bg-accent text-white px-4 font-medium hover:bg-accent-hover disabled:opacity-60"
-            >
-              {busy ? 'Saving…' : 'Continue'}
-            </button>
-          </form>
-        )}
+          )}
+          {signup && (
+            <label>
+              Mobile number for delivery
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                autoComplete="tel-national"
+                inputMode="numeric"
+                pattern="[6-9][0-9]{9}"
+                maxLength={10}
+                placeholder="10-digit mobile number"
+                required
+              />
+            </label>
+          )}
+          <label>
+            Email address
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              required
+            />
+          </label>
+          <label>
+            Password
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              minLength={signup ? 10 : 1}
+              maxLength={128}
+              autoComplete={signup ? "new-password" : "current-password"}
+              placeholder={signup ? "At least 10 characters" : undefined}
+              required
+            />
+          </label>
+          {error && (
+            <p className="text-sm text-danger mb-3" role="alert">
+              {error}
+            </p>
+          )}
+          <button className="button-primary" disabled={busy}>
+            {busy ? "Please wait…" : signup ? "Create my account" : "Sign in"}
+            <span aria-hidden="true">→</span>
+          </button>
+        </form>
+        <button
+          className="auth-toggle"
+          onClick={() => {
+            setSignup((v) => !v);
+            setError("");
+            setPassword("");
+          }}
+        >
+          {signup
+            ? "Already a member? Sign in"
+            : "New to Matrizo? Create an account"}
+        </button>
       </div>
     </div>
+  );
+}
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<p className="empty-state">Loading sign-in…</p>}>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -2,20 +2,29 @@
   "name": "matrizo",
   "private": true,
   "version": "0.1.0",
-  "description": "Matrizo — quick-commerce delivery for construction materials (dark-store model): Next.js customer site + admin ops portal, Cloudflare Workers API. Mobile (Expo) app to follow.",
+  "description": "Matrizo — sanitary ware, bathroom fittings and paints: storefront, admin, employee portal, and Cloudflare API.",
   "scripts": {
     "web:dev": "pnpm --filter @matrizo/web dev",
     "web:build": "pnpm --filter @matrizo/web build",
     "admin:dev": "pnpm --filter @matrizo/admin dev",
     "admin:build": "pnpm --filter @matrizo/admin build",
     "api:dev": "pnpm --filter @matrizo/api dev",
-    "api:deploy": "pnpm --filter @matrizo/api deploy",
+    "api:deploy": "pnpm --filter @matrizo/api run deploy",
     "api:db:generate": "pnpm --filter @matrizo/api db:generate",
     "api:db:migrate:local": "pnpm --filter @matrizo/api db:migrate:local",
-    "api:db:migrate:remote": "pnpm --filter @matrizo/api db:migrate:remote"
+    "api:db:migrate:remote": "pnpm --filter @matrizo/api db:migrate:remote",
+    "test": "node --test tests/*.test.mjs",
+    "test:serve": "node scripts/local-platform.mjs --serve",
+    "employees:dev": "pnpm --filter @matrizo/employees dev",
+    "employees:build": "pnpm --filter @matrizo/employees build"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
-  "packageManager": "pnpm@11.20.0"
+  "packageManager": "pnpm@11.20.0",
+  "devDependencies": {
+    "esbuild": "0.28.1",
+    "jose": "6.2.8",
+    "miniflare": "5.20260903.0-alpha"
+  }
 }

@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
-import { ApiError } from '@matrizo/shared';
-import { api } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
+import { ApiError } from "@matrizo/shared";
+import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 
 type StaffMember = {
   id: string;
-  role: 'store_staff' | 'delivery_partner' | 'admin';
+  role: "store_staff" | "delivery_partner" | "admin";
   email: string | null;
   name: string | null;
   storeId: string | null;
@@ -17,25 +17,31 @@ type StaffMember = {
 type Store = { id: string; name: string };
 
 const ROLE_LABELS: Record<string, string> = {
-  store_staff: 'Store staff',
-  delivery_partner: 'Delivery partner',
-  admin: 'Admin',
+  store_staff: "Store staff",
+  delivery_partner: "Delivery partner",
+  admin: "Admin",
 };
 
 const ROLE_CHIP: Record<string, string> = {
-  store_staff: 'bg-brand-orange-100 text-brand-orange-800',
-  delivery_partner: 'bg-brand-coral-100 text-brand-coral-800',
-  admin: 'bg-stone-300 text-stone-800',
+  store_staff: "bg-brand-orange-100 text-brand-orange-800",
+  delivery_partner: "bg-brand-coral-100 text-brand-coral-800",
+  admin: "bg-stone-300 text-stone-800",
 };
 
 type FormValues = {
   email: string;
   password: string;
   name: string;
-  role: 'store_staff' | 'delivery_partner' | 'admin';
+  role: "store_staff" | "delivery_partner" | "admin";
   storeId: string;
 };
-const emptyForm: FormValues = { email: '', password: '', name: '', role: 'store_staff', storeId: '' };
+const emptyForm: FormValues = {
+  email: "",
+  password: "",
+  name: "",
+  role: "store_staff",
+  storeId: "",
+};
 
 export default function StaffPage() {
   const { user, loading: authLoading } = useAuth();
@@ -45,14 +51,31 @@ export default function StaffPage() {
   const [form, setForm] = useState<FormValues>(emptyForm);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   function load() {
-    api.get<{ users: StaffMember[] }>('/admin/users').then((res) => setStaff(res.users));
-    api.get<{ stores: Store[] }>('/admin/stores').then((res) => setStores(res.stores));
+    setLoadError(null);
+    api
+      .get<{ users: StaffMember[] }>("/admin/users")
+      .then((res) => setStaff(res.users))
+      .catch((err) =>
+        setLoadError(
+          err instanceof ApiError ? err.message : "Could not load staff.",
+        ),
+      );
+    api
+      .get<{ stores: Store[] }>("/admin/stores")
+      .then((res) => setStores(res.stores))
+      .catch((err) =>
+        setLoadError(
+          err instanceof ApiError ? err.message : "Could not load stores.",
+        ),
+      );
   }
 
   useEffect(() => {
-    if (!authLoading && user?.role === 'admin') load();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!authLoading && user?.role === "admin") load();
   }, [authLoading, user]);
 
   async function createStaff(e: React.FormEvent) {
@@ -60,18 +83,20 @@ export default function StaffPage() {
     setError(null);
     setBusy(true);
     try {
-      await api.post('/admin/users', {
+      await api.post("/admin/users", {
         email: form.email,
         password: form.password,
         name: form.name,
         role: form.role,
-        storeId: form.role === 'admin' ? undefined : form.storeId,
+        storeId: form.role === "admin" ? undefined : form.storeId,
       });
       setCreating(false);
       setForm(emptyForm);
       load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not create account.');
+      setError(
+        err instanceof ApiError ? err.message : "Could not create account.",
+      );
     } finally {
       setBusy(false);
     }
@@ -82,16 +107,34 @@ export default function StaffPage() {
       await api.patch(`/admin/users/${member.id}`, { active: !member.active });
       load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not update account.');
+      setError(
+        err instanceof ApiError ? err.message : "Could not update account.",
+      );
     }
   }
 
-  if (!authLoading && user?.role !== 'admin') {
-    return <p className="text-stone-600">Only admins can manage staff accounts.</p>;
+  if (!authLoading && user?.role !== "admin") {
+    return (
+      <p className="text-stone-600">Only admins can manage staff accounts.</p>
+    );
+  }
+  if (loadError && (!staff || !stores)) {
+    return (
+      <div className="glass rounded-xl p-4">
+        <p className="text-sm text-rose-600">{loadError}</p>
+        <button
+          onClick={load}
+          className="mt-2 text-xs px-3 py-1.5 rounded-full font-medium text-brand-orange-700 hover:bg-brand-orange-50"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
   if (!staff || !stores) return <p className="text-stone-500">Loading…</p>;
 
-  const storeName = (id: string | null) => stores.find((s) => s.id === id)?.name ?? '—';
+  const storeName = (id: string | null) =>
+    stores.find((s) => s.id === id)?.name ?? "—";
 
   return (
     <div>
@@ -110,14 +153,19 @@ export default function StaffPage() {
       {error && <p className="mb-3 text-sm text-rose-600">{error}</p>}
 
       {creating && (
-        <form onSubmit={createStaff} className="glass rounded-2xl p-5 space-y-3 mb-5">
+        <form
+          onSubmit={createStaff}
+          className="glass rounded-2xl p-5 space-y-3 mb-5"
+        >
           <div className="grid grid-cols-2 gap-3">
             <label className="text-sm font-medium text-stone-700">
               Name
               <input
                 required
                 value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, name: e.target.value }))
+                }
                 className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
               />
             </label>
@@ -125,7 +173,12 @@ export default function StaffPage() {
               Role
               <select
                 value={form.role}
-                onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as FormValues['role'] }))}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    role: e.target.value as FormValues["role"],
+                  }))
+                }
                 className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
               >
                 <option value="store_staff">Store staff</option>
@@ -141,7 +194,9 @@ export default function StaffPage() {
                 required
                 type="email"
                 value={form.email}
-                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, email: e.target.value }))
+                }
                 className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
               />
             </label>
@@ -152,18 +207,22 @@ export default function StaffPage() {
                 type="password"
                 minLength={8}
                 value={form.password}
-                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, password: e.target.value }))
+                }
                 className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
               />
             </label>
           </div>
-          {form.role !== 'admin' && (
+          {form.role !== "admin" && (
             <label className="block text-sm font-medium text-stone-700">
               Store
               <select
                 required
                 value={form.storeId}
-                onChange={(e) => setForm((f) => ({ ...f, storeId: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, storeId: e.target.value }))
+                }
                 className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
               >
                 <option value="" disabled>
@@ -183,7 +242,7 @@ export default function StaffPage() {
               disabled={busy}
               className="rounded-lg bg-brand-orange-700 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:bg-brand-orange-800 disabled:opacity-60"
             >
-              {busy ? 'Creating…' : 'Create account'}
+              {busy ? "Creating…" : "Create account"}
             </button>
             <button
               type="button"
@@ -198,11 +257,18 @@ export default function StaffPage() {
 
       <div className="space-y-2">
         {staff.map((member) => (
-          <div key={member.id} className="glass rounded-xl p-4 flex items-center justify-between gap-3">
+          <div
+            key={member.id}
+            className="glass rounded-xl p-4 flex items-center justify-between gap-3"
+          >
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-stone-900">{member.name}</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ROLE_CHIP[member.role]}`}>
+                <span className="font-semibold text-stone-900">
+                  {member.name}
+                </span>
+                <span
+                  className={`text-xs px-2 py-0.5 rounded-full font-medium ${ROLE_CHIP[member.role]}`}
+                >
                   {ROLE_LABELS[member.role]}
                 </span>
                 {!member.active && (
@@ -219,14 +285,18 @@ export default function StaffPage() {
             <button
               onClick={() => toggleActive(member)}
               className={`text-xs px-3 py-1.5 rounded-full font-medium ${
-                member.active ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-700 hover:bg-emerald-50'
+                member.active
+                  ? "text-rose-600 hover:bg-rose-50"
+                  : "text-emerald-700 hover:bg-emerald-50"
               }`}
             >
-              {member.active ? 'Deactivate' : 'Reactivate'}
+              {member.active ? "Deactivate" : "Reactivate"}
             </button>
           </div>
         ))}
-        {staff.length === 0 && <p className="text-stone-500">No staff accounts yet.</p>}
+        {staff.length === 0 && (
+          <p className="text-stone-500">No staff accounts yet.</p>
+        )}
       </div>
     </div>
   );

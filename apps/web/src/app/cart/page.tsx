@@ -1,107 +1,132 @@
-'use client';
-
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-
-import { api } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
-import { Icon } from '@/components/Icon';
-
-type CartItem = {
-  id: string;
-  product: { id: string; name: string; unit: string };
-  quantity: number;
-  unitPrice: number;
-  lineTotal: number;
-};
-type Cart = { items: CartItem[]; subtotal: number };
+"use client";
+import Link from "next/link";
+import { useState } from "react";
+import { ApiError, formatMoney } from "@matrizo/shared";
+import { useAuth } from "@/lib/auth";
+import { useCart } from "@/lib/cart";
+import { Icon } from "@/components/Icon";
 
 export default function CartPage() {
   const { user, loading: authLoading } = useAuth();
-  const [cart, setCart] = useState<Cart | null>(null);
-  const [busyProductId, setBusyProductId] = useState<string | null>(null);
-
-  function reload() {
-    api.get<Cart>('/cart').then(setCart);
-  }
-
-  useEffect(() => {
-    if (!authLoading && user) reload();
-  }, [authLoading, user]);
-
-  async function updateQuantity(productId: string, quantity: number) {
-    setBusyProductId(productId);
+  const cart = useCart();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  async function update(productId: string, quantity: number) {
+    setBusy(productId);
+    setError("");
     try {
-      const res = await api.patch<Cart>(`/cart/items/${productId}`, { quantity });
-      setCart(res);
+      await cart.setQuantity(productId, quantity);
+    } catch (e) {
+      setError(
+        e instanceof ApiError
+          ? e.message
+          : "Couldn’t update your basket. Please try again.",
+      );
     } finally {
-      setBusyProductId(null);
+      setBusy(null);
     }
   }
-
-  if (!authLoading && !user) {
+  if (!authLoading && !user)
     return (
-      <p className="text-stone-600">
-        <Link href="/login" className="text-accent font-medium underline">
-          Log in
-        </Link>{' '}
-        to view your cart.
-      </p>
-    );
-  }
-
-  if (!cart) return <p className="text-stone-500">Loading…</p>;
-
-  if (cart.items.length === 0) {
-    return (
-      <div className="text-center py-16">
-        <div className="mx-auto h-14 w-14 rounded-full bg-stone-100 flex items-center justify-center">
-          <Icon name="cart" className="h-7 w-7 text-stone-400" />
-        </div>
-        <p className="mt-4 text-stone-500">Your cart is empty.</p>
-        <Link href="/" className="mt-1 inline-block text-accent font-medium hover:underline">
-          Browse categories
+      <div className="empty-state">
+        <h1>Make room for something good.</h1>
+        <p className="my-4">Sign in to save your basket and place an order.</p>
+        <Link href="/login?next=/cart" className="button-primary">
+          Sign in to shop →
         </Link>
       </div>
     );
-  }
-
+  if (cart.loading) return <p className="empty-state">Loading your basket…</p>;
+  if (cart.error)
+    return (
+      <div className="notice" role="alert">
+        {cart.error}
+        <button onClick={cart.reload}>Try again</button>
+      </div>
+    );
+  if (!cart.items.length)
+    return (
+      <div className="empty-state">
+        <Icon name="cart" className="h-8 w-8 mx-auto mb-4" />
+        <h1>Your next project is waiting.</h1>
+        <p className="my-4">
+          Your basket is empty. Find a few things you’ll love.
+        </p>
+        <Link href="/shop" className="button-primary">
+          Explore the collection →
+        </Link>
+      </div>
+    );
   return (
-    <div className="max-w-lg">
-      <h1 className="text-xl font-medium text-stone-900 mb-4">Your cart</h1>
-      <div className="glass divide-y divide-line rounded-card">
-        {cart.items.map((item) => (
-          <div key={item.id} className="p-4 flex items-center justify-between gap-4">
-            <div>
-              <div className="font-medium text-stone-900">{item.product.name}</div>
-              <div className="text-sm text-stone-500">
-                ₹{item.unitPrice} / {item.product.unit}
+    <div>
+      <div className="shop-heading">
+        <span className="eyebrow">YOUR PROJECT, COMING TOGETHER</span>
+        <h1>Your basket.</h1>
+        <p>{cart.itemCount} items, one step closer to home.</p>
+      </div>
+      <div className="purchase-layout">
+        <section className="purchase-panel basket-lines">
+          {cart.items.map((item) => (
+            <div className="basket-line" key={item.id}>
+              <div>
+                <h2>{item.product.name}</h2>
+                <p>
+                  {formatMoney(item.unitPrice)} / {item.product.unit}
+                </p>
+                <button
+                  className="text-accent text-xs underline mt-2"
+                  disabled={!!busy}
+                  onClick={() => update(item.product.id, 0)}
+                >
+                  Remove
+                </button>
+              </div>
+              <div className="basket-controls">
+                <div className="quantity-control">
+                  <button
+                    aria-label={`Decrease ${item.product.name}`}
+                    disabled={!!busy}
+                    onClick={() => update(item.product.id, item.quantity - 1)}
+                  >
+                    −
+                  </button>
+                  <span>{item.quantity}</span>
+                  <button
+                    aria-label={`Increase ${item.product.name}`}
+                    disabled={!!busy}
+                    onClick={() => update(item.product.id, item.quantity + 1)}
+                  >
+                    +
+                  </button>
+                </div>
+                <strong>{formatMoney(item.lineTotal)}</strong>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                min={0}
-                value={item.quantity}
-                disabled={busyProductId === item.product.id}
-                onChange={(e) => updateQuantity(item.product.id, Math.max(0, parseInt(e.target.value, 10) || 0))}
-                className="w-16 min-h-11 rounded-card border border-line px-2 text-center outline-none"
-              />
-              <div className="w-20 text-right font-medium text-accent">₹{item.lineTotal}</div>
-            </div>
+          ))}
+        </section>
+        <aside className="purchase-panel order-summary">
+          <span className="eyebrow">ORDER SUMMARY</span>
+          <div className="summary-total">
+            <span>Subtotal</span>
+            <strong>{formatMoney(cart.subtotal)}</strong>
           </div>
-        ))}
+          <p>
+            Delivery availability is checked against your address and local
+            stock at checkout.
+          </p>
+          <Link href="/checkout" className="button-primary">
+            Continue to checkout →
+          </Link>
+          <Link href="/shop" className="continue-shopping">
+            Keep exploring
+          </Link>
+        </aside>
       </div>
-      <div className="glass mt-4 rounded-card p-4 flex items-center justify-between">
-        <span className="text-stone-600 font-medium">Subtotal</span>
-        <span className="text-lg font-medium text-accent">₹{cart.subtotal}</span>
-      </div>
-      <Link
-        href="/checkout"
-        className="mt-4 flex items-center justify-center min-h-11 rounded-card bg-accent text-white px-5 font-medium hover:bg-accent-hover"
-      >
-        Proceed to checkout
-      </Link>
+      {error && (
+        <p className="notice mt-4" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

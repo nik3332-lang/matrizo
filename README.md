@@ -1,131 +1,92 @@
 # Matrizo
 
-Quick-commerce delivery for construction materials (cement, hardware, plumbing, electrical
-supplies) — a dark-store model, similar in shape to Blinkit/Zepto but for a building-materials
-catalog. Backed by **Cloudflare Workers**, with separate **Next.js** apps for the customer site
-and the dark-store ops portal. A React Native (Expo) mobile app follows once web + API + admin
-are working end-to-end.
+Matrizo brings sanitary ware, bathroom fittings, plumbing supplies, and paints into one local quick-commerce storefront, with separate operations and employee workspaces.
 
-## Structure
+| Application | Address                                                       | Purpose                                                                              |
+| ----------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Storefront  | https://www.matrizo.com                                       | Browse, search, filter, basket, cash-on-delivery checkout, order tracking            |
+| Admin       | https://adminacc.matrizo.com                                  | Products, nested categories, inventory, orders, staff, employees, daily sales review |
+| Employees   | https://emp.matrizo.com                                       | Daily sales reports, monthly totals, commission, profile                             |
+| API         | https://matrizo-api.nikhilsinghal-official.workers.dev/api/v1 | Shared authenticated REST API                                                        |
 
-```
-apps/api/       Cloudflare Worker (Hono) — the REST API, backed by D1, with a Durable Object
-                per active order for live tracking. R2/KV/Queues bindings land as each is used.
-apps/web/       Next.js — customer site (browse catalog, cart, checkout), Cloudflare Pages
-apps/admin/     Next.js — dark-store ops portal (order queue, inventory), Cloudflare Pages
-packages/shared/ Shared zod schemas, enums, and pricing logic used by all of the above
-```
+## Architecture
 
-`apps/mobile/` (Expo) isn't scaffolded yet — deliberately deferred until the web + API + admin
-flows are solid.
+- `apps/web`, `apps/admin`, `apps/employees`: Next.js 16, deployed as Cloudflare Workers through OpenNext.
+- `apps/api`: Hono Worker with Drizzle, D1, KV, and an order-tracking Durable Object.
+- `packages/shared`: domain types, pricing, API client, currency/date utilities, and portal styling.
+- `apps/mobile`: existing Expo application; not part of the September 2026 website release.
+- `tests`: isolated API integration tests with local D1/KV/Durable Objects.
 
-## Stack
+## What works
 
-- **API**: Cloudflare Workers + [Hono](https://hono.dev), **D1** (SQLite, via Drizzle ORM) for
-  relational data, a **Durable Object** (`OrderTrackerDO`, one per active order) for live
-  WebSocket order tracking, **R2** for product images and delivery-proof photos, **KV** for
-  catalog cache / pincode serviceability / anonymous cart sessions, **Queues** for async jobs
-  (dispatch, cashback, notifications).
-- **Web / Admin**: Next.js on Cloudflare Pages — separate apps rather than route groups of one
-  app, since the ops portal has different auth/permissions and no reason to ship React Native
-  web bundles to a back-office user.
-- **Auth**: phone + OTP (via MSG91) for customers, email + password for store staff / delivery
-  partners / admins — one custom-JWT scheme with a `role` claim, extending what the pre-rewrite
-  MVP already had rather than adopting Clerk/Supabase (see reasoning in the schema-design PR).
-- **Payments**: Razorpay (UPI) alongside cash-on-delivery.
+Customers can browse the actual active catalog, search, filter by category/brand, inspect product details and quantity pricing, check delivery pincodes, create an email/password account, save addresses, order with cash on delivery, and track orders. New accounts include a delivery contact number. Uploaded product URLs take precedence over category illustrations.
 
-## Data model
+Admins can create/edit/remove products and nested categories, manage inventory and orders, add/edit/remove/restore employees, and review daily sales by date or employee. Daily review includes submitted/missing reports, totals, estimated commission, notes, and CSV export. A removed employee loses access immediately; historic sales stay in the business records. Categories containing products or subcategories must be emptied before removal.
 
-Core entities (see `apps/api/src/db/schema.ts` for the authoritative definitions):
+Employees can save or update one sales total per day, add notes, inspect their journal and monthly commission estimate, and maintain their profile. Sales dates follow India Standard Time. Reports are employee-entered totals, not automatically reconciled with online orders. Commission estimates use the employee's currently configured rate; they are not a payroll ledger.
 
-- `users` — role-based (`customer` / `store_staff` / `delivery_partner` / `admin`)
-- `stores` + `store_service_pincodes` — dark stores and which pincodes each one serves
-- `products` + `categories` + `bulk_pricing_tiers` — catalog, with volume-discount tiers
-- `inventory` — per-store stock levels
-- `orders` + `order_items` — assigned to exactly one store at creation time
-- `order_status_events` — append-only tracking history (`orders.status` is just the current
-  pointer); the `OrderTrackerDO` reads/writes through this table and only caches the latest
-  status in memory for fast WebSocket fan-out
-- `delivery_assignments` — links an order to the delivery partner fulfilling it
-- `wallet_transactions` — append-only cashback/wallet ledger
+## Local development
 
-## Prerequisites
+Use Node.js 24 and the pinned pnpm version. `pnpm install` installs the workspace.
 
-- Node.js 20+ (this repo uses Node 24)
-- [pnpm](https://pnpm.io) (`corepack enable` or `npm i -g pnpm`)
-- A Cloudflare account + `npx wrangler login` (only needed once you deploy or touch real D1/KV/R2)
+For a completely isolated demo, run `pnpm test:serve`. This builds the API into an ephemeral Miniflare environment, applies the migrations locally, and creates demo products, a test store, an admin, and two employees. No root `.env` is loaded and no Cloudflare resources are changed.
 
-Install everything from the repo root:
+In separate terminals:
 
 ```sh
-pnpm install
+NEXT_PUBLIC_API_URL=http://localhost:8787/api/v1 pnpm web:dev --port 3000
+NEXT_PUBLIC_API_URL=http://localhost:8787/api/v1 pnpm admin:dev --port 3001
+NEXT_PUBLIC_API_URL=http://localhost:8787/api/v1 pnpm employees:dev --port 3002
 ```
 
-> `pnpm-workspace.yaml` pins `nodeLinker: hoisted`, kept from before the rewrite in anticipation
-> of `apps/mobile` (Expo) returning — React Native's Metro bundler doesn't reliably resolve
-> pnpm's default strict/symlinked `node_modules` layout.
+Local fixture accounts are `admin-test@matrizo.test` and `employee-test@matrizo.test`. The fixture-only password is `TEST_PASSWORD` in `scripts/local-platform.mjs`. Never create these accounts in production. For a separate storefront preview while another Next server is running, set `MATRIZO_NEXT_DIR=.next-preview` and choose another port.
 
-## Running things
+The regular `pnpm api:dev` uses Wrangler's local persistence instead of the fixture. Initialize it with `pnpm api:db:migrate:local` and supply a local JWT secret through `apps/api/.dev.vars`. Never point local test runs at production D1.
+
+## Verification
 
 ```sh
-pnpm api:dev      # wrangler dev — emulates D1/KV/DO locally, no Cloudflare login needed
-pnpm web:dev       # Next.js dev server, customer site
-pnpm admin:dev     # Next.js dev server, ops portal
+pnpm test
+pnpm --filter @matrizo/api exec tsc --noEmit
+pnpm --filter @matrizo/web exec tsc --noEmit
+pnpm --filter @matrizo/admin exec tsc --noEmit
+pnpm --filter @matrizo/employees exec tsc --noEmit
+pnpm --filter @matrizo/web lint
+pnpm --filter @matrizo/admin lint
+pnpm --filter @matrizo/employees lint
+pnpm --filter @matrizo/web worker:build
+pnpm --filter @matrizo/admin worker:build
+pnpm --filter @matrizo/employees worker:build
 ```
 
-Verify the API's up:
+Integration tests cover catalog/nested-category CRUD, role boundaries, daily reporting, employee removal and restoration, customer login/refresh, cash-on-delivery inventory, cancellation, and competing checkouts for the final item. The test harness requires permission to start a local workerd process.
+
+## Cloudflare configuration and deployment
+
+The root `.env` is ignored by Git. It holds Cloudflare deployment access, not browser configuration. Never log it, bundle it into a website, or commit it. Worker runtime secrets are managed separately through Wrangler. The API requires `JWT_SECRET`; existing owner login also uses `OWNER_EMAIL` and `OWNER_PASSWORD`.
+
+A safe, read-only configuration check prints resource names, domains, and secret **names**:
 
 ```sh
-curl http://127.0.0.1:8787/api/v1/health
+node --env-file=.env scripts/cloudflare-status.mjs
 ```
 
-### Database migrations (Drizzle → D1)
-
-Schema lives in `apps/api/src/db/schema.ts`.
+Each app has a `wrangler.jsonc` pointing at the existing Worker and bindings. After building and exporting the Cloudflare deployment credentials into the shell environment:
 
 ```sh
-pnpm api:db:generate         # generate a migration from schema.ts changes
-pnpm api:db:migrate:local    # apply migrations to the local D1 emulation
-pnpm api:db:migrate:remote   # apply migrations to the real D1 database (needs wrangler login)
+pnpm api:deploy
+pnpm --filter @matrizo/web exec opennextjs-cloudflare deploy
+pnpm --filter @matrizo/admin exec opennextjs-cloudflare deploy
+pnpm --filter @matrizo/employees exec opennextjs-cloudflare deploy
 ```
 
-### Deploying apps/web (Cloudflare Pages → Workers migration in progress)
+Deploy API compatibility changes before the websites. `NEXT_PUBLIC_API_URL` is public and baked into the frontend at build time; production builds must use the production API URL. The storefront's `API` service binding handles server-side requests directly to the API Worker. This release does not change D1 schema or require a migration.
 
-`www.matrizo.com` is live today on a **Cloudflare Pages** project (git-integrated: pushing to
-`main` auto-deploys), built with `@cloudflare/next-on-pages`. That adapter works by internally
-running `vercel build` as a build-time step — no Vercel account/hosting involved, but it's an
-extra dependency, and the package is deprecated upstream in favor of a fully-Cloudflare toolchain.
+## Operational configuration still needed
 
-We're migrating to `@opennextjs/cloudflare`, which deploys `apps/web` as a **Workers** project
-instead (no Vercel involved at any point). Both paths coexist for now:
+- Cash on delivery is the checkout payment option. Razorpay keys and production payment/webhook integration are not configured.
+- Email/password sign-in is available for new customer accounts. SMS sign-in stays disabled until MSG91 is configured, and OTP codes are never returned to the browser. Existing phone-only accounts need SMS service restored or a verified account-recovery process; there is no self-service password reset yet.
+- Existing product data, product-specific images, store stock, and delivery coverage must be maintained by the business. Category illustrations and the bathroom hero are editorial imagery, not a guarantee of a particular SKU's appearance. The live sanitary category currently needs real products added by an admin.
+- R2/Queues bindings remain disabled in the current infrastructure; product images use supplied URLs or bundled assets.
 
-```sh
-pnpm --filter @matrizo/web run pages:build   # old path — what the live Pages project still runs
-pnpm --filter @matrizo/web run deploy        # new path — builds + `wrangler deploy`s a Workers
-                                              # project named matrizo-web (run manually for now)
-```
-
-Once `matrizo-web` (the Worker) is verified working, the remaining step is cutting
-`www.matrizo.com` over to it and retiring the Pages project + `next-on-pages` — a deliberate,
-separate step, not automatic.
-
-### Real Cloudflare resources
-
-`apps/api/wrangler.jsonc` points at real, already-provisioned resources (account:
-`Nikhilsinghal.official@gmail.com`'s account): D1 database `matrizo-db` and KV namespace `CACHE`.
-R2 and Queues bindings are commented out in `wrangler.jsonc` until each is actually enabled/created
-on the account (R2 needs a one-time dashboard opt-in; both need `wrangler r2 bucket create` /
-`wrangler queues create` before their binding can be uncommented, or `wrangler deploy` fails
-referencing a resource that doesn't exist).
-
-Secrets (MSG91 API key, JWT signing secret, Razorpay keys) are set with
-`npx wrangler secret put <NAME>` from `apps/api`, never committed to the repo.
-
-## Status
-
-Rewritten from a single-store home-improvement-marketplace MVP (Expo Router app + a simpler
-Workers API — see git history before this rewrite) into the dark-store quick-commerce model
-described above. Current state: monorepo scaffolding, full D1 schema, and migrations are in place
-(applied to both local and the real remote D1). API routes (catalog + serviceability, cart +
-order creation, the order-tracking Durable Object), the admin order queue / inventory screens, and
-the customer catalog/cart/checkout flow are the next build steps, in that order.
+See [release notes and visual provenance](docs/release-2026-09-16.md) for implementation and validation details.

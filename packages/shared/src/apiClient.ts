@@ -13,34 +13,64 @@ export class ApiError extends Error {
 export type ApiClientConfig = {
   baseUrl: string;
   getAccessToken?: () => string | null | undefined;
+  refreshAccessToken?: () => Promise<boolean>;
 };
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export function createApiClient({ baseUrl, getAccessToken }: ApiClientConfig) {
-  async function requestOnce<T = unknown>(path: string, init?: RequestInit): Promise<T> {
+export function createApiClient({
+  baseUrl,
+  getAccessToken,
+  refreshAccessToken,
+}: ApiClientConfig) {
+  async function requestOnce<T = unknown>(
+    path: string,
+    init?: RequestInit,
+    refreshed = false,
+  ): Promise<T> {
     const token = getAccessToken?.();
     const res = await fetch(`${baseUrl}${path}`, {
       // Explicit no-store: a bare fetch() from a Next.js Server Component
       // defaults to force-cache and gets cached in Next's Data Cache —
       // this data (prices, stock, specs) should never be cached at this
       // layer regardless.
-      cache: 'no-store',
+      cache: "no-store",
       ...init,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...init?.headers,
       },
     });
 
     const text = await res.text();
-    const body = text ? JSON.parse(text) : null;
+    let body;
+    try {
+      body = text ? JSON.parse(text) : null;
+    } catch {
+      throw new ApiError(
+        "The service is temporarily unavailable. Please try again.",
+        res.status || 503,
+      );
+    }
+
+    if (
+      res.status === 401 &&
+      !refreshed &&
+      token &&
+      refreshAccessToken &&
+      (await refreshAccessToken())
+    ) {
+      return requestOnce<T>(path, init, true);
+    }
 
     if (!res.ok) {
-      throw new ApiError((body && body.error) || `Request failed (${res.status})`, res.status);
+      throw new ApiError(
+        (body && body.error) || `Request failed (${res.status})`,
+        res.status,
+      );
     }
     return body as T;
   }
@@ -55,9 +85,12 @@ export function createApiClient({ baseUrl, getAccessToken }: ApiClientConfig) {
   // control-plane flakiness seen all session during deploys. A GET is
   // safe to retry; writes (POST/PATCH/etc.) are deliberately not retried
   // here since a failure after the write landed shouldn't resubmit it.
-  async function request<T = unknown>(path: string, init?: RequestInit): Promise<T> {
-    const method = init?.method?.toUpperCase() ?? 'GET';
-    if (method !== 'GET') return requestOnce<T>(path, init);
+  async function request<T = unknown>(
+    path: string,
+    init?: RequestInit,
+  ): Promise<T> {
+    const method = init?.method?.toUpperCase() ?? "GET";
+    if (method !== "GET") return requestOnce<T>(path, init);
 
     const attempts = 3;
     let lastErr: unknown;
@@ -79,12 +112,22 @@ export function createApiClient({ baseUrl, getAccessToken }: ApiClientConfig) {
   return {
     get: <T = unknown>(path: string) => request<T>(path),
     post: <T = unknown>(path: string, data?: unknown) =>
-      request<T>(path, { method: 'POST', body: data !== undefined ? JSON.stringify(data) : undefined }),
+      request<T>(path, {
+        method: "POST",
+        body: data !== undefined ? JSON.stringify(data) : undefined,
+      }),
     patch: <T = unknown>(path: string, data?: unknown) =>
-      request<T>(path, { method: 'PATCH', body: data !== undefined ? JSON.stringify(data) : undefined }),
+      request<T>(path, {
+        method: "PATCH",
+        body: data !== undefined ? JSON.stringify(data) : undefined,
+      }),
     put: <T = unknown>(path: string, data?: unknown) =>
-      request<T>(path, { method: 'PUT', body: data !== undefined ? JSON.stringify(data) : undefined }),
-    delete: <T = unknown>(path: string) => request<T>(path, { method: 'DELETE' }),
+      request<T>(path, {
+        method: "PUT",
+        body: data !== undefined ? JSON.stringify(data) : undefined,
+      }),
+    delete: <T = unknown>(path: string) =>
+      request<T>(path, { method: "DELETE" }),
   };
 }
 

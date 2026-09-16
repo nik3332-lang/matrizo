@@ -1,13 +1,19 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 
-import { ApiError } from '@matrizo/shared';
-import { api, getStoredToken, setStoredToken } from './api';
+import { ApiError } from "@matrizo/shared";
+import { api, getStoredToken, setStoredToken } from "./api";
 
 export type StaffUser = {
   id: string;
-  role: 'store_staff' | 'delivery_partner' | 'admin';
+  role: "store_staff" | "delivery_partner" | "admin";
   email: string | null;
   name: string | null;
   storeId: string | null;
@@ -29,15 +35,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const token = getStoredToken();
     if (!token) {
-      setLoading(false);
+      void Promise.resolve().then(() => setLoading(false));
       return;
     }
     api
-      .get<{ user: { id: string; role: string; email: string | null; name: string | null; storeId: string | null } }>(
-        '/account/me'
-      )
+      .get<{
+        user: {
+          id: string;
+          role: string;
+          email: string | null;
+          name: string | null;
+          storeId: string | null;
+        };
+      }>("/account/me")
       .then((res) => {
-        if (res.user.role !== 'customer') setUser(res.user as StaffUser);
+        if (
+          ["admin", "store_staff", "delivery_partner"].includes(res.user.role)
+        )
+          setUser(res.user as StaffUser);
         else setStoredToken(null);
       })
       .catch((err) => {
@@ -56,11 +71,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }
 
-  return <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }

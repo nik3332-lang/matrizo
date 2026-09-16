@@ -1,192 +1,246 @@
-'use client';
-
-import Link from 'next/link';
-import Image from 'next/image';
-import { useEffect, useState } from 'react';
-
-import { priceForQuantity, type ProductBrand } from '@matrizo/shared';
-import { api } from '@/lib/api';
-import { categoryCatalogImage, productCatalogImage } from '@/lib/catalogImages';
-import { categoryIcon, Icon } from '@/components/Icon';
-import { HeroBanner } from '@/components/HeroBanner';
-import { ProductCard } from '@/components/ProductCard';
-import { ProductCardSkeleton, TileSkeleton } from '@/components/Skeleton';
-import type { ProductSpecs } from '@/lib/specs';
-
-type Category = {
-  id: string;
-  slug: string;
-  name: string;
-  icon: string | null;
+"use client";
+import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { BRAND_LABELS, priceForQuantity } from "@matrizo/shared";
+import { api } from "@/lib/api";
+import { categoryCatalogImage, productCatalogImage } from "@/lib/catalogImages";
+import { categoryIcon, Icon } from "@/components/Icon";
+import { HeroBanner } from "@/components/HeroBanner";
+import { ProductCard } from "@/components/ProductCard";
+import { TileSkeleton, ProductCardSkeleton } from "@/components/Skeleton";
+import type { CatalogData } from "@/lib/catalog";
+const CATEGORY_COPY: Record<string, string> = {
+  sanitary: "Everyday, elevated",
+  upvc: "Build a better flow",
+  cpvc: "Made for the long run",
+  paints: "A fresh perspective",
+  "paint-materials-tools": "The finishing touches",
 };
-
-type Brand = { brand: ProductBrand; name: string; productCount: number };
-
-type Tier = { minQty: number; pricePerUnit: number };
-type Product = {
-  id: string;
-  slug: string;
-  name: string;
-  unit: string;
-  basePrice: number;
-  categoryId: string;
-  tiers: Tier[];
-  specs: ProductSpecs | null;
-  gstInvoiceEligible: boolean;
-};
-
-const STEPS = [
-  { step: '1', title: 'Check your pincode', body: 'See if we deliver to your address in seconds.' },
-  { step: '2', title: 'Browse & order', body: 'Pick what you need — bulk pricing applies automatically.' },
-  { step: '3', title: 'Get it delivered', body: 'Track your order live, right up to your door.' },
-];
-
 export default function HomePage() {
-  const [categories, setCategories] = useState<Category[] | null>(null);
-  const [brands, setBrands] = useState<Brand[] | null>(null);
-  const [popular, setPopular] = useState<Product[] | null>(null);
-
+  const [data, setData] = useState<CatalogData | null>(null);
+  const [error, setError] = useState("");
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
-    api.get<{ categories: Category[] }>('/categories').then(async (res) => {
-      setCategories(res.categories);
-
-      const perCategory = await Promise.all(
-        res.categories.map((cat) =>
-          api
-            .get<{ products: Product[] }>(`/categories/${cat.slug}/products`)
-            .then((r) => r.products)
-            .catch(() => [])
-        )
-      );
-      setPopular(perCategory.flat().slice(0, 8));
-    });
-    api.get<{ brands: Brand[] }>('/brands').then((res) => setBrands(res.brands));
-  }, []);
-
+    let live = true;
+    api
+      .get<CatalogData>("/storefront")
+      .then((value) => {
+        if (live) {
+          setData(value);
+          setError("");
+        }
+      })
+      .catch(() => {
+        if (live)
+          setError("We couldn’t load the collection. Please try again.");
+      });
+    return () => {
+      live = false;
+    };
+  }, [attempt]);
+  const featured = data?.featured ?? [];
   return (
-    <div className="space-y-10">
-      {categories && categories.length > 0 && (
-        <section>
-          <HeroBanner availableSlugs={categories.map((c) => c.slug)} />
-        </section>
-      )}
-
-      {/* Catalog first — category grid, then brand row, then frequently-
-         ordered products. The old pincode-check hero and four benefit
-         tiles are gone: ETA now lives in the persistent header location
-         bar, bulk tiers are on each product card, COD is on the checkout
-         button, and warranty/authenticity moved to the product page. */}
-      <section>
-        <h2 className="text-lg font-medium text-stone-900 mb-4">Shop by category</h2>
-        {!categories && (
-          <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <TileSkeleton key={i} />
-            ))}
+    <div className="home-sections">
+      <HeroBanner />
+      <div className="service-strip">
+        {(
+          [
+            [
+              "truck",
+              "Your neighbourhood, delivered",
+              "Check your pincode for delivery",
+            ],
+            ["badgeCheck", "Brands you know", "Products for every project"],
+            [
+              "package",
+              "Buying for a bigger project?",
+              "Explore quantity pricing",
+            ],
+            ["cash", "Keep payments simple", "Cash on delivery available"],
+          ] as const
+        ).map(([icon, title, body]) => (
+          <div key={title}>
+            <Icon name={icon} className="h-6 w-6" />
+            <span>
+              <strong>{title}</strong>
+              <small>{body}</small>
+            </span>
           </div>
-        )}
-        {categories && categories.length === 0 && <p className="text-stone-500">No categories yet.</p>}
-        {categories && categories.length > 0 && (
-          <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-            {categories.map((cat) => (
+        ))}
+      </div>
+      {error && (
+        <div role="alert" className="notice">
+          {error}
+          <button onClick={() => setAttempt((a) => a + 1)}>Try again</button>
+        </div>
+      )}
+      <section id="categories">
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">FIND YOUR EVERYDAY ESSENTIALS</span>
+            <h2>Good spaces start here.</h2>
+          </div>
+          <Link href="/shop">
+            Shop everything <span aria-hidden="true">↗</span>
+          </Link>
+        </div>
+        <div className="category-grid">
+          {!data &&
+            Array.from({ length: 5 }, (_, i) => <TileSkeleton key={i} />)}
+          {data?.categories
+            .filter((c) => !c.parentId)
+            .map((cat, i) => (
               <Link
                 key={cat.id}
                 href={`/category/${cat.slug}`}
-                className="glass rounded-card p-2 text-center transition-colors hover:border-stone-300"
+                className={`category-tile category-tone-${i % 5}`}
               >
-                <div className="relative mx-auto h-16 sm:h-20 w-full">
-                  {categoryCatalogImage(cat.slug) ? (
+                <div className="category-art">
+                  {cat.slug === "sanitary" ? (
+                    <Image
+                      src="/images/brand/bathroom-editorial.webp"
+                      alt=""
+                      fill
+                      sizes="(max-width: 700px) 45vw, 20vw"
+                      className="object-cover"
+                    />
+                  ) : categoryCatalogImage(cat.slug) ? (
                     <Image
                       src={categoryCatalogImage(cat.slug)!}
                       alt=""
                       fill
-                      sizes="(max-width: 640px) 50vw, 33vw"
-                      className="object-contain"
+                      sizes="(max-width: 700px) 45vw, 20vw"
+                      className="object-contain p-4"
                     />
                   ) : (
-                    <div className="mx-auto h-14 w-14 rounded-full bg-accent-subtle flex items-center justify-center">
-                      <Icon name={categoryIcon(cat.slug)} className="h-7 w-7 text-accent" />
-                    </div>
+                    <Icon name={categoryIcon(cat.slug)} className="h-16 w-16" />
                   )}
                 </div>
-                <div className="mt-2 text-xs sm:text-sm font-medium text-stone-900 line-clamp-2">{cat.name}</div>
+                <div className="category-label">
+                  <h3>{cat.name}</h3>
+                  <span aria-hidden="true">↗</span>
+                </div>
+                <p>{CATEGORY_COPY[cat.slug] ?? "Discover the collection"}</p>
               </Link>
             ))}
-          </div>
-        )}
+        </div>
       </section>
-
-      <section>
-        <h2 className="text-lg font-medium text-stone-900 mb-4">Shop by brand</h2>
-        {!brands && (
-          <div className="grid grid-cols-3 gap-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <TileSkeleton key={i} />
+      <section className="brand-section">
+        <span className="eyebrow">GOOD COMPANY FOR YOUR HOME</span>
+        <div className="brand-row">
+          {data?.brands
+            .filter((b) => b.productCount > 0 && b.brand !== "others")
+            .map((b) => (
+              <Link key={b.brand} href={`/brand/${b.brand}`}>
+                <span className={`manufacturer manufacturer-${b.brand}`}>
+                  {b.name}
+                </span>
+                <small>{b.productCount} products</small>
+              </Link>
             ))}
-          </div>
-        )}
-        {brands && (
-          <div className="grid grid-cols-3 gap-4">
-            {brands
-              .filter((b) => b.productCount > 0)
-              .map((b) => (
-                <Link
-                  key={b.brand}
-                  href={`/brand/${b.brand}`}
-                  className="glass rounded-card p-5 text-center transition-colors hover:border-stone-300"
-                >
-                  <div className="mx-auto h-12 w-12 rounded-full bg-accent-subtle flex items-center justify-center text-accent font-medium">
-                    {b.name[0]}
-                  </div>
-                  <div className="mt-3 font-medium text-stone-900">{b.name}</div>
-                  <div className="text-xs text-stone-500 mt-0.5">{b.productCount} products</div>
-                </Link>
-              ))}
-          </div>
-        )}
+        </div>
       </section>
-
       <section>
-        <h2 className="text-lg font-medium text-stone-900 mb-4">Frequently ordered</h2>
-        {!popular && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {Array.from({ length: 8 }).map((_, i) => (
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">THE PROJECT STARTERS</span>
+            <h2>Small upgrades. Big difference.</h2>
+          </div>
+          <Link href="/shop">
+            View collection <span aria-hidden="true">↗</span>
+          </Link>
+        </div>
+        <div className="product-grid">
+          {!data &&
+            Array.from({ length: 5 }, (_, i) => (
               <ProductCardSkeleton key={i} />
             ))}
-          </div>
-        )}
-        {popular && popular.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {popular.map((product) => {
-              const price = priceForQuantity(product.tiers, 1, product.basePrice);
-              const cat = categories?.find((c) => c.id === product.categoryId);
-              return (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  price={price}
-                  tiers={product.tiers}
-                  categoryIconName={categoryIcon(cat?.slug ?? '')}
-                  imageSrc={productCatalogImage(cat?.slug ?? '', product.name)}
-                  specs={product.specs}
-                  gstInvoiceEligible={product.gstInvoiceEligible}
-                />
-              );
-            })}
-          </div>
+          {featured.slice(0, 10).map((p) => {
+            const cat = data?.categories.find((c) => c.id === p.categoryId);
+            return (
+              <ProductCard
+                key={p.id}
+                product={p}
+                price={priceForQuantity(p.tiers, 1, p.basePrice)}
+                tiers={p.tiers}
+                categoryIconName={categoryIcon(cat?.slug ?? "")}
+                imageSrc={productCatalogImage(cat?.slug ?? "", p.name)}
+                brandLabel={BRAND_LABELS[p.brand]}
+                specs={p.specs}
+                gstInvoiceEligible={p.gstInvoiceEligible}
+              />
+            );
+          })}
+        </div>
+        {data && !featured.length && (
+          <p className="empty-state">
+            Our collection is being prepared. Please check back soon.
+          </p>
         )}
       </section>
-
-      <section>
-        <h2 className="text-lg font-medium text-stone-900 mb-4">How it works</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {STEPS.map((s) => (
-            <div key={s.step} className="glass rounded-card p-5">
-              <div className="h-8 w-8 rounded-full bg-accent text-white flex items-center justify-center font-medium text-sm">
-                {s.step}
-              </div>
-              <div className="mt-3 font-medium text-stone-900">{s.title}</div>
-              <div className="mt-1 text-sm text-stone-500">{s.body}</div>
+      <section className="paint-edit">
+        <div>
+          <span className="eyebrow">A LITTLE COLOUR GOES A LONG WAY</span>
+          <h2>
+            New walls.
+            <br />
+            New possibilities.
+          </h2>
+          <p>
+            From the first coat to the final finish. Find paints, primers and
+            the right tools to bring your space to life.
+          </p>
+          <Link href="/category/paints" className="button-primary">
+            Explore paints <span aria-hidden="true">↗</span>
+          </Link>
+        </div>
+        <div className="paint-still-life">
+          <div className="paint-swatch swatch-one" />
+          <div className="paint-swatch swatch-two" />
+          <div className="paint-swatch swatch-three" />
+          <Image
+            src="/images/catalog/paint-supplies.png"
+            alt="Paint can, brush and roller"
+            width={480}
+            height={350}
+            sizes="(max-width: 700px) 85vw, 40vw"
+          />
+        </div>
+      </section>
+      <section className="how-section">
+        <div>
+          <span className="eyebrow">
+            LESS RUNNING AROUND. MORE GETTING IT DONE.
+          </span>
+          <h2>
+            Your next project,
+            <br />
+            three steps away.
+          </h2>
+        </div>
+        <div className="how-steps">
+          {[
+            [
+              "01",
+              "Make it local",
+              "Set your pincode to check delivery to your doorstep.",
+            ],
+            [
+              "02",
+              "Find your fit",
+              "Choose your products, compare details and add to cart.",
+            ],
+            [
+              "03",
+              "We’ll take it from here",
+              "Place your order and follow its progress all the way home.",
+            ],
+          ].map(([n, title, copy]) => (
+            <div key={n}>
+              <span>{n}</span>
+              <h3>{title}</h3>
+              <p>{copy}</p>
             </div>
           ))}
         </div>

@@ -15,25 +15,25 @@
 // only) — confirmed live: this page 500'd until the edge export was
 // removed. The Workers deploy (nodejs_compat) doesn't need it either way.
 
-import type { Metadata } from 'next';
-import Image from 'next/image';
-import Link from 'next/link';
+import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
 
-import { priceForQuantity, type ProductBrand } from '@matrizo/shared';
-import { serverApiGet } from '@/lib/serverApi';
-import { categoryIcon } from '@/lib/categoryIcon';
-import { productCatalogImage } from '@/lib/catalogImages';
-import { specEntries, type ProductSpecs } from '@/lib/specs';
-import { Icon } from '@/components/Icon';
-import { AddToCartPanel } from './AddToCartPanel';
+import { priceForQuantity, type ProductBrand } from "@matrizo/shared";
+import { serverApiGet } from "@/lib/serverApi";
+import { categoryIcon } from "@/lib/categoryIcon";
+import { productCatalogImage } from "@/lib/catalogImages";
+import { specEntries, type ProductSpecs } from "@/lib/specs";
+import { Icon } from "@/components/Icon";
+import { AddToCartPanel } from "./AddToCartPanel";
 
 const BRAND_LABELS: Record<ProductBrand, string> = {
-  raksha: 'Raksha',
-  prince: 'Prince',
-  asian_paints: 'Asian Paints',
-  birla_opus: 'Birla Opus',
-  padmavati: 'Padmavati',
-  others: 'Others',
+  raksha: "Raksha",
+  prince: "Prince",
+  asian_paints: "Asian Paints",
+  birla_opus: "Birla Opus",
+  padmavati: "Padmavati",
+  others: "Others",
 };
 
 type Tier = { minQty: number; pricePerUnit: number };
@@ -62,24 +62,32 @@ async function getProduct(slug: string): Promise<Product | null> {
   }
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProduct(slug);
-  if (!product) return { title: 'Product not found — Matrizo' };
+  if (!product) return { title: "Product not found" };
 
   const price = priceForQuantity(product.tiers, 1, product.basePrice);
   const description =
     product.description?.trim() ||
-    `${product.name} — ₹${price} / ${product.unit}. Genuine ${BRAND_LABELS[product.brand]}, delivered fast from your nearest Matrizo dark store.`;
+    `${product.name} — ₹${price} / ${product.unit}. ${BRAND_LABELS[product.brand]}. Check local delivery availability with Matrizo.`;
 
   return {
-    title: `${product.name} — Matrizo`,
+    title: product.name,
     description,
-    openGraph: { title: product.name, description, type: 'website' },
+    openGraph: { title: product.name, description, type: "website" },
   };
 }
 
-export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function ProductPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const { slug } = await params;
   const product = await getProduct(slug);
 
@@ -87,7 +95,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   const unitPrice = priceForQuantity(product.tiers, 1, product.basePrice);
   const specs = specEntries(product.specs);
-  const imageSrc = productCatalogImage(product.category?.slug ?? '', product.name);
+  const imageSrc = productCatalogImage(
+    product.category?.slug ?? "",
+    product.name,
+  );
 
   // Product/Offer schema.org markup (STAGE 6) — availability is
   // deliberately omitted rather than guessed: there's no customer-facing
@@ -95,22 +106,25 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   // gap), and asserting InStock/OutOfStock without real data would be
   // worse than saying nothing.
   const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
+    "@context": "https://schema.org",
+    "@type": "Product",
     name: product.name,
     sku: product.sku,
     ...(product.description ? { description: product.description } : {}),
-    brand: { '@type': 'Brand', name: BRAND_LABELS[product.brand] },
+    brand: { "@type": "Brand", name: BRAND_LABELS[product.brand] },
     offers: {
-      '@type': 'Offer',
-      priceCurrency: 'INR',
+      "@type": "Offer",
+      priceCurrency: "INR",
       price: unitPrice,
     },
   };
 
   return (
     <div className="max-w-3xl pb-24 sm:pb-0">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
       <nav className="flex items-center gap-1.5 text-sm text-stone-500 mb-4">
         <Link href="/" className="hover:text-accent">
@@ -119,7 +133,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         {product.category && (
           <>
             <Icon name="chevronLeft" className="h-3 w-3 rotate-180" />
-            <Link href={`/category/${product.category.slug}`} className="hover:text-accent">
+            <Link
+              href={`/category/${product.category.slug}`}
+              className="hover:text-accent"
+            >
               {product.category.name}
             </Link>
           </>
@@ -138,13 +155,18 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             />
           ) : (
             <div className="h-20 w-20 rounded-full bg-accent-subtle flex items-center justify-center">
-              <Icon name={categoryIcon(product.category?.slug ?? '')} className="h-10 w-10 text-accent" />
+              <Icon
+                name={categoryIcon(product.category?.slug ?? "")}
+                className="h-10 w-10 text-accent"
+              />
             </div>
           )}
         </div>
 
         <div>
-          <h1 className="text-2xl font-medium text-stone-900">{product.name}</h1>
+          <h1 className="text-2xl font-medium text-stone-900">
+            {product.name}
+          </h1>
           <div className="mt-2 flex items-center gap-2 flex-wrap">
             <span className="text-xs px-2.5 py-1 rounded-card border border-line text-stone-600 font-medium">
               {BRAND_LABELS[product.brand]}
@@ -168,15 +190,17 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </dl>
           )}
 
-          {product.description && <p className="mt-3 text-stone-600">{product.description}</p>}
+          {product.description && (
+            <p className="mt-3 text-stone-600">{product.description}</p>
+          )}
 
-          {/* Brand authenticity + warranty — relocated here from the old
-             homepage "Genuine products" benefit tile (STAGE 3), same
-             claim the site already made, just where the doubt actually
-             occurs: on the product itself. */}
           <div className="mt-3 flex items-center gap-1.5 text-xs text-stone-500">
-            <Icon name="badgeCheck" className="h-3.5 w-3.5 text-success shrink-0" />
-            Genuine product, sourced directly from {BRAND_LABELS[product.brand]} — brand warranty applies.
+            <Icon
+              name="badgeCheck"
+              className="h-3.5 w-3.5 text-success shrink-0"
+            />
+            From {BRAND_LABELS[product.brand]}. Check the specifications to find
+            the right fit for your project.
           </div>
 
           <AddToCartPanel
@@ -202,12 +226,17 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           {[...product.tiers]
             .sort((a, b) => a.minQty - b.minQty)
             .map((tier, i, arr) => (
-              <div key={tier.minQty} className="px-4 py-2.5 flex justify-between">
+              <div
+                key={tier.minQty}
+                className="px-4 py-2.5 flex justify-between"
+              >
                 <span>
                   {tier.minQty}
-                  {arr[i + 1] ? ` – ${arr[i + 1].minQty - 1}` : '+'}
+                  {arr[i + 1] ? ` – ${arr[i + 1].minQty - 1}` : "+"}
                 </span>
-                <span className="font-medium text-accent">₹{tier.pricePerUnit}</span>
+                <span className="font-medium text-accent">
+                  ₹{tier.pricePerUnit}
+                </span>
               </div>
             ))}
         </div>

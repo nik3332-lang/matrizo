@@ -1,52 +1,83 @@
-'use client';
-
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-
-import { useAuth } from '@/lib/auth';
-
-const ADMIN_LINKS = [{ href: '/admin', label: 'Employees' }];
-
-const EMPLOYEE_LINKS = [
-  { href: '/', label: 'Dashboard' },
-  { href: '/sales', label: 'Sales entry' },
-  { href: '/commission', label: 'Commission' },
-  { href: '/profile', label: 'Profile' },
-];
-
-export function NavBar() {
-  const { user, loading, logout } = useAuth();
-  const pathname = usePathname();
-
-  const links = user?.role === 'admin' ? ADMIN_LINKS : EMPLOYEE_LINKS;
-  const homeHref = user?.role === 'admin' ? '/admin' : '/';
-
+"use client";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { useAuth } from "@/lib/auth";
+function Brand() {
   return (
-    <header className="sticky top-0 z-10 bg-stone-900 shadow-sm">
-      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-        <Link href={homeHref} className="font-bold text-lg tracking-tight text-white">
-          Matrizo Employees
-        </Link>
-        {!loading && user && (
-          <nav className="flex items-center gap-1 text-sm">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`rounded-full px-3 py-1.5 font-medium transition-colors ${
-                  pathname === link.href ? 'bg-brand-orange-700 text-white' : 'text-stone-300 hover:bg-white/10 hover:text-white'
-                }`}
+    <Link href="/" className="portal-brand">
+      <span aria-hidden="true">M</span>matrizo.
+    </Link>
+  );
+}
+export function NavBar() {
+  const { user, logout } = useAuth();
+  const path = usePathname();
+  const [open, setOpen] = useState(false);
+  if (path === "/login")
+    return (
+      <header className="portal-login-header">
+        <Brand />
+      </header>
+    );
+  const links =
+    user?.role === "admin"
+      ? [["/admin", "Employees"]]
+      : [
+          ["/", "Overview"],
+          ["/sales", "Log daily sales"],
+          ["/commission", "Commission"],
+          ["/profile", "My profile"],
+        ];
+  return (
+    <>
+      <header className="portal-mobile">
+        <Brand />
+        <button onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+          ☰ Menu
+        </button>
+      </header>
+      <aside className={`portal-sidebar ${open ? "is-open" : ""}`}>
+        <Brand />
+        <p className="portal-sidebar-label">YOUR TEAM WORKSPACE</p>
+        <nav className="portal-links" aria-label="Main navigation">
+          {links.map(([href, label]) => (
+            <Link
+              key={href}
+              href={href}
+              onClick={() => setOpen(false)}
+              className={path === href ? "active" : ""}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                aria-hidden="true"
               >
-                {link.label}
-              </Link>
-            ))}
-            <span className="ml-3 text-stone-400 text-xs hidden sm:inline">{user.email}</span>
-            <button onClick={logout} className="ml-1 rounded-full px-3 py-1.5 font-medium text-stone-300 hover:bg-white/10 hover:text-white">
-              Log out
-            </button>
-          </nav>
-        )}
-      </div>
-    </header>
+                <rect x="4" y="4" width="16" height="16" rx="3" />
+                <path d="M8 9h8M8 13h8M8 17h4" />
+              </svg>
+              {label}
+            </Link>
+          ))}
+        </nav>
+        <div className="portal-sidebar-bottom">
+          <strong>{user?.name ?? "Matrizo team"}</strong>
+          <small>{user?.email ?? "Sign in to your workspace"}</small>
+          <a href="https://www.matrizo.com">Open storefront ↗</a>
+          {user?.role === "admin" && (
+            <a href="https://matrizo-admin.nikhilsinghal-official.workers.dev/sales">
+              Review daily sales ↗
+            </a>
+          )}
+          {user ? (
+            <button onClick={logout}>Sign out</button>
+          ) : (
+            <Link href="/login">Sign in →</Link>
+          )}
+        </div>
+      </aside>
+    </>
   );
 }

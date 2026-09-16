@@ -1,13 +1,19 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 
-import { ApiError } from '@matrizo/shared';
-import { api, getStoredToken, setStoredToken } from './api';
+import { ApiError } from "@matrizo/shared";
+import { api, getStoredToken, setStoredToken } from "./api";
 
 type CustomerUser = {
   id: string;
-  role: 'customer';
+  role: "customer";
   phone: string | null;
   name: string | null;
 };
@@ -28,11 +34,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const token = getStoredToken();
     if (!token) {
-      setLoading(false);
+      void Promise.resolve().then(() => setLoading(false));
       return;
     }
     api
-      .get<{ user: CustomerUser }>('/account/me')
+      .get<{ user: CustomerUser }>("/account/me")
       .then((res) => setUser(res.user))
       .catch((err) => {
         if (err instanceof ApiError && err.status === 401) setStoredToken(null);
@@ -50,11 +56,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }
 
-  return <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }

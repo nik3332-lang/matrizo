@@ -1,32 +1,68 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
-import { api } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
-import { STATUS_COLORS } from '@/lib/statusColors';
+import { ApiError } from "@matrizo/shared";
+import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { STATUS_COLORS } from "@/lib/statusColors";
 
 type Summary = {
   totalRevenue: number;
   totalOrders: number;
   avgOrderValue: number;
   ordersByStatus: Record<string, number>;
-  topProducts: { productId: string; productName: string; quantity: number; revenue: number }[];
-  lowStock: { storeId: string; productId: string; productName: string; stockQty: number }[];
+  topProducts: {
+    productId: string;
+    productName: string;
+    quantity: number;
+    revenue: number;
+  }[];
+  lowStock: {
+    storeId: string;
+    productId: string;
+    productName: string;
+    stockQty: number;
+  }[];
 };
 
 export default function AnalyticsPage() {
   const { user, loading: authLoading } = useAuth();
   const [summary, setSummary] = useState<Summary | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  function load() {
+    setLoadError(null);
+    api
+      .get<Summary>("/admin/analytics/summary")
+      .then(setSummary)
+      .catch((err) =>
+        setLoadError(
+          err instanceof ApiError ? err.message : "Could not load analytics.",
+        ),
+      );
+  }
 
   useEffect(() => {
-    if (!authLoading && user?.role === 'admin') {
-      api.get<Summary>('/admin/analytics/summary').then(setSummary);
-    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!authLoading && user?.role === "admin") load();
   }, [authLoading, user]);
 
-  if (!authLoading && user?.role !== 'admin') {
+  if (!authLoading && user?.role !== "admin") {
     return <p className="text-stone-600">Only admins can view analytics.</p>;
+  }
+  if (loadError && !summary) {
+    return (
+      <div className="glass rounded-xl p-4">
+        <p className="text-sm text-rose-600">{loadError}</p>
+        <button
+          onClick={load}
+          className="mt-2 text-xs px-3 py-1.5 rounded-full font-medium text-brand-orange-700 hover:bg-brand-orange-50"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
   if (!summary) return <p className="text-stone-500">Loading…</p>;
 
@@ -38,44 +74,61 @@ export default function AnalyticsPage() {
 
       <div className="grid grid-cols-3 gap-4">
         <div className="glass rounded-xl p-4 border-l-4 border-l-emerald-400">
-          <div className="text-2xl font-bold text-emerald-700">₹{summary.totalRevenue.toFixed(2)}</div>
+          <div className="text-2xl font-bold text-emerald-700">
+            ₹{summary.totalRevenue.toFixed(2)}
+          </div>
           <div className="text-xs text-stone-500">Total revenue</div>
         </div>
         <div className="glass rounded-xl p-4 border-l-4 border-l-brand-orange-400">
-          <div className="text-2xl font-bold text-brand-orange-700">{summary.totalOrders}</div>
+          <div className="text-2xl font-bold text-brand-orange-700">
+            {summary.totalOrders}
+          </div>
           <div className="text-xs text-stone-500">Orders (excl. cancelled)</div>
         </div>
         <div className="glass rounded-xl p-4 border-l-4 border-l-brand-purple-400">
-          <div className="text-2xl font-bold text-brand-purple-700">₹{summary.avgOrderValue.toFixed(2)}</div>
+          <div className="text-2xl font-bold text-brand-purple-700">
+            ₹{summary.avgOrderValue.toFixed(2)}
+          </div>
           <div className="text-xs text-stone-500">Average order value</div>
         </div>
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold text-stone-900 mb-3">Orders by status</h2>
+        <h2 className="text-lg font-semibold text-stone-900 mb-3">
+          Orders by status
+        </h2>
         <div className="flex gap-2 flex-wrap">
           {Object.entries(summary.ordersByStatus).map(([status, count]) => (
             <span
               key={status}
               className={`text-sm px-3 py-1.5 rounded-full font-medium capitalize ring-1 ${
-                STATUS_COLORS[status as keyof typeof STATUS_COLORS] ?? 'bg-stone-100 text-stone-700 ring-stone-200'
+                STATUS_COLORS[status as keyof typeof STATUS_COLORS] ??
+                "bg-stone-100 text-stone-700 ring-stone-200"
               }`}
             >
               {status}: {count}
             </span>
           ))}
-          {Object.keys(summary.ordersByStatus).length === 0 && <p className="text-stone-500">No orders yet.</p>}
+          {Object.keys(summary.ordersByStatus).length === 0 && (
+            <p className="text-stone-500">No orders yet.</p>
+          )}
         </div>
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold text-stone-900 mb-3">Top products</h2>
-        {summary.topProducts.length === 0 && <p className="text-stone-500">No sales yet.</p>}
+        <h2 className="text-lg font-semibold text-stone-900 mb-3">
+          Top products
+        </h2>
+        {summary.topProducts.length === 0 && (
+          <p className="text-stone-500">No sales yet.</p>
+        )}
         <div className="space-y-2">
           {summary.topProducts.map((p) => (
             <div key={p.productId} className="glass rounded-xl p-3">
               <div className="flex items-center justify-between text-sm mb-1">
-                <span className="font-medium text-stone-900">{p.productName}</span>
+                <span className="font-medium text-stone-900">
+                  {p.productName}
+                </span>
                 <span className="text-stone-500">
                   {p.quantity} sold · ₹{p.revenue.toFixed(2)}
                 </span>
@@ -92,20 +145,30 @@ export default function AnalyticsPage() {
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold text-stone-900 mb-3">Low stock (all stores)</h2>
-        {summary.lowStock.length === 0 && <p className="text-stone-500">Nothing running low.</p>}
+        <h2 className="text-lg font-semibold text-stone-900 mb-3">
+          Low stock (all stores)
+        </h2>
+        {summary.lowStock.length === 0 && (
+          <p className="text-stone-500">Nothing running low.</p>
+        )}
         <div className="space-y-2">
           {summary.lowStock.map((row) => (
             <div
               key={`${row.storeId}-${row.productId}`}
               className={`glass rounded-xl p-3 flex items-center justify-between border-l-4 ${
-                row.stockQty === 0 ? 'border-l-rose-400' : 'border-l-brand-orange-400'
+                row.stockQty === 0
+                  ? "border-l-rose-400"
+                  : "border-l-brand-orange-400"
               }`}
             >
-              <span className="text-sm font-medium text-stone-900">{row.productName}</span>
+              <span className="text-sm font-medium text-stone-900">
+                {row.productName}
+              </span>
               <span
                 className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                  row.stockQty === 0 ? 'bg-rose-100 text-rose-700' : 'bg-brand-orange-100 text-brand-orange-700'
+                  row.stockQty === 0
+                    ? "bg-rose-100 text-rose-700"
+                    : "bg-brand-orange-100 text-brand-orange-700"
                 }`}
               >
                 {row.stockQty} left

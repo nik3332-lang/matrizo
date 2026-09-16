@@ -1,28 +1,42 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 
-type CategoryFormValues = {
+export type CategoryFormValues = {
   slug: string;
   name: string;
   icon: string;
   sortOrder: number;
+  parentId: string | null;
 };
 
-const EMPTY: CategoryFormValues = { slug: '', name: '', icon: '', sortOrder: 0 };
+const EMPTY: CategoryFormValues = {
+  slug: "",
+  name: "",
+  icon: "",
+  sortOrder: 0,
+  parentId: null,
+};
 
 export function CategoryForm({
   initial,
   onSubmit,
   onCancel,
   busy,
+  categories = [],
+  excludedIds = [],
 }: {
   initial?: Partial<CategoryFormValues>;
   onSubmit: (values: CategoryFormValues) => void;
   onCancel: () => void;
   busy?: boolean;
+  categories?: { id: string; name: string }[];
+  excludedIds?: string[];
 }) {
-  const [values, setValues] = useState<CategoryFormValues>({ ...EMPTY, ...initial });
+  const [values, setValues] = useState<CategoryFormValues>({
+    ...EMPTY,
+    ...initial,
+  });
 
   return (
     <form
@@ -68,18 +82,42 @@ export function CategoryForm({
           <input
             type="number"
             value={values.sortOrder}
-            onChange={(e) => setValues((v) => ({ ...v, sortOrder: parseInt(e.target.value, 10) || 0 }))}
+            onChange={(e) =>
+              setValues((v) => ({
+                ...v,
+                sortOrder: parseInt(e.target.value, 10) || 0,
+              }))
+            }
             className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-brand-orange-500 focus:ring-2 focus:ring-brand-orange-200 outline-none"
           />
         </label>
       </div>
+      <label className="block text-sm font-medium text-slate-700">
+        Parent category
+        <select
+          value={values.parentId ?? ""}
+          onChange={(e) =>
+            setValues((v) => ({ ...v, parentId: e.target.value || null }))
+          }
+          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+        >
+          <option value="">None — top-level category</option>
+          {categories
+            .filter((c) => !excludedIds.includes(c.id))
+            .map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+        </select>
+      </label>
       <div className="flex gap-2 pt-1">
         <button
           type="submit"
           disabled={busy}
           className="rounded-lg bg-brand-orange-700 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:bg-brand-orange-800 disabled:opacity-60"
         >
-          {busy ? 'Saving…' : 'Save'}
+          {busy ? "Saving…" : "Save"}
         </button>
         <button
           type="button"

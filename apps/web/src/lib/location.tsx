@@ -1,68 +1,77 @@
-'use client';
-
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-
-import { api } from './api';
-
-const STORAGE_KEY = 'matrizo_pincode';
-
-type Serviceability = { pincode: string; serviceable: boolean; etaMinutes: number | null };
-
+"use client";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useRef,
+  type ReactNode,
+} from "react";
+import { api } from "./api";
+const STORAGE_KEY = "matrizo_pincode";
+type Serviceability = {
+  pincode: string;
+  serviceable: boolean;
+  etaMinutes: number | null;
+};
 type LocationState = {
   pincode: string | null;
   serviceability: Serviceability | null;
   checking: boolean;
-  setPincode: (pincode: string) => Promise<void>;
+  error: string;
+  setPincode: (pincode: string) => Promise<boolean>;
 };
-
 const LocationContext = createContext<LocationState | null>(null);
-
-// Persistent, app-wide "where am I delivering to" state — STAGE 3 moves the
-// pincode/ETA check out of a one-off homepage hero and into the header,
-// visible and editable on every route. Pincode itself lives in
-// localStorage (same pattern as the auth token in lib/api.ts) so it
-// survives a reload without needing a signed-in account.
 export function LocationProvider({ children }: { children: ReactNode }) {
-  const [pincode, setPincodeState] = useState<string | null>(() =>
-    typeof window !== 'undefined' ? window.localStorage.getItem(STORAGE_KEY) : null
+  const [pincode, setPincodeState] = useState<string | null>(null);
+  const [serviceability, setServiceability] = useState<Serviceability | null>(
+    null,
   );
-  const [serviceability, setServiceability] = useState<Serviceability | null>(null);
   const [checking, setChecking] = useState(false);
-
-  async function check(value: string) {
+  const [error, setError] = useState("");
+  const request = useRef(0);
+  async function setPincode(value: string): Promise<boolean> {
+    if (!/^\d{6}$/.test(value)) {
+      setError("Enter a valid 6-digit pincode.");
+      return false;
+    }
+    const id = ++request.current;
     setChecking(true);
+    setError("");
+    setServiceability(null);
     try {
-      const res = await api.get<Serviceability>(`/serviceability/${encodeURIComponent(value)}`);
-      setServiceability(res);
+      const result = await api.get<Serviceability>(`/serviceability/${value}`);
+      if (id !== request.current) return false;
+      setPincodeState(value);
+      setServiceability(result);
+      window.localStorage.setItem(STORAGE_KEY, value);
+      return result.serviceable;
+    } catch {
+      if (id === request.current)
+        setError(
+          "Delivery availability could not be checked. Please try again.",
+        );
+      return false;
     } finally {
-      setChecking(false);
+      if (id === request.current) setChecking(false);
     }
   }
-
   useEffect(() => {
-    // Only re-validate on mount, when a stored pincode is first loaded —
-    // setPincode below handles the explicit-change path itself, so this
-    // intentionally doesn't re-run when `pincode` changes.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (pincode) check(pincode);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      void Promise.resolve().then(() => setPincode(stored));
+    }
   }, []);
-
-  async function setPincode(value: string) {
-    setPincodeState(value);
-    if (typeof window !== 'undefined') window.localStorage.setItem(STORAGE_KEY, value);
-    await check(value);
-  }
-
   return (
-    <LocationContext.Provider value={{ pincode, serviceability, checking, setPincode }}>
+    <LocationContext.Provider
+      value={{ pincode, serviceability, checking, error, setPincode }}
+    >
       {children}
     </LocationContext.Provider>
   );
 }
-
-export function useLocation(): LocationState {
+export function useLocation() {
   const ctx = useContext(LocationContext);
-  if (!ctx) throw new Error('useLocation must be used within LocationProvider');
+  if (!ctx) throw new Error("Missing LocationProvider");
   return ctx;
 }

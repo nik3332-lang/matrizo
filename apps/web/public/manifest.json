@@ -1,11 +1,11 @@
 {
   "name": "Matrizo",
   "short_name": "Matrizo",
-  "description": "Sanitary ware, plumbing supplies, and paints delivered fast from your nearest dark store.",
+  "description": "Sanitary ware, plumbing supplies, and paints delivered fast from your local Matrizo store.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#faf9f7",
-  "theme_color": "#c22f16",
+  "background_color": "#fafaf8",
+  "theme_color": "#153747",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }

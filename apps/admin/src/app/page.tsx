@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 
-import { ORDER_STATUSES } from '@matrizo/shared';
-import { api } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
-import { STATUS_COLORS } from '@/lib/statusColors';
+import { ApiError, ORDER_STATUSES } from "@matrizo/shared";
+import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { STATUS_COLORS } from "@/lib/statusColors";
 
 const STATUS_BORDER: Record<string, string> = {
-  placed: 'border-l-brand-purple-400',
-  confirmed: 'border-l-brand-orange-400',
-  picked: 'border-l-brand-coral-400',
-  dispatched: 'border-l-stone-400',
-  delivered: 'border-l-emerald-400',
-  cancelled: 'border-l-rose-400',
+  placed: "border-l-brand-purple-400",
+  confirmed: "border-l-brand-orange-400",
+  picked: "border-l-brand-coral-400",
+  dispatched: "border-l-stone-400",
+  delivered: "border-l-emerald-400",
+  cancelled: "border-l-rose-400",
 };
 
 type Order = {
@@ -25,32 +25,61 @@ type Order = {
   createdAt: string;
 };
 
-const FILTERS = ['all', ...ORDER_STATUSES] as const;
-
 export default function OrderQueuePage() {
   const { user, loading } = useAuth();
   const [orders, setOrders] = useState<Order[] | null>(null);
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]>('all');
+  const [filter, setFilter] = useState<"all" | (typeof ORDER_STATUSES)[number]>(
+    "all",
+  );
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  function load() {
+    setLoadError(null);
+    api
+      .get<{ orders: Order[] }>("/orders")
+      .then((res) => setOrders(res.orders))
+      .catch((err) =>
+        setLoadError(
+          err instanceof ApiError ? err.message : "Could not load orders.",
+        ),
+      );
+  }
 
   useEffect(() => {
-    if (!loading && user) {
-      api.get<{ orders: Order[] }>('/orders').then((res) => setOrders(res.orders));
-    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!loading && user) load();
   }, [loading, user]);
 
   const filtered = useMemo(
-    () => (filter === 'all' ? orders : orders?.filter((o) => o.status === filter)),
-    [orders, filter]
+    () =>
+      filter === "all" ? orders : orders?.filter((o) => o.status === filter),
+    [orders, filter],
   );
 
   if (!loading && !user) {
     return (
       <p className="text-slate-600">
-        <Link href="/login" className="text-brand-orange-700 font-medium underline">
+        <Link
+          href="/login"
+          className="text-brand-orange-700 font-medium underline"
+        >
           Sign in
-        </Link>{' '}
+        </Link>{" "}
         to view the order queue.
       </p>
+    );
+  }
+  if (loadError && !orders) {
+    return (
+      <div className="glass rounded-xl p-4">
+        <p className="text-sm text-rose-600">{loadError}</p>
+        <button
+          onClick={load}
+          className="mt-2 text-xs px-3 py-1.5 rounded-full font-medium text-brand-orange-700 hover:bg-brand-orange-50"
+        >
+          Retry
+        </button>
+      </div>
     );
   }
   if (!orders) return <p className="text-slate-500">Loading…</p>;
@@ -61,7 +90,9 @@ export default function OrderQueuePage() {
 
       <div className="grid grid-cols-3 gap-3 mb-5">
         <div className="glass rounded-xl p-4 border-l-4 border-l-brand-purple-400">
-          <div className="text-2xl font-bold text-brand-purple-800">{orders.length}</div>
+          <div className="text-2xl font-bold text-brand-purple-800">
+            {orders.length}
+          </div>
           <div className="text-xs text-slate-500">Total orders</div>
         </div>
         <div className="glass rounded-xl p-4 border-l-4 border-l-emerald-400">
@@ -72,7 +103,11 @@ export default function OrderQueuePage() {
         </div>
         <div className="glass rounded-xl p-4 border-l-4 border-l-brand-orange-400">
           <div className="text-2xl font-bold text-brand-orange-700">
-            {orders.filter((o) => o.status !== 'delivered' && o.status !== 'cancelled').length}
+            {
+              orders.filter(
+                (o) => o.status !== "delivered" && o.status !== "cancelled",
+              ).length
+            }
           </div>
           <div className="text-xs text-slate-500">In progress</div>
         </div>
@@ -80,11 +115,11 @@ export default function OrderQueuePage() {
 
       <div className="flex gap-2 mb-5 flex-wrap">
         <button
-          onClick={() => setFilter('all')}
+          onClick={() => setFilter("all")}
           className={`text-xs px-3 py-1.5 rounded-full font-medium ring-1 transition-colors ${
-            filter === 'all'
-              ? 'bg-slate-900 text-white ring-slate-900'
-              : 'bg-white text-slate-600 ring-slate-200 hover:ring-slate-300'
+            filter === "all"
+              ? "bg-slate-900 text-white ring-slate-900"
+              : "bg-white text-slate-600 ring-slate-200 hover:ring-slate-300"
           }`}
         >
           All
@@ -94,7 +129,9 @@ export default function OrderQueuePage() {
             key={s}
             onClick={() => setFilter(s)}
             className={`text-xs px-3 py-1.5 rounded-full font-medium capitalize ring-1 transition-colors ${
-              filter === s ? STATUS_COLORS[s] + ' ring-2' : 'bg-white text-slate-600 ring-slate-200 hover:ring-slate-300'
+              filter === s
+                ? STATUS_COLORS[s] + " ring-2"
+                : "bg-white text-slate-600 ring-slate-200 hover:ring-slate-300"
             }`}
           >
             {s}
@@ -102,18 +139,24 @@ export default function OrderQueuePage() {
         ))}
       </div>
 
-      {filtered?.length === 0 && <p className="text-slate-500">No orders here.</p>}
+      {filtered?.length === 0 && (
+        <p className="text-slate-500">No orders here.</p>
+      )}
 
       <div className="space-y-2">
         {filtered?.map((order) => (
           <Link
             key={order.id}
             href={`/orders/${order.id}`}
-            className={`glass block rounded-xl p-4 border-l-4 ${STATUS_BORDER[order.status] ?? 'border-l-slate-300'} hover:ring-brand-orange-300 hover:-translate-y-0.5 transition-all flex items-center justify-between`}
+            className={`glass block rounded-xl p-4 border-l-4 ${STATUS_BORDER[order.status] ?? "border-l-slate-300"} hover:ring-brand-orange-300 hover:-translate-y-0.5 transition-all flex items-center justify-between`}
           >
             <div>
-              <div className="font-semibold text-slate-900">#{order.id.slice(0, 8)}</div>
-              <div className="text-sm text-slate-500">{new Date(order.createdAt).toLocaleString()}</div>
+              <div className="font-semibold text-slate-900">
+                #{order.id.slice(0, 8)}
+              </div>
+              <div className="text-sm text-slate-500">
+                {new Date(order.createdAt).toLocaleString()}
+              </div>
             </div>
             <div className="text-right flex items-center gap-3">
               <div>

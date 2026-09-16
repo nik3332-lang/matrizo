@@ -1,230 +1,198 @@
-'use client';
-
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
-
-import { api } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
-import { useCart } from '@/lib/cart';
-import { useLocation } from '@/lib/location';
-import { Icon } from '@/components/Icon';
-
-type Suggestion = { id: string; slug: string; name: string };
-
-// Debounced live results under the search input — Blinkit-style instant
-// search rather than only-on-submit. Submitting (Enter, or the search icon
-// on mobile) still goes to the full /search results page unchanged.
-function useSearchSuggestions() {
-  const [q, setQ] = useState('');
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [open, setOpen] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (timer.current) clearTimeout(timer.current);
-    const query = q.trim();
-    if (!query) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSuggestions([]);
-      return;
-    }
-    timer.current = setTimeout(() => {
-      api
-        .get<{ products: Suggestion[] }>(`/products/search?q=${encodeURIComponent(query)}`)
-        .then((res) => setSuggestions(res.products.slice(0, 5)))
-        .catch(() => setSuggestions([]));
-    }, 250);
-    return () => {
-      if (timer.current) clearTimeout(timer.current);
-    };
-  }, [q]);
-
-  return { q, setQ, suggestions, open, setOpen };
-}
-
+"use client";
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { useCart } from "@/lib/cart";
+import { useLocation } from "@/lib/location";
+import { Icon } from "./Icon";
+import { Brand } from "./Brand";
+import type { Category } from "@/lib/catalog";
+type Suggestion = { id: string; name: string; slug: string };
 export function NavBar() {
-  const { user, loading, logout } = useAuth();
+  const { user } = useAuth();
   const { itemCount } = useCart();
+  const location = useLocation();
   const router = useRouter();
   const pathname = usePathname();
-  const search = useSearchSuggestions();
-
-  useEffect(() => {
-    search.setOpen(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
-
-  function submitSearch(e: React.FormEvent) {
-    e.preventDefault();
-    if (!search.q.trim()) return;
-    search.setOpen(false);
-    router.push(`/search?q=${encodeURIComponent(search.q.trim())}`);
-  }
-
-  return (
-    <header className="sticky top-0 z-10 bg-surface border-b border-line">
-      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-        <Link href="/" className="font-medium text-lg tracking-tight text-stone-900 shrink-0">
-          Matrizo
-        </Link>
-        <form onSubmit={submitSearch} className="relative flex-1 max-w-sm hidden sm:block">
-          <Icon name="search" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
-          <input
-            value={search.q}
-            onChange={(e) => search.setQ(e.target.value)}
-            onFocus={() => search.setOpen(true)}
-            onBlur={() => setTimeout(() => search.setOpen(false), 150)}
-            onKeyDown={(e) => e.key === 'Escape' && search.setOpen(false)}
-            placeholder="Search products…"
-            className="w-full h-11 rounded-full pl-9 pr-4 text-sm text-stone-900 outline-none border border-line bg-white"
-          />
-          {search.open && search.suggestions.length > 0 && <SuggestionDropdown suggestions={search.suggestions} />}
-        </form>
-        <nav className="flex items-center gap-1 text-sm">
-          <Link
-            href="/cart"
-            className="relative flex items-center gap-1.5 min-h-11 rounded-card px-3 font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition-colors"
-          >
-            <span className="relative">
-              <Icon name="cart" className="h-4 w-4" />
-              {itemCount > 0 && (
-                <span className="absolute -top-2 -right-2 h-4 min-w-4 px-0.5 rounded-full bg-accent text-white text-[10px] font-medium flex items-center justify-center">
-                  {itemCount}
-                </span>
-              )}
-            </span>
-            <span className="hidden sm:inline">Cart</span>
-          </Link>
-          {!loading && user && (
-            <>
-              <Link
-                href="/orders"
-                className="flex items-center gap-1.5 min-h-11 rounded-card px-3 font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition-colors"
-              >
-                <Icon name="receipt" className="h-4 w-4" />
-                <span className="hidden sm:inline">Orders</span>
-              </Link>
-              <Link
-                href="/account"
-                className="flex items-center gap-1.5 min-h-11 rounded-card px-3 font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition-colors"
-              >
-                <Icon name="user" className="h-4 w-4" />
-                <span className="hidden sm:inline">Account</span>
-              </Link>
-              <button
-                onClick={logout}
-                className="flex items-center gap-1.5 min-h-11 rounded-card px-3 font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition-colors"
-              >
-                <Icon name="logout" className="h-4 w-4" />
-                <span className="hidden sm:inline">Log out</span>
-              </button>
-            </>
-          )}
-          {!loading && !user && (
-            <Link
-              href="/login"
-              className="ml-1 flex items-center min-h-11 rounded-card bg-accent text-white px-4 font-medium hover:bg-accent-hover"
-            >
-              Log in
-            </Link>
-          )}
-        </nav>
-      </div>
-      <form onSubmit={submitSearch} className="relative sm:hidden px-4 pb-2">
-        <Icon name="search" className="pointer-events-none absolute left-7 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
-        <input
-          value={search.q}
-          onChange={(e) => search.setQ(e.target.value)}
-          onFocus={() => search.setOpen(true)}
-          onBlur={() => setTimeout(() => search.setOpen(false), 150)}
-          onKeyDown={(e) => e.key === 'Escape' && search.setOpen(false)}
-          placeholder="Search products…"
-          className="w-full h-11 rounded-full pl-9 pr-4 text-sm text-stone-900 outline-none border border-line bg-white"
-        />
-        {search.open && search.suggestions.length > 0 && <SuggestionDropdown suggestions={search.suggestions} className="left-4 right-4" />}
-      </form>
-      <LocationBar />
-    </header>
-  );
-}
-
-function SuggestionDropdown({ suggestions, className = '' }: { suggestions: Suggestion[]; className?: string }) {
-  return (
-    <div className={`absolute top-full mt-1 inset-x-0 rounded-card border border-line bg-white shadow-sm overflow-hidden z-20 ${className}`}>
-      {suggestions.map((product) => (
-        <Link
-          key={product.id}
-          href={`/product/${product.slug}`}
-          className="block px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 truncate"
-        >
-          {product.name}
-        </Link>
-      ))}
-    </div>
-  );
-}
-
-// STAGE 3: the pincode-check hero is gone — this is where "do you deliver
-// to me, and how fast" lives now, persistent and editable on every route
-// instead of a one-off homepage form.
-function LocationBar() {
-  const { pincode, serviceability, checking, setPincode } = useLocation();
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState(false);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState('');
-
-  async function submit(e: React.FormEvent) {
+  const [draft, setDraft] = useState("");
+  useEffect(() => {
+    api
+      .get<{ categories: Category[] }>("/categories")
+      .then((r) => setCategories(r.categories))
+      .catch(() => {});
+  }, []);
+  useEffect(() => {
+    let live = true;
+    const timer = setTimeout(() => {
+      if (!q.trim()) {
+        setSuggestions([]);
+        return;
+      }
+      api
+        .get<{ products: Suggestion[] }>(
+          `/products/search?q=${encodeURIComponent(q.trim())}`,
+        )
+        .then((r) => {
+          if (live) setSuggestions(r.products.slice(0, 5));
+        })
+        .catch(() => {
+          if (live) setSuggestions([]);
+        });
+    }, 250);
+    return () => {
+      live = false;
+      clearTimeout(timer);
+    };
+  }, [q]);
+  function search(e: React.FormEvent) {
     e.preventDefault();
-    if (!draft.trim()) return;
-    await setPincode(draft.trim());
-    setEditing(false);
-  }
-
-  if (editing) {
-    return (
-      <form onSubmit={submit} className="border-t border-line px-4 py-2 flex items-center gap-2 max-w-5xl mx-auto">
-        <Icon name="mapPin" className="h-4 w-4 text-stone-400 shrink-0" />
-        <input
-          autoFocus
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Enter delivery pincode"
-          inputMode="numeric"
-          className="flex-1 h-9 rounded-card border border-line px-3 text-sm outline-none"
-        />
-        <button type="submit" disabled={checking} className="h-9 rounded-card bg-accent text-white px-3 text-sm font-medium disabled:opacity-60">
-          {checking ? 'Checking…' : 'Check'}
-        </button>
-        <button type="button" onClick={() => setEditing(false)} className="h-9 px-2 text-sm font-medium text-stone-500">
-          Cancel
-        </button>
-      </form>
+    setOpen(false);
+    router.push(
+      q.trim() ? `/search?q=${encodeURIComponent(q.trim())}` : "/shop",
     );
   }
-
+  function editLocation() {
+    setDraft(location.pincode ?? "");
+    setEditing((v) => !v);
+  }
+  async function saveLocation(e: React.FormEvent) {
+    e.preventDefault();
+    const ok = await location.setPincode(draft);
+    if (ok) setEditing(false);
+  }
+  const deliveryText = location.checking
+    ? "Checking delivery…"
+    : location.serviceability?.serviceable
+      ? `Delivery in ~${location.serviceability.etaMinutes ?? 60} min`
+      : location.pincode
+        ? "Check delivery availability"
+        : "Where should we deliver?";
   return (
-    <button
-      onClick={() => {
-        setDraft(pincode ?? '');
-        setEditing(true);
-      }}
-      className="w-full border-t border-line px-4 py-2 flex items-center gap-1.5 text-sm text-stone-600 hover:bg-stone-50 max-w-5xl mx-auto"
-    >
-      <Icon name="mapPin" className="h-4 w-4 text-stone-400 shrink-0" />
-      {!pincode && <span className="font-medium">Set delivery location</span>}
-      {pincode && checking && <span>Checking {pincode}…</span>}
-      {pincode && !checking && serviceability?.serviceable && (
-        <span>
-          Delivering to <span className="font-medium text-stone-900">{pincode}</span>
-          {serviceability.etaMinutes != null && <span className="text-success font-medium"> · ETA ~{serviceability.etaMinutes} min</span>}
-        </span>
+    <header className="site-header">
+      <div className="announcement">
+        Beautiful spaces. Everyday essentials. Delivered by Matrizo.
+      </div>
+      <div className="header-inner">
+        <Brand />
+        <button className="delivery-trigger" onClick={editLocation}>
+          <Icon name="mapPin" className="h-5 w-5 text-accent" />
+          <span>
+            <strong>{deliveryText}</strong>
+            <small>{location.pincode ?? "Set your delivery pincode"} ⌄</small>
+          </span>
+        </button>
+        <form className="header-search" role="search" onSubmit={search}>
+          <Icon name="search" className="h-4 w-4" />
+          <input
+            aria-label="Search products"
+            placeholder="Search for paints, taps, pipes and more"
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setOpen(true);
+            }}
+            onFocus={() => setOpen(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setOpen(false);
+            }}
+            onBlur={() => setTimeout(() => setOpen(false), 150)}
+          />
+          {open && q.trim() && suggestions.length > 0 && (
+            <div className="suggestions">
+              {suggestions.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/product/${p.slug}`}
+                  onClick={() => setOpen(false)}
+                >
+                  {p.name} <span aria-hidden="true">↗</span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </form>
+        <nav className="header-actions" aria-label="Your account">
+          <Link
+            href={user ? "/account" : "/login"}
+            className="header-account"
+            aria-label={user ? "My account" : "Sign in"}
+          >
+            <Icon name="user" className="h-5 w-5" />
+            <span>{user ? "My account" : "Sign in"}</span>
+          </Link>
+          <Link href="/cart" className="header-cart">
+            <Icon name="cart" className="h-4 w-4" />
+            Cart{itemCount > 0 && <span>{itemCount}</span>}
+          </Link>
+        </nav>
+      </div>
+      <nav className="category-nav" aria-label="Shop categories">
+        <Link href="/shop" className={pathname === "/shop" ? "active" : ""}>
+          All products
+        </Link>
+        <button className="mobile-pincode" onClick={editLocation}>
+          <span aria-hidden="true">⌖ </span>
+          {location.pincode ?? "Set pincode"}
+        </button>
+        {categories
+          .filter((c) => !c.parentId)
+          .map((c) => (
+            <Link
+              key={c.id}
+              href={`/category/${c.slug}`}
+              className={pathname === `/category/${c.slug}` ? "active" : ""}
+            >
+              {c.name}
+            </Link>
+          ))}
+      </nav>
+      {editing && (
+        <div className="location-editor">
+          <form onSubmit={saveLocation}>
+            <input
+              aria-label="Delivery pincode"
+              placeholder="6-digit pincode"
+              value={draft}
+              onChange={(e) =>
+                setDraft(e.target.value.replace(/\D/g, "").slice(0, 6))
+              }
+              inputMode="numeric"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              required
+              autoFocus
+            />
+            <button className="button-primary" disabled={location.checking}>
+              Check
+            </button>
+            <button
+              type="button"
+              className="text-xs px-2"
+              onClick={() => setEditing(false)}
+            >
+              Close
+            </button>
+          </form>
+          {location.error && (
+            <p role="alert" className="text-danger">
+              {location.error}
+            </p>
+          )}
+          {location.serviceability && !location.serviceability.serviceable && (
+            <p>
+              We’re not delivering to this pincode yet. You can still explore
+              our collection.
+            </p>
+          )}
+        </div>
       )}
-      {pincode && !checking && serviceability && !serviceability.serviceable && (
-        <span>
-          <span className="font-medium text-stone-900">{pincode}</span> — not serviceable yet
-        </span>
-      )}
-      <Icon name="chevronLeft" className="h-3 w-3 -rotate-90 text-stone-400 ml-auto shrink-0" />
-    </button>
+    </header>
   );
 }

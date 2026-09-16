@@ -1,9 +1,15 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-
-import { api } from './api';
-import { useAuth } from './auth';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
+import { api } from "./api";
+import { useAuth } from "./auth";
 
 type CartItem = {
   id: string;
@@ -13,65 +19,94 @@ type CartItem = {
   lineTotal: number;
 };
 type Cart = { items: CartItem[]; subtotal: number };
-
-type CartState = {
-  items: CartItem[];
-  subtotal: number;
+type CartState = Cart & {
   itemCount: number;
+  loading: boolean;
+  error: string | null;
+  reload: () => Promise<void>;
+  clear: () => void;
   quantityOf: (productId: string) => number;
   addItem: (productId: string) => Promise<void>;
   setQuantity: (productId: string, quantity: number) => Promise<void>;
 };
-
+const empty: Cart = { items: [], subtotal: 0 };
 const CartContext = createContext<CartState | null>(null);
 
-// Mirrors lib/location.tsx's provider pattern: one app-wide source of truth
-// so the nav badge, the floating cart bar, and every ProductCard's quick-add
-// control all reflect the same state instead of each fetching /cart on its
-// own. Cart still requires login (see apps/api/src/routes/cart.ts) — there's
-// no anonymous/KV-backed cart yet, so signed-out state is just an empty cart.
+// The catalog, header, basket, and checkout share one customer-scoped cart.
 export function CartProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading } = useAuth();
-  const [cart, setCart] = useState<Cart>({ items: [], subtotal: 0 });
-
+  const userId = user?.id;
+  const [state, setState] = useState<{
+    ownerId?: string;
+    cart: Cart;
+    error: string | null;
+  }>({ cart: empty, error: null });
+  const cart = state.ownerId === userId ? state.cart : empty;
+  const error = state.ownerId === userId ? state.error : null;
+  const reload = useCallback(() => {
+    if (!userId) return Promise.resolve();
+    return api
+      .get<Cart>("/cart")
+      .then((cart) => {
+        setState({ ownerId: userId, cart, error: null });
+      })
+      .catch(() => {
+        setState({
+          ownerId: userId,
+          cart: empty,
+          error: "Your basket couldn’t load. Please try again.",
+        });
+      });
+  }, [userId]);
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCart({ items: [], subtotal: 0 });
-      return;
-    }
-    api.get<Cart>('/cart').then(setCart);
-  }, [authLoading, user]);
-
+    if (!authLoading) void reload();
+  }, [authLoading, reload]);
+  const loading = authLoading || Boolean(userId && state.ownerId !== userId);
   function quantityOf(productId: string) {
-    return cart.items.find((item) => item.product.id === productId)?.quantity ?? 0;
+    return (
+      cart.items.find((item) => item.product.id === productId)?.quantity ?? 0
+    );
   }
-
   async function addItem(productId: string) {
     const existing = quantityOf(productId);
-    if (existing > 0) {
-      setCart(await api.patch<Cart>(`/cart/items/${productId}`, { quantity: existing + 1 }));
-    } else {
-      setCart(await api.post<Cart>('/cart/items', { productId, quantity: 1 }));
-    }
+    const updated =
+      existing > 0
+        ? await api.patch<Cart>(`/cart/items/${productId}`, {
+            quantity: existing + 1,
+          })
+        : await api.post<Cart>("/cart/items", { productId, quantity: 1 });
+    setState({ ownerId: userId, cart: updated, error: null });
   }
-
   async function setQuantity(productId: string, quantity: number) {
-    setCart(await api.patch<Cart>(`/cart/items/${productId}`, { quantity }));
+    setState({
+      ownerId: userId,
+      cart: await api.patch<Cart>(`/cart/items/${productId}`, { quantity }),
+      error: null,
+    });
   }
-
-  const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
-
+  function clear() {
+    setState({ ownerId: userId, cart: empty, error: null });
+  }
   return (
-    <CartContext.Provider value={{ items: cart.items, subtotal: cart.subtotal, itemCount, quantityOf, addItem, setQuantity }}>
+    <CartContext.Provider
+      value={{
+        ...cart,
+        loading,
+        error,
+        reload,
+        clear,
+        itemCount: cart.items.reduce((sum, item) => sum + item.quantity, 0),
+        quantityOf,
+        addItem,
+        setQuantity,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );
 }
-
 export function useCart(): CartState {
   const ctx = useContext(CartContext);
-  if (!ctx) throw new Error('useCart must be used within CartProvider');
+  if (!ctx) throw new Error("useCart must be used within CartProvider");
   return ctx;
 }

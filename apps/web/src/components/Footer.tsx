@@ -1,12 +1,43 @@
+import Link from "next/link";
+import { Brand } from "./Brand";
 export function Footer() {
   return (
-    <footer className="mt-16 border-t border-line bg-surface">
-      <div className="max-w-5xl mx-auto px-4 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
-          <div className="font-medium text-lg text-stone-900">Matrizo</div>
-          <p className="text-sm text-stone-500">Sanitary ware & paints, delivered from your nearest dark store.</p>
+    <footer className="site-footer">
+      <div className="footer-inner">
+        <div className="footer-top">
+          <div>
+            <Brand light />
+            <p>
+              Good things for great spaces.
+              <br />
+              Sanitary ware, bathroom fittings & paints.
+            </p>
+          </div>
+          <div>
+            <h3>Make it yours</h3>
+            <Link href="/shop">Shop all products</Link>
+            <Link href="/category/sanitary">Bathroom essentials</Link>
+            <Link href="/category/paints">Paints & finishes</Link>
+          </div>
+          <div>
+            <h3>Your Matrizo</h3>
+            <Link href="/account">My account</Link>
+            <Link href="/orders">Track your orders</Link>
+            <Link href="/cart">Your cart</Link>
+          </div>
+          <div>
+            <h3>Behind the scenes</h3>
+            <a href="https://emp.matrizo.com">Employee portal ↗</a>
+            <a href="https://adminacc.matrizo.com">Admin portal ↗</a>
+            <p>Built around your next project.</p>
+          </div>
         </div>
-        <p className="text-xs text-stone-400">© {new Date().getFullYear()} Matrizo. All rights reserved.</p>
+        <div className="footer-bottom">
+          <span>
+            © {new Date().getFullYear()} Matrizo. All rights reserved.
+          </span>
+          <span>Thoughtful choices. Beautiful spaces.</span>
+        </div>
       </div>
     </footer>
   );

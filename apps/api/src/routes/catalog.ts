@@ -1,39 +1,102 @@
-import { and, asc, count, eq, inArray, like, or } from 'drizzle-orm';
-import type { BatchItem } from 'drizzle-orm/batch';
-import { Hono } from 'hono';
-import { z } from 'zod';
+import { and, asc, count, eq, inArray, like, or } from "drizzle-orm";
+import type { BatchItem } from "drizzle-orm/batch";
+import { Hono } from "hono";
+import { z } from "zod";
 
-import { PRODUCT_BRANDS, type ProductBrand } from '@matrizo/shared';
-import { getDb } from '../db/client';
-import { bulkPricingTiers, cartItems, categories, inventory, orderItems, products, stores } from '../db/schema';
-import { findServiceableStore } from '../lib/serviceability';
-import { requireAuth, requireRole, type AuthEnv } from '../middleware/auth';
-import type { Env } from '../env';
+import {
+  PRODUCT_BRANDS,
+  BRAND_LABELS,
+  type ProductBrand,
+} from "@matrizo/shared";
+import { getDb } from "../db/client";
+import {
+  bulkPricingTiers,
+  cartItems,
+  categories,
+  inventory,
+  orderItems,
+  products,
+  stores,
+} from "../db/schema";
+import { findServiceableStore } from "../lib/serviceability";
+import { requireAuth, requireRole, type AuthEnv } from "../middleware/auth";
+import type { Env } from "../env";
 
 export const catalogRoutes = new Hono<AuthEnv>();
 
 // Brand is a fixed enum (unlike categories, which are admin-managed rows),
 // so there's no `brands` table — this is just the display label for each.
-const BRAND_LABELS: Record<ProductBrand, string> = {
-  raksha: 'Raksha',
-  prince: 'Prince',
-  asian_paints: 'Asian Paints',
-  birla_opus: 'Birla Opus',
-  padmavati: 'Padmavati',
-  others: 'Others',
-};
+function descendants(
+  rows: { id: string; parentId: string | null }[],
+  id: string,
+): string[] {
+  const ids = new Set([id]);
+  let previous = 0;
+  while (previous !== ids.size) {
+    previous = ids.size;
+    for (const row of rows)
+      if (row.parentId && ids.has(row.parentId)) ids.add(row.id);
+  }
+  return [...ids];
+}
 
 // --- public reads ---------------------------------------------------------
 
-catalogRoutes.get('/categories', async (c) => {
+catalogRoutes.get("/categories", async (c) => {
   const db = getDb(c.env.DB);
-  const rows = await db.select().from(categories).orderBy(asc(categories.sortOrder));
+  const rows = await db
+    .select()
+    .from(categories)
+    .orderBy(asc(categories.sortOrder));
   return c.json({ categories: rows });
+});
+
+catalogRoutes.get("/products", async (c) => {
+  const db = getDb(c.env.DB);
+  const rows = await db
+    .select()
+    .from(products)
+    .where(eq(products.active, true))
+    .orderBy(asc(products.name));
+  return c.json({ products: await attachTiers(db, rows) });
+});
+
+catalogRoutes.get("/storefront", async (c) => {
+  const db = getDb(c.env.DB);
+  const [categoryRows, productRows] = await Promise.all([
+    db.select().from(categories).orderBy(asc(categories.sortOrder)),
+    db
+      .select()
+      .from(products)
+      .where(eq(products.active, true))
+      .orderBy(asc(products.name)),
+  ]);
+  const groups = categoryRows.map((category) =>
+    productRows.filter((p) => p.categoryId === category.id),
+  );
+  const selected: typeof productRows = [];
+  for (
+    let i = 0;
+    selected.length < 10 && groups.some((group) => group[i]);
+    i++
+  ) {
+    for (const group of groups)
+      if (group[i] && selected.length < 10) selected.push(group[i]);
+  }
+  return c.json({
+    categories: categoryRows,
+    featured: await attachTiers(db, selected),
+    brands: PRODUCT_BRANDS.map((brand) => ({
+      brand,
+      name: BRAND_LABELS[brand],
+      productCount: productRows.filter((p) => p.brand === brand).length,
+    })),
+  });
 });
 
 // Fixed brand list (with a live count of active products per brand, so the
 // UI can hide/grey out an empty brand rather than guess).
-catalogRoutes.get('/brands', async (c) => {
+catalogRoutes.get("/brands", async (c) => {
   const db = getDb(c.env.DB);
   const rows = await db
     .select({ brand: products.brand, count: count() })
@@ -43,13 +106,18 @@ catalogRoutes.get('/brands', async (c) => {
   const counts = new Map(rows.map((r) => [r.brand, r.count]));
 
   return c.json({
-    brands: PRODUCT_BRANDS.map((brand) => ({ brand, name: BRAND_LABELS[brand], productCount: counts.get(brand) ?? 0 })),
+    brands: PRODUCT_BRANDS.map((brand) => ({
+      brand,
+      name: BRAND_LABELS[brand],
+      productCount: counts.get(brand) ?? 0,
+    })),
   });
 });
 
-catalogRoutes.get('/brands/:brand/products', async (c) => {
-  const brand = c.req.param('brand') as ProductBrand;
-  if (!PRODUCT_BRANDS.includes(brand)) return c.json({ error: 'Unknown brand' }, 404);
+catalogRoutes.get("/brands/:brand/products", async (c) => {
+  const brand = c.req.param("brand") as ProductBrand;
+  if (!PRODUCT_BRANDS.includes(brand))
+    return c.json({ error: "Unknown brand" }, 404);
 
   const db = getDb(c.env.DB);
   const productRows = await db
@@ -58,19 +126,31 @@ catalogRoutes.get('/brands/:brand/products', async (c) => {
     .where(and(eq(products.brand, brand), eq(products.active, true)));
 
   const withTiers = await attachTiers(db, productRows);
-  return c.json({ brand: { brand, name: BRAND_LABELS[brand] }, products: withTiers });
+  return c.json({
+    brand: { brand, name: BRAND_LABELS[brand] },
+    products: withTiers,
+  });
 });
 
-catalogRoutes.get('/categories/:slug/products', async (c) => {
+catalogRoutes.get("/categories/:slug/products", async (c) => {
   const db = getDb(c.env.DB);
-  const slug = c.req.param('slug');
-  const brand = c.req.query('brand');
+  const slug = c.req.param("slug");
+  const brand = c.req.query("brand");
 
-  const [category] = await db.select().from(categories).where(eq(categories.slug, slug)).limit(1);
-  if (!category) return c.json({ error: 'Category not found' }, 404);
+  const [category] = await db
+    .select()
+    .from(categories)
+    .where(eq(categories.slug, slug))
+    .limit(1);
+  if (!category) return c.json({ error: "Category not found" }, 404);
 
-  const conditions = [eq(products.categoryId, category.id), eq(products.active, true)];
-  if (brand && PRODUCT_BRANDS.includes(brand as ProductBrand)) conditions.push(eq(products.brand, brand as ProductBrand));
+  const categoryRows = await db.select().from(categories);
+  const conditions = [
+    inArray(products.categoryId, descendants(categoryRows, category.id)),
+    eq(products.active, true),
+  ];
+  if (brand && PRODUCT_BRANDS.includes(brand as ProductBrand))
+    conditions.push(eq(products.brand, brand as ProductBrand));
 
   const productRows = await db
     .select()
@@ -87,15 +167,19 @@ catalogRoutes.get('/categories/:slug/products', async (c) => {
 // Must be registered before /products/:slug — otherwise Hono matches
 // "search" itself as the :slug param and this is never reached (confirmed
 // via a real 404 "Product not found" during testing).
-catalogRoutes.get('/products/search', async (c) => {
-  const q = c.req.query('q')?.trim();
+catalogRoutes.get("/products/search", async (c) => {
+  const q = c.req.query("q")?.trim();
   if (!q) return c.json({ products: [] });
-  const brand = c.req.query('brand');
+  const brand = c.req.query("brand");
 
   const db = getDb(c.env.DB);
   const pattern = `%${q}%`;
-  const conditions = [eq(products.active, true), or(like(products.name, pattern), like(products.sku, pattern))!];
-  if (brand && PRODUCT_BRANDS.includes(brand as ProductBrand)) conditions.push(eq(products.brand, brand as ProductBrand));
+  const conditions = [
+    eq(products.active, true),
+    or(like(products.name, pattern), like(products.sku, pattern))!,
+  ];
+  if (brand && PRODUCT_BRANDS.includes(brand as ProductBrand))
+    conditions.push(eq(products.brand, brand as ProductBrand));
 
   const productRows = await db
     .select()
@@ -112,18 +196,33 @@ catalogRoutes.get('/products/search', async (c) => {
 // guessing (e.g. "in stock somewhere") would be worse than saying
 // nothing. The web app passes the pincode it already has from the header
 // location bar (lib/location.tsx) once one is set.
-catalogRoutes.get('/products/:slug', async (c) => {
+catalogRoutes.get("/products/:slug", async (c) => {
   const db = getDb(c.env.DB);
-  const slug = c.req.param('slug');
-  const pincode = c.req.query('pincode');
+  const slug = c.req.param("slug");
+  const pincode = c.req.query("pincode");
 
-  const [product] = await db.select().from(products).where(eq(products.slug, slug)).limit(1);
-  if (!product) return c.json({ error: 'Product not found' }, 404);
+  const [product] = await db
+    .select()
+    .from(products)
+    .where(eq(products.slug, slug))
+    .limit(1);
+  if (!product) return c.json({ error: "Product not found" }, 404);
 
-  const [category] = await db.select().from(categories).where(eq(categories.id, product.categoryId)).limit(1);
-  const tiers = await db.select().from(bulkPricingTiers).where(eq(bulkPricingTiers.productId, product.id));
+  const [category] = await db
+    .select()
+    .from(categories)
+    .where(eq(categories.id, product.categoryId))
+    .limit(1);
+  const tiers = await db
+    .select()
+    .from(bulkPricingTiers)
+    .where(eq(bulkPricingTiers.productId, product.id));
 
-  let stock: { storeName: string; stockQty: number; etaMinutes: number } | null = null;
+  let stock: {
+    storeName: string;
+    stockQty: number;
+    etaMinutes: number;
+  } | null = null;
   if (pincode) {
     const match = await findServiceableStore(db, pincode);
     if (match) {
@@ -131,9 +230,19 @@ catalogRoutes.get('/products/:slug', async (c) => {
         .select({ stockQty: inventory.stockQty, storeName: stores.name })
         .from(inventory)
         .innerJoin(stores, eq(stores.id, inventory.storeId))
-        .where(and(eq(inventory.storeId, match.storeId), eq(inventory.productId, product.id)))
+        .where(
+          and(
+            eq(inventory.storeId, match.storeId),
+            eq(inventory.productId, product.id),
+          ),
+        )
         .limit(1);
-      if (row) stock = { storeName: row.storeName, stockQty: row.stockQty, etaMinutes: match.etaMinutes };
+      if (row)
+        stock = {
+          storeName: row.storeName,
+          stockQty: row.stockQty,
+          etaMinutes: match.etaMinutes,
+        };
     }
   }
 
@@ -141,7 +250,9 @@ catalogRoutes.get('/products/:slug', async (c) => {
     product: {
       ...product,
       tiers,
-      category: category ? { id: category.id, slug: category.slug, name: category.name } : null,
+      category: category
+        ? { id: category.id, slug: category.slug, name: category.name }
+        : null,
       stock,
     },
   });
@@ -151,13 +262,17 @@ catalogRoutes.get('/products/:slug', async (c) => {
 // near me" check (apps/web's AddToCartPanel, which only knows the
 // customer's pincode after the page has already hydrated) doesn't need to
 // re-fetch and re-send the whole product payload just to learn this.
-catalogRoutes.get('/products/:slug/stock', async (c) => {
-  const slug = c.req.param('slug');
-  const pincode = c.req.query('pincode');
+catalogRoutes.get("/products/:slug/stock", async (c) => {
+  const slug = c.req.param("slug");
+  const pincode = c.req.query("pincode");
   if (!pincode) return c.json({ stock: null });
 
   const db = getDb(c.env.DB);
-  const [product] = await db.select({ id: products.id }).from(products).where(eq(products.slug, slug)).limit(1);
+  const [product] = await db
+    .select({ id: products.id })
+    .from(products)
+    .where(eq(products.slug, slug))
+    .limit(1);
   if (!product) return c.json({ stock: null });
 
   const match = await findServiceableStore(db, pincode);
@@ -167,19 +282,47 @@ catalogRoutes.get('/products/:slug/stock', async (c) => {
     .select({ stockQty: inventory.stockQty, storeName: stores.name })
     .from(inventory)
     .innerJoin(stores, eq(stores.id, inventory.storeId))
-    .where(and(eq(inventory.storeId, match.storeId), eq(inventory.productId, product.id)))
+    .where(
+      and(
+        eq(inventory.storeId, match.storeId),
+        eq(inventory.productId, product.id),
+      ),
+    )
     .limit(1);
 
-  return c.json({ stock: row ? { storeName: row.storeName, stockQty: row.stockQty, etaMinutes: match.etaMinutes } : null });
+  return c.json({
+    stock: row
+      ? {
+          storeName: row.storeName,
+          stockQty: row.stockQty,
+          etaMinutes: match.etaMinutes,
+        }
+      : null,
+  });
 });
 
-// One bulk query for all products' tiers (rather than N+1 per product) — fine
-// at any catalog size we'll hit before this needs revisiting.
-async function attachTiers(db: ReturnType<typeof getDb>, productRows: (typeof products.$inferSelect)[]) {
+// Keep each query below D1's bound-parameter limit even for the full catalog.
+async function attachTiers(
+  db: ReturnType<typeof getDb>,
+  productRows: (typeof products.$inferSelect)[],
+) {
   if (productRows.length === 0) return [];
 
   const productIds = productRows.map((p) => p.id);
-  const tierRows = await db.select().from(bulkPricingTiers).where(inArray(bulkPricingTiers.productId, productIds));
+  const tierRows: (typeof bulkPricingTiers.$inferSelect)[] = [];
+  for (let offset = 0; offset < productIds.length; offset += 80) {
+    tierRows.push(
+      ...(await db
+        .select()
+        .from(bulkPricingTiers)
+        .where(
+          inArray(
+            bulkPricingTiers.productId,
+            productIds.slice(offset, offset + 80),
+          ),
+        )),
+    );
+  }
 
   const tiersByProduct = new Map<string, typeof tierRows>();
   for (const tier of tierRows) {
@@ -200,21 +343,24 @@ async function attachTiers(db: ReturnType<typeof getDb>, productRows: (typeof pr
 // real duplicate-slug attempt during testing: it 500'd before this existed.)
 function uniqueConstraintMessage(err: unknown): string | null {
   const message = err instanceof Error ? err.message : String(err);
-  if (!message.includes('UNIQUE constraint failed')) return null;
-  if (message.includes('categories.slug')) return 'A category with this slug already exists.';
-  if (message.includes('products.slug')) return 'A product with this slug already exists.';
-  if (message.includes('products.sku')) return 'A product with this SKU already exists.';
-  return 'That value is already in use.';
+  if (!message.includes("UNIQUE constraint failed")) return null;
+  if (message.includes("categories.slug"))
+    return "A category with this slug already exists.";
+  if (message.includes("products.slug"))
+    return "A product with this slug already exists.";
+  if (message.includes("products.sku"))
+    return "A product with this SKU already exists.";
+  return "That value is already in use.";
 }
 
 // --- admin: catalog management ---------------------------------------------
 
-catalogRoutes.use('/admin/*', requireAuth, requireRole('admin'));
+catalogRoutes.use("/admin/*", requireAuth, requireRole("admin"));
 
 // All products, any active state, with category + tiers — the customer-
 // facing GETs above deliberately filter to active-only and are scoped per
 // category, neither of which fits a management table.
-catalogRoutes.get('/admin/products', async (c) => {
+catalogRoutes.get("/admin/products", async (c) => {
   const db = getDb(c.env.DB);
   const productRows = await db.select().from(products);
   const withTiers = await attachTiers(db, productRows);
@@ -222,19 +368,32 @@ catalogRoutes.get('/admin/products', async (c) => {
 });
 
 const categorySchema = z.object({
-  slug: z.string().trim().min(1),
-  name: z.string().trim().min(1),
+  slug: z
+    .string()
+    .trim()
+    .min(1)
+    .max(120)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  name: z.string().trim().min(1).max(120),
   icon: z.string().trim().optional(),
-  parentId: z.string().optional(),
+  parentId: z.string().nullable().optional(),
   sortOrder: z.number().int().optional(),
 });
 
-catalogRoutes.post('/admin/categories', async (c) => {
+catalogRoutes.post("/admin/categories", async (c) => {
   const parsed = categorySchema.safeParse(await c.req.json().catch(() => null));
-  if (!parsed.success) return c.json({ error: 'Invalid request' }, 400);
+  if (!parsed.success) return c.json({ error: "Invalid request" }, 400);
 
   const db = getDb(c.env.DB);
   const id = crypto.randomUUID();
+  if (parsed.data.parentId) {
+    const [parent] = await db
+      .select()
+      .from(categories)
+      .where(eq(categories.id, parsed.data.parentId))
+      .limit(1);
+    if (!parent) return c.json({ error: "Parent category not found." }, 400);
+  }
   try {
     await db.insert(categories).values({
       id,
@@ -250,18 +409,42 @@ catalogRoutes.post('/admin/categories', async (c) => {
     throw err;
   }
 
-  const [category] = await db.select().from(categories).where(eq(categories.id, id)).limit(1);
+  const [category] = await db
+    .select()
+    .from(categories)
+    .where(eq(categories.id, id))
+    .limit(1);
   return c.json({ category }, 201);
 });
 
-catalogRoutes.patch('/admin/categories/:id', async (c) => {
-  const parsed = categorySchema.partial().safeParse(await c.req.json().catch(() => null));
-  if (!parsed.success) return c.json({ error: 'Invalid request' }, 400);
+catalogRoutes.patch("/admin/categories/:id", async (c) => {
+  const parsed = categorySchema
+    .partial()
+    .safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ error: "Invalid request" }, 400);
 
   const db = getDb(c.env.DB);
-  const id = c.req.param('id')!;
-  const [existing] = await db.select().from(categories).where(eq(categories.id, id)).limit(1);
-  if (!existing) return c.json({ error: 'Category not found' }, 404);
+  const id = c.req.param("id")!;
+  const [existing] = await db
+    .select()
+    .from(categories)
+    .where(eq(categories.id, id))
+    .limit(1);
+  if (!existing) return c.json({ error: "Category not found" }, 404);
+
+  if (parsed.data.parentId) {
+    const rows = await db.select().from(categories);
+    if (!rows.some((row) => row.id === parsed.data.parentId))
+      return c.json({ error: "Parent category not found." }, 400);
+    if (descendants(rows, id).includes(parsed.data.parentId))
+      return c.json(
+        {
+          error:
+            "A category cannot be placed inside itself or one of its subcategories.",
+        },
+        400,
+      );
+  }
 
   try {
     await db.update(categories).set(parsed.data).where(eq(categories.id, id));
@@ -270,24 +453,49 @@ catalogRoutes.patch('/admin/categories/:id', async (c) => {
     if (message) return c.json({ error: message }, 409);
     throw err;
   }
-  const [category] = await db.select().from(categories).where(eq(categories.id, id)).limit(1);
+  const [category] = await db
+    .select()
+    .from(categories)
+    .where(eq(categories.id, id))
+    .limit(1);
   return c.json({ category });
 });
 
-catalogRoutes.delete('/admin/categories/:id', async (c) => {
+catalogRoutes.delete("/admin/categories/:id", async (c) => {
   const db = getDb(c.env.DB);
-  const id = c.req.param('id')!;
+  const id = c.req.param("id")!;
 
-  const [inUse] = await db.select().from(products).where(eq(products.categoryId, id)).limit(1);
+  const [child] = await db
+    .select()
+    .from(categories)
+    .where(eq(categories.parentId, id))
+    .limit(1);
+  if (child)
+    return c.json(
+      { error: "Move or delete this category’s subcategories first." },
+      409,
+    );
+
+  const [inUse] = await db
+    .select()
+    .from(products)
+    .where(eq(products.categoryId, id))
+    .limit(1);
   if (inUse) {
-    return c.json({ error: 'Category still has products — move or delete those first' }, 409);
+    return c.json(
+      { error: "Category still has products — move or delete those first" },
+      409,
+    );
   }
 
   await db.delete(categories).where(eq(categories.id, id));
   return c.json({ ok: true });
 });
 
-const tierInputSchema = z.object({ minQty: z.number().int().positive(), pricePerUnit: z.number().positive() });
+const tierInputSchema = z.object({
+  minQty: z.number().int().positive(),
+  pricePerUnit: z.number().positive(),
+});
 
 // Mirrors ProductSpecs in db/schema.ts — every field optional, since
 // which ones apply depends on the category (a paint has no `material`, a
@@ -297,8 +505,8 @@ const tierInputSchema = z.object({ minQty: z.number().int().positive(), pricePer
 const productSpecsSchema = z
   .object({
     volumeLitres: z.number().positive().optional(),
-    finish: z.enum(['matt', 'satin', 'gloss', 'enamel', 'primer']).optional(),
-    surface: z.enum(['interior', 'exterior', 'both']).optional(),
+    finish: z.enum(["matt", "satin", "gloss", "enamel", "primer"]).optional(),
+    surface: z.enum(["interior", "exterior", "both"]).optional(),
     coverageSqFtPerLitre: z.number().positive().optional(),
     size: z.string().trim().optional(),
     material: z.string().trim().optional(),
@@ -323,15 +531,15 @@ const productSchema = z.object({
   tiers: z.array(tierInputSchema).optional(),
 });
 
-catalogRoutes.post('/admin/products', async (c) => {
+catalogRoutes.post("/admin/products", async (c) => {
   const parsed = productSchema.safeParse(await c.req.json().catch(() => null));
-  if (!parsed.success) return c.json({ error: 'Invalid request' }, 400);
+  if (!parsed.success) return c.json({ error: "Invalid request" }, 400);
   const { tiers, ...productData } = parsed.data;
 
   const db = getDb(c.env.DB);
   const id = crypto.randomUUID();
 
-  const statements: BatchItem<'sqlite'>[] = [
+  const statements: BatchItem<"sqlite">[] = [
     db.insert(products).values({
       id,
       sku: productData.sku,
@@ -342,13 +550,15 @@ catalogRoutes.post('/admin/products', async (c) => {
       unit: productData.unit,
       basePrice: productData.basePrice,
       imageUrl: productData.imageUrl ?? null,
-      brand: productData.brand ?? 'others',
+      brand: productData.brand ?? "others",
       specs: productData.specs ?? null,
       gstInvoiceEligible: productData.gstInvoiceEligible ?? false,
       active: productData.active ?? true,
     }),
     ...(tiers ?? []).map((tier) =>
-      db.insert(bulkPricingTiers).values({ id: crypto.randomUUID(), productId: id, ...tier })
+      db
+        .insert(bulkPricingTiers)
+        .values({ id: crypto.randomUUID(), productId: id, ...tier }),
     ),
   ];
   try {
@@ -359,32 +569,53 @@ catalogRoutes.post('/admin/products', async (c) => {
     throw err;
   }
 
-  const [product] = await db.select().from(products).where(eq(products.id, id)).limit(1);
-  const tierRows = await db.select().from(bulkPricingTiers).where(eq(bulkPricingTiers.productId, id));
+  const [product] = await db
+    .select()
+    .from(products)
+    .where(eq(products.id, id))
+    .limit(1);
+  const tierRows = await db
+    .select()
+    .from(bulkPricingTiers)
+    .where(eq(bulkPricingTiers.productId, id));
   return c.json({ product: { ...product, tiers: tierRows } }, 201);
 });
 
-catalogRoutes.patch('/admin/products/:id', async (c) => {
-  const parsed = productSchema.partial().safeParse(await c.req.json().catch(() => null));
-  if (!parsed.success) return c.json({ error: 'Invalid request' }, 400);
+catalogRoutes.patch("/admin/products/:id", async (c) => {
+  const parsed = productSchema
+    .partial()
+    .safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ error: "Invalid request" }, 400);
   const { tiers, ...productData } = parsed.data;
 
   const db = getDb(c.env.DB);
-  const id = c.req.param('id')!;
-  const [existing] = await db.select().from(products).where(eq(products.id, id)).limit(1);
-  if (!existing) return c.json({ error: 'Product not found' }, 404);
+  const id = c.req.param("id")!;
+  const [existing] = await db
+    .select()
+    .from(products)
+    .where(eq(products.id, id))
+    .limit(1);
+  if (!existing) return c.json({ error: "Product not found" }, 404);
 
-  const statements: BatchItem<'sqlite'>[] = [];
+  const statements: BatchItem<"sqlite">[] = [];
   if (Object.keys(productData).length > 0) {
-    statements.push(db.update(products).set(productData).where(eq(products.id, id)));
+    statements.push(
+      db.update(products).set(productData).where(eq(products.id, id)),
+    );
   }
   // Tiers, when provided, fully replace the existing set — simplest correct
   // model for "edit this product's pricing tiers" as one form submission,
   // rather than a diff/patch API for a handful of rows.
   if (tiers) {
-    statements.push(db.delete(bulkPricingTiers).where(eq(bulkPricingTiers.productId, id)));
     statements.push(
-      ...tiers.map((tier) => db.insert(bulkPricingTiers).values({ id: crypto.randomUUID(), productId: id, ...tier }))
+      db.delete(bulkPricingTiers).where(eq(bulkPricingTiers.productId, id)),
+    );
+    statements.push(
+      ...tiers.map((tier) =>
+        db
+          .insert(bulkPricingTiers)
+          .values({ id: crypto.randomUUID(), productId: id, ...tier }),
+      ),
     );
   }
   if (statements.length > 0) {
@@ -397,8 +628,15 @@ catalogRoutes.patch('/admin/products/:id', async (c) => {
     }
   }
 
-  const [product] = await db.select().from(products).where(eq(products.id, id)).limit(1);
-  const tierRows = await db.select().from(bulkPricingTiers).where(eq(bulkPricingTiers.productId, id));
+  const [product] = await db
+    .select()
+    .from(products)
+    .where(eq(products.id, id))
+    .limit(1);
+  const tierRows = await db
+    .select()
+    .from(bulkPricingTiers)
+    .where(eq(bulkPricingTiers.productId, id));
   return c.json({ product: { ...product, tiers: tierRows } });
 });
 
@@ -409,18 +647,25 @@ catalogRoutes.patch('/admin/products/:id', async (c) => {
 // reports success/failure per row so the admin can see exactly what to fix.
 const bulkProductSchema = z.array(productSchema);
 
-catalogRoutes.post('/admin/products/bulk', async (c) => {
-  const parsed = bulkProductSchema.safeParse(await c.req.json().catch(() => null));
-  if (!parsed.success) return c.json({ error: 'Invalid request — expected an array of products' }, 400);
+catalogRoutes.post("/admin/products/bulk", async (c) => {
+  const parsed = bulkProductSchema.safeParse(
+    await c.req.json().catch(() => null),
+  );
+  if (!parsed.success)
+    return c.json(
+      { error: "Invalid request — expected an array of products" },
+      400,
+    );
 
   const db = getDb(c.env.DB);
-  const results: { row: number; sku: string; ok: boolean; error?: string }[] = [];
+  const results: { row: number; sku: string; ok: boolean; error?: string }[] =
+    [];
 
   for (const [i, item] of parsed.data.entries()) {
     const { tiers, ...productData } = item;
     const id = crypto.randomUUID();
     try {
-      const statements: BatchItem<'sqlite'>[] = [
+      const statements: BatchItem<"sqlite">[] = [
         db.insert(products).values({
           id,
           sku: productData.sku,
@@ -431,19 +676,23 @@ catalogRoutes.post('/admin/products/bulk', async (c) => {
           unit: productData.unit,
           basePrice: productData.basePrice,
           imageUrl: productData.imageUrl ?? null,
-          brand: productData.brand ?? 'others',
+          brand: productData.brand ?? "others",
           specs: productData.specs ?? null,
           gstInvoiceEligible: productData.gstInvoiceEligible ?? false,
           active: productData.active ?? true,
         }),
         ...(tiers ?? []).map((tier) =>
-          db.insert(bulkPricingTiers).values({ id: crypto.randomUUID(), productId: id, ...tier })
+          db
+            .insert(bulkPricingTiers)
+            .values({ id: crypto.randomUUID(), productId: id, ...tier }),
         ),
       ];
       await db.batch(statements as unknown as Parameters<typeof db.batch>[0]);
       results.push({ row: i, sku: item.sku, ok: true });
     } catch (err) {
-      const message = uniqueConstraintMessage(err) ?? (err instanceof Error ? err.message : 'Unknown error');
+      const message =
+        uniqueConstraintMessage(err) ??
+        (err instanceof Error ? err.message : "Unknown error");
       results.push({ row: i, sku: item.sku, ok: false, error: message });
     }
   }
@@ -455,12 +704,16 @@ catalogRoutes.post('/admin/products/bulk', async (c) => {
   });
 });
 
-catalogRoutes.delete('/admin/products/:id', async (c) => {
+catalogRoutes.delete("/admin/products/:id", async (c) => {
   const db = getDb(c.env.DB);
-  const id = c.req.param('id')!;
+  const id = c.req.param("id")!;
 
-  const [existing] = await db.select().from(products).where(eq(products.id, id)).limit(1);
-  if (!existing) return c.json({ error: 'Product not found' }, 404);
+  const [existing] = await db
+    .select()
+    .from(products)
+    .where(eq(products.id, id))
+    .limit(1);
+  if (!existing) return c.json({ error: "Product not found" }, 404);
 
   // D1 enforces the order_items -> products foreign key (confirmed: this
   // used to attempt a hard delete regardless and 500'd on any product with
@@ -471,7 +724,11 @@ catalogRoutes.delete('/admin/products/:id', async (c) => {
   // customer's perspective — it disappears from the catalog immediately —
   // without breaking referential integrity for order history). Only
   // products with no order history get a real hard delete.
-  const [orderItemUsingProduct] = await db.select().from(orderItems).where(eq(orderItems.productId, id)).limit(1);
+  const [orderItemUsingProduct] = await db
+    .select()
+    .from(orderItems)
+    .where(eq(orderItems.productId, id))
+    .limit(1);
 
   if (orderItemUsingProduct) {
     await db.update(products).set({ active: false }).where(eq(products.id, id));

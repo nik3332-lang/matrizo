@@ -1,19 +1,23 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
-import { ApiError } from '@matrizo/shared';
-import { api } from '@/lib/api';
-import { useAuth, type StaffUser } from '@/lib/auth';
+import { ApiError } from "@matrizo/shared";
+import { api, setRefreshToken } from "@/lib/api";
+import { useAuth, type StaffUser } from "@/lib/auth";
 
-type LoginResponse = { accessToken: string; user: StaffUser };
+type LoginResponse = {
+  accessToken: string;
+  refreshToken: string;
+  user: StaffUser;
+};
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -22,24 +26,33 @@ export default function LoginPage() {
     setError(null);
     setBusy(true);
     try {
-      const res = await api.post<LoginResponse>('/auth/login', {
+      const res = await api.post<LoginResponse>("/auth/login", {
         email: email.trim(),
         password,
       });
+      if (
+        !["admin", "store_staff", "delivery_partner"].includes(res.user.role)
+      ) {
+        setError("This account cannot access the admin portal.");
+        return;
+      }
+      setRefreshToken(res.refreshToken);
       login(res.accessToken, res.user);
-      router.push('/');
+      router.push("/");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong.');
+      setError(err instanceof ApiError ? err.message : "Something went wrong.");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className="flex items-center justify-center -m-6 py-14 sm:py-24 bg-brand-purple-800">
-      <div className="glass w-full max-w-sm mx-4 rounded-2xl p-8">
-        <h1 className="text-xl font-bold text-slate-900 mb-1">Matrizo Ops</h1>
-        <p className="text-sm text-slate-500 mb-6">Sign in to manage orders, catalog & inventory.</p>
+    <div className="portal-login">
+      <div className="portal-login-card">
+        <h1 className="text-xl font-bold text-slate-900 mb-1">Welcome back.</h1>
+        <p className="text-sm text-slate-500 mb-6">
+          Sign in to manage orders, catalog & inventory.
+        </p>
         <form onSubmit={submit} className="space-y-4">
           <label className="block text-sm font-medium text-slate-700">
             Email
@@ -71,7 +84,7 @@ export default function LoginPage() {
             disabled={busy}
             className="w-full rounded-lg bg-brand-orange-700 text-white px-4 py-2.5 font-semibold shadow-sm hover:bg-brand-orange-800 disabled:opacity-60"
           >
-            {busy ? 'Signing in…' : 'Sign in'}
+            {busy ? "Signing in…" : "Sign in"}
           </button>
         </form>
       </div>
