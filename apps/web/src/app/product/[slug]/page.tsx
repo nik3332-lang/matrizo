@@ -16,11 +16,13 @@
 // removed. The Workers deploy (nodejs_compat) doesn't need it either way.
 
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 
 import { priceForQuantity, type ProductBrand } from '@matrizo/shared';
 import { serverApiGet } from '@/lib/serverApi';
 import { categoryIcon } from '@/lib/categoryIcon';
+import { productCatalogImage } from '@/lib/catalogImages';
 import { specEntries, type ProductSpecs } from '@/lib/specs';
 import { Icon } from '@/components/Icon';
 import { AddToCartPanel } from './AddToCartPanel';
@@ -85,6 +87,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   const unitPrice = priceForQuantity(product.tiers, 1, product.basePrice);
   const specs = specEntries(product.specs);
+  const imageSrc = productCatalogImage(product.category?.slug ?? '', product.name);
 
   // Product/Offer schema.org markup (STAGE 6) — availability is
   // deliberately omitted rather than guessed: there's no customer-facing
@@ -124,10 +127,20 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       </nav>
 
       <div className="grid sm:grid-cols-[220px_1fr] gap-6">
-        {/* Stand-in for product photography until real images are wired
-           in (STAGE 4/5 — blocked on real photos, see project notes). */}
-        <div className="h-44 sm:h-full rounded-card bg-accent-subtle flex items-center justify-center shrink-0">
-          <Icon name={categoryIcon(product.category?.slug ?? '')} className="h-16 w-16 text-accent" />
+        <div className="relative h-44 sm:h-full min-h-44 rounded-card bg-white border border-line flex items-center justify-center shrink-0 overflow-hidden">
+          {imageSrc ? (
+            <Image
+              src={imageSrc}
+              alt=""
+              fill
+              sizes="(max-width: 640px) 100vw, 220px"
+              className="object-contain p-6"
+            />
+          ) : (
+            <div className="h-20 w-20 rounded-full bg-accent-subtle flex items-center justify-center">
+              <Icon name={categoryIcon(product.category?.slug ?? '')} className="h-10 w-10 text-accent" />
+            </div>
+          )}
         </div>
 
         <div>

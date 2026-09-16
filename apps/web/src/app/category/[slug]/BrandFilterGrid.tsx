@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { priceForQuantity, type ProductBrand } from '@matrizo/shared';
 import { ProductCard } from '@/components/ProductCard';
 import { categoryIcon } from '@/components/Icon';
+import { productCatalogImage } from '@/lib/catalogImages';
 import type { ProductSpecs } from '@/lib/specs';
 
 const BRAND_LABELS: Record<ProductBrand, string> = {
@@ -107,6 +108,7 @@ export function BrandFilterGrid({
               price={priceForQuantity(product.tiers, 1, product.basePrice)}
               tiers={product.tiers}
               categoryIconName={categoryIcon(categorySlug)}
+              imageSrc={productCatalogImage(categorySlug, product.name)}
               brandLabel={BRAND_LABELS[product.brand]}
               specs={product.specs}
               gstInvoiceEligible={product.gstInvoiceEligible}

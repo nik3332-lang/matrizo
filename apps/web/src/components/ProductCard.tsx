@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 import { useAuth } from '@/lib/auth';
@@ -27,6 +28,7 @@ export function ProductCard({
   price,
   tiers = [],
   categoryIconName,
+  imageSrc,
   brandLabel,
   specs,
   gstInvoiceEligible,
@@ -35,6 +37,8 @@ export function ProductCard({
   price: number;
   tiers?: Tier[];
   categoryIconName: IconName;
+  /** Generic category artwork or a real product image, when available. */
+  imageSrc?: string | null;
   /** Optional manufacturer brand (Raksha/Prince/Others) — a plain neutral
    * badge, not a colored one. Brand used to get its own hue per value,
    * which was decoration outside the one-accent rule; the name alone
@@ -69,15 +73,23 @@ export function ProductCard({
       href={`/product/${product.slug}`}
       className="block rounded-card border border-line bg-surface overflow-hidden transition-colors hover:border-stone-300"
     >
-      {/* Stand-in for product photography until real images are wired in
-         (STAGE 4/5). A flat neutral-gray version of this read as dull
-         with no real photos anywhere yet to carry color — tinted with
-         the one accent instead, swapped for the real photo later. */}
-      <div className="h-28 bg-accent-subtle flex items-center justify-center">
-        <Icon name={categoryIconName} className="h-7 w-7 text-accent" />
+      <div className="relative h-32 bg-white flex items-center justify-center">
+        {imageSrc ? (
+          <Image
+            src={imageSrc}
+            alt=""
+            fill
+            sizes="(max-width: 640px) 50vw, 25vw"
+            className="object-contain p-3"
+          />
+        ) : (
+          <div className="h-14 w-14 rounded-full bg-accent-subtle flex items-center justify-center">
+            <Icon name={categoryIconName} className="h-7 w-7 text-accent" />
+          </div>
+        )}
       </div>
-      <div className="p-4">
-        <div className="font-medium text-stone-900 line-clamp-2">{product.name}</div>
+      <div className="p-3">
+        <div className="text-sm font-medium text-stone-900 line-clamp-2">{product.name}</div>
         <div className="mt-1 flex items-center gap-1 flex-wrap">
           {brandLabel && (
             <span className="text-[11px] px-2 py-0.5 rounded-card border border-line text-stone-600">{brandLabel}</span>

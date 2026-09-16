@@ -20,6 +20,7 @@ import { api } from '@/lib/api';
 import { ProductCard } from '@/components/ProductCard';
 import { ProductCardSkeleton } from '@/components/Skeleton';
 import { categoryIcon } from '@/components/Icon';
+import { productCatalogImage } from '@/lib/catalogImages';
 import type { ProductSpecs } from '@/lib/specs';
 
 const BRAND_LABELS: Record<ProductBrand, string> = {
@@ -100,6 +101,7 @@ function SearchResults() {
               price={priceForQuantity(product.tiers, 1, product.basePrice)}
               tiers={product.tiers}
               categoryIconName={categoryIcon(categories.find((c) => c.id === product.categoryId)?.slug ?? '')}
+              imageSrc={productCatalogImage(categories.find((c) => c.id === product.categoryId)?.slug ?? '', product.name)}
               brandLabel={BRAND_LABELS[product.brand]}
               specs={product.specs}
               gstInvoiceEligible={product.gstInvoiceEligible}

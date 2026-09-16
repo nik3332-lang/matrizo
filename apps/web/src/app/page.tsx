@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 import { priceForQuantity, type ProductBrand } from '@matrizo/shared';
 import { api } from '@/lib/api';
+import { categoryCatalogImage, productCatalogImage } from '@/lib/catalogImages';
 import { categoryIcon, Icon } from '@/components/Icon';
 import { HeroBanner } from '@/components/HeroBanner';
 import { ProductCard } from '@/components/ProductCard';
@@ -62,7 +64,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="space-y-14">
+    <div className="space-y-10">
       {categories && categories.length > 0 && (
         <section>
           <HeroBanner availableSlugs={categories.map((c) => c.slug)} />
@@ -77,7 +79,7 @@ export default function HomePage() {
       <section>
         <h2 className="text-lg font-medium text-stone-900 mb-4">Shop by category</h2>
         {!categories && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
             {Array.from({ length: 3 }).map((_, i) => (
               <TileSkeleton key={i} />
             ))}
@@ -85,17 +87,29 @@ export default function HomePage() {
         )}
         {categories && categories.length === 0 && <p className="text-stone-500">No categories yet.</p>}
         {categories && categories.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
             {categories.map((cat) => (
               <Link
                 key={cat.id}
                 href={`/category/${cat.slug}`}
-                className="glass rounded-card p-5 text-center transition-colors hover:border-stone-300"
+                className="glass rounded-card p-2 text-center transition-colors hover:border-stone-300"
               >
-                <div className="mx-auto h-14 w-14 rounded-full bg-accent-subtle flex items-center justify-center">
-                  <Icon name={categoryIcon(cat.slug)} className="h-7 w-7 text-accent" />
+                <div className="relative mx-auto h-16 sm:h-20 w-full">
+                  {categoryCatalogImage(cat.slug) ? (
+                    <Image
+                      src={categoryCatalogImage(cat.slug)!}
+                      alt=""
+                      fill
+                      sizes="(max-width: 640px) 50vw, 33vw"
+                      className="object-contain"
+                    />
+                  ) : (
+                    <div className="mx-auto h-14 w-14 rounded-full bg-accent-subtle flex items-center justify-center">
+                      <Icon name={categoryIcon(cat.slug)} className="h-7 w-7 text-accent" />
+                    </div>
+                  )}
                 </div>
-                <div className="mt-3 font-medium text-stone-900">{cat.name}</div>
+                <div className="mt-2 text-xs sm:text-sm font-medium text-stone-900 line-clamp-2">{cat.name}</div>
               </Link>
             ))}
           </div>
@@ -153,6 +167,7 @@ export default function HomePage() {
                   price={price}
                   tiers={product.tiers}
                   categoryIconName={categoryIcon(cat?.slug ?? '')}
+                  imageSrc={productCatalogImage(cat?.slug ?? '', product.name)}
                   specs={product.specs}
                   gstInvoiceEligible={product.gstInvoiceEligible}
                 />
