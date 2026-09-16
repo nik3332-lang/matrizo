@@ -12,6 +12,8 @@ export class ApiError extends Error {
 
 export type ApiClientConfig = {
   baseUrl: string;
+  timeoutMs?: number;
+  getSessionIdentity?: () => string | null;
   getAccessToken?: () => string | null | undefined;
   refreshAccessToken?: () => Promise<boolean>;
 };
@@ -22,6 +24,8 @@ function delay(ms: number) {
 
 export function createApiClient({
   baseUrl,
+  timeoutMs,
+  getSessionIdentity,
   getAccessToken,
   refreshAccessToken,
 }: ApiClientConfig) {
@@ -31,21 +35,33 @@ export function createApiClient({
     refreshed = false,
   ): Promise<T> {
     const token = getAccessToken?.();
-    const res = await fetch(`${baseUrl}${path}`, {
-      // Explicit no-store: a bare fetch() from a Next.js Server Component
-      // defaults to force-cache and gets cached in Next's Data Cache —
-      // this data (prices, stock, specs) should never be cached at this
-      // layer regardless.
-      cache: "no-store",
-      ...init,
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...init?.headers,
-      },
-    });
+    const identity = getSessionIdentity?.();
+    const controller = timeoutMs ? new AbortController() : null;
+    const timer = controller
+      ? setTimeout(() => controller.abort(), timeoutMs)
+      : null;
+    let res: Response;
+    let text: string;
+    try {
+      res = await fetch(`${baseUrl}${path}`, {
+        // Explicit no-store: a bare fetch() from a Next.js Server Component
+        // defaults to force-cache and gets cached in Next's Data Cache —
+        // this data (prices, stock, specs) should never be cached at this
+        // layer regardless.
+        cache: "no-store",
+        ...init,
+        ...(controller ? { signal: controller.signal } : {}),
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...init?.headers,
+        },
+      });
 
-    const text = await res.text();
+      text = await res.text();
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
     let body;
     try {
       body = text ? JSON.parse(text) : null;
@@ -61,7 +77,9 @@ export function createApiClient({
       !refreshed &&
       token &&
       refreshAccessToken &&
-      (await refreshAccessToken())
+      (!getSessionIdentity || identity === getSessionIdentity()) &&
+      (await refreshAccessToken()) &&
+      (!getSessionIdentity || identity === getSessionIdentity())
     ) {
       return requestOnce<T>(path, init, true);
     }

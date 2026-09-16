@@ -1,15 +1,15 @@
-import { and, eq, inArray } from 'drizzle-orm';
-import { Hono } from 'hono';
-import { z } from 'zod';
+import { and, eq, inArray, sql } from "drizzle-orm";
+import { Hono } from "hono";
+import { z } from "zod";
 
-import { priceForQuantity } from '@matrizo/shared';
-import { getDb } from '../db/client';
-import { bulkPricingTiers, cartItems, products } from '../db/schema';
-import { requireAuth, requireRole, type AuthEnv } from '../middleware/auth';
+import { priceForQuantity } from "@matrizo/shared";
+import { getDb } from "../db/client";
+import { bulkPricingTiers, cartItems, products } from "../db/schema";
+import { requireAuth, requireRole, type AuthEnv } from "../middleware/auth";
 
 export const cartRoutes = new Hono<AuthEnv>();
 
-cartRoutes.use('*', requireAuth, requireRole('customer'));
+cartRoutes.use("*", requireAuth, requireRole("customer"));
 
 async function serializeCart(db: ReturnType<typeof getDb>, userId: string) {
   const rows = await db
@@ -20,7 +20,10 @@ async function serializeCart(db: ReturnType<typeof getDb>, userId: string) {
 
   const productIds = rows.map((r) => r.product.id);
   const tierRows = productIds.length
-    ? await db.select().from(bulkPricingTiers).where(inArray(bulkPricingTiers.productId, productIds))
+    ? await db
+        .select()
+        .from(bulkPricingTiers)
+        .where(inArray(bulkPricingTiers.productId, productIds))
     : [];
 
   const tiersByProduct = new Map<string, typeof tierRows>();
@@ -31,7 +34,11 @@ async function serializeCart(db: ReturnType<typeof getDb>, userId: string) {
   }
 
   const items = rows.map(({ cartItem, product }) => {
-    const unitPrice = priceForQuantity(tiersByProduct.get(product.id) ?? [], cartItem.quantity, product.basePrice);
+    const unitPrice = priceForQuantity(
+      tiersByProduct.get(product.id) ?? [],
+      cartItem.quantity,
+      product.basePrice,
+    );
     return {
       id: cartItem.id,
       product,
@@ -41,70 +48,122 @@ async function serializeCart(db: ReturnType<typeof getDb>, userId: string) {
     };
   });
 
-  return { items, subtotal: items.reduce((sum, item) => sum + item.lineTotal, 0) };
+  return {
+    items,
+    subtotal: items.reduce((sum, item) => sum + item.lineTotal, 0),
+  };
 }
 
-cartRoutes.get('/', async (c) => {
-  const auth = c.get('auth');
+cartRoutes.get("/", async (c) => {
+  const auth = c.get("auth");
   return c.json(await serializeCart(getDb(c.env.DB), auth.sub));
 });
 
-const addItemSchema = z.object({ productId: z.string(), quantity: z.number().int().positive() });
+const addItemSchema = z.object({
+  productId: z.string(),
+  quantity: z.number().int().positive().max(9999),
+});
 
-cartRoutes.post('/items', async (c) => {
+cartRoutes.post("/items", async (c) => {
   const parsed = addItemSchema.safeParse(await c.req.json().catch(() => null));
-  if (!parsed.success) return c.json({ error: 'Invalid request' }, 400);
+  if (!parsed.success) return c.json({ error: "Invalid request" }, 400);
   const { productId, quantity } = parsed.data;
-  const auth = c.get('auth');
+  const auth = c.get("auth");
   const db = getDb(c.env.DB);
 
-  const [product] = await db.select().from(products).where(eq(products.id, productId)).limit(1);
-  if (!product || !product.active) return c.json({ error: 'Product not found' }, 404);
-
-  const [existing] = await db
+  const [product] = await db
     .select()
-    .from(cartItems)
-    .where(and(eq(cartItems.userId, auth.sub), eq(cartItems.productId, productId)))
+    .from(products)
+    .where(eq(products.id, productId))
     .limit(1);
+  if (!product || !product.active)
+    return c.json({ error: "Product not found" }, 404);
 
-  if (existing) {
-    await db
-      .update(cartItems)
-      .set({ quantity: existing.quantity + quantity })
-      .where(eq(cartItems.id, existing.id));
-  } else {
-    await db.insert(cartItems).values({ id: crypto.randomUUID(), userId: auth.sub, productId, quantity });
-  }
+  const inserted = await c.env.DB.prepare(
+    `INSERT INTO cart_items (id,user_id,product_id,quantity)
+    SELECT ?,id,?,? FROM users WHERE id=? AND active=1 AND deletion_requested_at IS NULL AND session_version=?
+    AND ((SELECT count(*) FROM cart_items WHERE user_id=?)<50 OR EXISTS(SELECT 1 FROM cart_items WHERE user_id=? AND product_id=?))
+    AND COALESCE((SELECT quantity FROM cart_items WHERE user_id=? AND product_id=?),0)+?<=9999
+    ON CONFLICT(user_id,product_id) DO UPDATE SET quantity=cart_items.quantity+excluded.quantity RETURNING id`,
+  )
+    .bind(
+      crypto.randomUUID(),
+      productId,
+      quantity,
+      auth.sub,
+      auth.sessionVersion ?? 0,
+      auth.sub,
+      auth.sub,
+      productId,
+      auth.sub,
+      productId,
+      quantity,
+    )
+    .all();
+  if (!inserted.results.length)
+    return c.json(
+      {
+        error:
+          "Your cart limit was reached or your session expired. Use up to 50 different items and 9999 units per item.",
+      },
+      409,
+    );
 
   return c.json(await serializeCart(db, auth.sub));
 });
 
-const updateItemSchema = z.object({ quantity: z.number().int().min(0) });
+const updateItemSchema = z.object({
+  quantity: z.number().int().min(0).max(9999),
+});
 
-cartRoutes.patch('/items/:productId', async (c) => {
-  const parsed = updateItemSchema.safeParse(await c.req.json().catch(() => null));
-  if (!parsed.success) return c.json({ error: 'Invalid request' }, 400);
-  const auth = c.get('auth');
+cartRoutes.patch("/items/:productId", async (c) => {
+  const parsed = updateItemSchema.safeParse(
+    await c.req.json().catch(() => null),
+  );
+  if (!parsed.success) return c.json({ error: "Invalid request" }, 400);
+  const auth = c.get("auth");
   const db = getDb(c.env.DB);
-  const productId = c.req.param('productId');
+  const productId = c.req.param("productId");
 
   if (parsed.data.quantity === 0) {
-    await db.delete(cartItems).where(and(eq(cartItems.userId, auth.sub), eq(cartItems.productId, productId)));
+    await db
+      .delete(cartItems)
+      .where(
+        and(
+          eq(cartItems.userId, auth.sub),
+          eq(cartItems.productId, productId),
+          sql`EXISTS(SELECT 1 FROM users WHERE id=${auth.sub} AND active=1 AND deletion_requested_at IS NULL AND session_version=${auth.sessionVersion ?? 0})`,
+        ),
+      );
   } else {
     await db
       .update(cartItems)
       .set({ quantity: parsed.data.quantity })
-      .where(and(eq(cartItems.userId, auth.sub), eq(cartItems.productId, productId)));
+      .where(
+        and(
+          eq(cartItems.userId, auth.sub),
+          eq(cartItems.productId, productId),
+          sql`EXISTS(SELECT 1 FROM users WHERE id=${auth.sub} AND active=1 AND deletion_requested_at IS NULL AND session_version=${auth.sessionVersion ?? 0})`,
+        ),
+      );
   }
 
   return c.json(await serializeCart(db, auth.sub));
 });
 
-cartRoutes.delete('/items/:productId', async (c) => {
-  const auth = c.get('auth');
+cartRoutes.delete("/items/:productId", async (c) => {
+  const auth = c.get("auth");
   const db = getDb(c.env.DB);
-  const productId = c.req.param('productId');
+  const productId = c.req.param("productId");
 
-  await db.delete(cartItems).where(and(eq(cartItems.userId, auth.sub), eq(cartItems.productId, productId)));
+  await db
+    .delete(cartItems)
+    .where(
+      and(
+        eq(cartItems.userId, auth.sub),
+        eq(cartItems.productId, productId),
+        sql`EXISTS(SELECT 1 FROM users WHERE id=${auth.sub} AND active=1 AND deletion_requested_at IS NULL AND session_version=${auth.sessionVersion ?? 0})`,
+      ),
+    );
   return c.json(await serializeCart(db, auth.sub));
 });

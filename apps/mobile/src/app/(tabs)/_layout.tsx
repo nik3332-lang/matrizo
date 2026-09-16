@@ -1,30 +1,57 @@
-import { Tabs } from 'expo-router';
-import type { ColorValue } from 'react-native';
-
-import { Icon, type IconName } from '@/components/Icon';
-
-const ACTIVE = '#ef3d21';
-const INACTIVE = '#a8a29e';
-
-function TabIcon(name: IconName) {
-  return ({ color }: { color: ColorValue }) => <Icon name={name} size={22} color={String(color)} />;
-}
-
+import type { ColorValue } from "react-native";
+import { Tabs } from "expo-router";
+import { Icon, type IconName } from "@/components/Icon";
+import { Brand } from "@/components/ui";
+import { useCart } from "@/lib/cart";
+import { colors } from "@/lib/theme";
+const icon =
+  (name: IconName) =>
+  ({ color }: { color: ColorValue }) => (
+    <Icon name={name} size={22} color={String(color)} />
+  );
 export default function TabsLayout() {
+  const { cart } = useCart();
+  const count = cart.items.reduce((total, item) => total + item.quantity, 0);
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: '#ffffff' },
-        headerTitleStyle: { color: '#1c1917', fontWeight: '700' },
-        tabBarActiveTintColor: ACTIVE,
-        tabBarInactiveTintColor: INACTIVE,
+        headerStyle: { backgroundColor: colors.background },
+        headerTitle: () => <Brand />,
+        headerShadowVisible: false,
+        tabBarActiveTintColor: colors.ink,
+        tabBarInactiveTintColor: colors.muted,
+        tabBarStyle: {
+          backgroundColor: colors.white,
+          borderTopColor: colors.line,
+        },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: "600" },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Matrizo', tabBarLabel: 'Home', tabBarIcon: TabIcon('home') }} />
-      <Tabs.Screen name="search" options={{ title: 'Search', tabBarIcon: TabIcon('search') }} />
-      <Tabs.Screen name="cart" options={{ title: 'Your cart', tabBarIcon: TabIcon('cart') }} />
-      <Tabs.Screen name="orders" options={{ title: 'Your orders', tabBarIcon: TabIcon('receipt') }} />
-      <Tabs.Screen name="account" options={{ title: 'Account', tabBarIcon: TabIcon('user') }} />
+      <Tabs.Screen
+        name="index"
+        options={{ title: "Home", tabBarIcon: icon("home") }}
+      />
+      <Tabs.Screen
+        name="search"
+        options={{ title: "Browse", tabBarIcon: icon("search") }}
+      />
+      <Tabs.Screen
+        name="cart"
+        options={{
+          title: "Cart",
+          tabBarIcon: icon("cart"),
+          tabBarBadge: count ? (count > 99 ? "99+" : count) : undefined,
+          tabBarBadgeStyle: { backgroundColor: colors.accent, fontSize: 10 },
+        }}
+      />
+      <Tabs.Screen
+        name="orders"
+        options={{ title: "Orders", tabBarIcon: icon("receipt") }}
+      />
+      <Tabs.Screen
+        name="account"
+        options={{ title: "You", tabBarIcon: icon("user") }}
+      />
     </Tabs>
   );
 }

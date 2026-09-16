@@ -1,125 +1,133 @@
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { Card, PressableCard } from '@/components/Card';
-import { Icon } from '@/components/Icon';
-import { api } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
-
-type CartItem = { id: string; product: { id: string; name: string; unit: string }; quantity: number; unitPrice: number; lineTotal: number };
-type Cart = { items: CartItem[]; subtotal: number };
-
+import { useCallback, useState } from "react";
+import { Text, View } from "react-native";
+import { router, useFocusEffect } from "expo-router";
+import { useAuth } from "@/lib/auth";
+import { useCart } from "@/lib/cart";
+import { message } from "@/lib/useResource";
+import { styles as s } from "@/lib/theme";
+import {
+  Button,
+  Empty,
+  Guest,
+  Loading,
+  Notice,
+  Screen,
+  money,
+} from "@/components/ui";
 export default function CartScreen() {
-  const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const [cart, setCart] = useState<Cart | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
-
-  function reload() {
-    api.get<Cart>('/cart').then(setCart);
-  }
-
-  useEffect(() => {
-    if (!authLoading && user) reload();
-  }, [authLoading, user]);
-
-  async function updateQuantity(productId: string, quantity: number) {
-    setBusyId(productId);
+  const { cart, loading, busy, error, reload, change } = useCart();
+  const [actionError, setActionError] = useState("");
+  useFocusEffect(
+    useCallback(() => {
+      void reload();
+    }, [reload]),
+  );
+  async function update(id: string, quantity: number) {
+    setActionError("");
     try {
-      const res = await api.patch<Cart>(`/cart/items/${productId}`, { quantity });
-      setCart(res);
-    } finally {
-      setBusyId(null);
+      await change(id, quantity);
+    } catch (e) {
+      setActionError(message(e));
     }
   }
-
-  if (!authLoading && !user) {
+  if (authLoading)
     return (
-      <SafeAreaView edges={['bottom']} className="flex-1 bg-brand-cream items-center justify-center px-6">
-        <Text className="text-stone-600 text-center mb-3">Log in to view your cart.</Text>
-        <Pressable onPress={() => router.push('/login')}>
-          <Text className="text-brand-orange-700 font-semibold">Log in</Text>
-        </Pressable>
-      </SafeAreaView>
+      <Screen>
+        <Loading />
+      </Screen>
     );
-  }
-
-  if (!cart) {
-    return (
-      <SafeAreaView edges={['bottom']} className="flex-1 bg-brand-cream items-center justify-center">
-        <Text className="text-stone-500">Loading…</Text>
-      </SafeAreaView>
-    );
-  }
-
-  if (cart.items.length === 0) {
-    return (
-      <SafeAreaView edges={['bottom']} className="flex-1 bg-brand-cream items-center justify-center px-6">
-        <View className="h-14 w-14 rounded-full bg-brand-orange-50 items-center justify-center">
-          <Icon name="cart" size={26} color="#fe8a3d" />
-        </View>
-        <Text className="mt-4 text-stone-500">Your cart is empty.</Text>
-        <Pressable onPress={() => router.push('/')} className="mt-1">
-          <Text className="text-brand-orange-700 font-semibold">Browse categories</Text>
-        </Pressable>
-      </SafeAreaView>
-    );
-  }
-
+  if (!user)
+    return <Guest next="/cart" title="Your next project starts here" />;
   return (
-    <SafeAreaView edges={['bottom']} className="flex-1 bg-brand-cream">
-      <FlatList
-        data={cart.items}
-        keyExtractor={(i) => i.id}
-        contentContainerClassName="p-4 gap-3"
-        renderItem={({ item }) => (
-          <Card className="flex-row items-center justify-between">
-            <View className="flex-1 pr-3">
-              <Text className="font-semibold text-stone-900">{item.product.name}</Text>
-              <Text className="text-sm text-stone-500 mt-0.5">
-                ₹{item.unitPrice} / {item.product.unit}
+    <Screen
+      onRefresh={() => {
+        setActionError("");
+        void reload();
+      }}
+      refreshing={loading}
+    >
+      <Text style={s.eyebrow}>THE GOOD THINGS, ALL TOGETHER</Text>
+      <Text style={s.title}>Your cart</Text>
+      <Notice text={actionError || error} error />
+      {loading && !cart.items.length ? (
+        <Loading />
+      ) : !cart.items.length ? (
+        <Empty
+          title="Room for something beautiful"
+          detail="Explore our collection and bring your next project to life."
+          action="Explore the collection"
+          onPress={() => router.push("/search")}
+        />
+      ) : (
+        <>
+          {cart.items.map((item) => (
+            <View key={item.id} style={s.card}>
+              <Text
+                style={s.heading}
+                onPress={() =>
+                  router.push({
+                    pathname: "/product/[slug]",
+                    params: { slug: item.product.slug },
+                  })
+                }
+              >
+                {item.product.name}
               </Text>
-            </View>
-            <View className="flex-row items-center gap-2">
-              <View className="flex-row items-center rounded-lg border border-stone-300">
-                <Pressable
-                  disabled={busyId === item.product.id}
-                  onPress={() => updateQuantity(item.product.id, Math.max(0, item.quantity - 1))}
-                  className="px-2.5 py-1.5"
-                >
-                  <Icon name="minus" size={14} color="#57534e" />
-                </Pressable>
-                <TextInput
-                  value={String(item.quantity)}
-                  editable={false}
-                  className="w-8 text-center text-stone-900"
-                />
-                <Pressable
-                  disabled={busyId === item.product.id}
-                  onPress={() => updateQuantity(item.product.id, item.quantity + 1)}
-                  className="px-2.5 py-1.5"
-                >
-                  <Icon name="plus" size={14} color="#57534e" />
-                </Pressable>
+              <Text style={s.small}>
+                {money(item.unitPrice)} / {item.product.unit}
+                {!item.product.active
+                  ? " · No longer available — remove to continue"
+                  : ""}
+              </Text>
+              <View style={s.between}>
+                <View style={s.row}>
+                  <Button
+                    title="−"
+                    secondary
+                    disabled={busy}
+                    onPress={() => update(item.product.id, item.quantity - 1)}
+                  />
+                  <Text style={s.heading}>{item.quantity}</Text>
+                  <Button
+                    title="+"
+                    secondary
+                    disabled={busy || item.quantity >= 9999}
+                    onPress={() => update(item.product.id, item.quantity + 1)}
+                  />
+                </View>
+                <Text style={s.heading}>{money(item.lineTotal)}</Text>
               </View>
-              <Text className="w-16 text-right font-semibold text-brand-orange-700">₹{item.lineTotal}</Text>
+              <Button
+                title="Remove item"
+                secondary
+                disabled={busy}
+                onPress={() => update(item.product.id, 0)}
+              />
             </View>
-          </Card>
-        )}
-        ListFooterComponent={
-          <View className="mt-1 gap-3">
-            <Card className="flex-row items-center justify-between">
-              <Text className="text-stone-600 font-medium">Subtotal</Text>
-              <Text className="text-lg font-bold text-brand-orange-700">₹{cart.subtotal}</Text>
-            </Card>
-            <PressableCard onPress={() => router.push('/checkout')} className="bg-brand-orange-600 items-center py-3.5">
-              <Text className="text-white font-semibold">Proceed to checkout</Text>
-            </PressableCard>
+          ))}
+          <View style={s.card}>
+            <View style={s.between}>
+              <Text style={s.heading}>Total</Text>
+              <Text style={s.price}>{money(cart.subtotal)}</Text>
+            </View>
+            <Text style={s.small}>
+              Cash on delivery. Final price and stock are checked when you place
+              your order.
+            </Text>
+            <Button
+              title="Continue to checkout →"
+              disabled={
+                busy ||
+                loading ||
+                !!error ||
+                cart.items.some((i) => !i.product.active)
+              }
+              onPress={() => router.push("/checkout")}
+            />
           </View>
-        }
-      />
-    </SafeAreaView>
+        </>
+      )}
+    </Screen>
   );
 }

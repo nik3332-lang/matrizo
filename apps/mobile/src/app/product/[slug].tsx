@@ -1,154 +1,176 @@
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { ApiError, priceForQuantity, type ProductBrand } from '@matrizo/shared';
-import { Card, PressableCard } from '@/components/Card';
-import { categoryIcon, Icon } from '@/components/Icon';
-import { api } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
-import { categoryColor } from '@/lib/categoryColors';
-
-const BRAND_LABELS: Record<ProductBrand, string> = { raksha: 'Raksha', prince: 'Prince', others: 'Others' };
-
-type Tier = { minQty: number; pricePerUnit: number };
-type Category = { id: string; slug: string; name: string };
-type Product = {
-  id: string;
-  sku: string;
-  name: string;
-  description: string | null;
-  unit: string;
-  basePrice: number;
-  categoryId: string;
-  brand: ProductBrand;
-  category: Category | null;
-  tiers: Tier[];
-};
-
-export default function ProductScreen() {
+import { useState } from "react";
+import { Text, View } from "react-native";
+import { useLocalSearchParams, router } from "expo-router";
+import { BRAND_LABELS, priceForQuantity } from "@matrizo/shared";
+import { useResource, message } from "@/lib/useResource";
+import { useAuth } from "@/lib/auth";
+import { useCart } from "@/lib/cart";
+import { useLocation, DeliveryArea } from "@/lib/location";
+import { styles as s } from "@/lib/theme";
+import type { Product } from "@/lib/types";
+import { ProductImage } from "@/components/ProductTile";
+import {
+  Button,
+  ErrorState,
+  Loading,
+  Notice,
+  Screen,
+  money,
+} from "@/components/ui";
+export default function ProductDetail() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
-  const router = useRouter();
-  const { user, loading } = useAuth();
-
-  const [product, setProduct] = useState<Product | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [quantity, setQuantity] = useState(1);
-  const [adding, setAdding] = useState(false);
-  const [added, setAdded] = useState(false);
-
-  useEffect(() => {
-    api
-      .get<{ product: Product }>(`/products/${slug}`)
-      .then((res) => setProduct(res.product))
-      .catch(() => setError('Product not found.'));
-  }, [slug]);
-
-  async function addToCart() {
-    if (!product) return;
-    if (!loading && !user) {
-      router.push('/login');
+  const { area } = useLocation();
+  const { user } = useAuth();
+  const cart = useCart();
+  const result = useResource<{ product: Product }>(
+    `/products/${encodeURIComponent(slug ?? "")}${area ? `?pincode=${area.pincode}` : ""}`,
+  );
+  const [quantity, setQuantity] = useState(1),
+    [error, setError] = useState(""),
+    [added, setAdded] = useState(false);
+  const product = result.data?.product;
+  async function add() {
+    if (!user) {
+      router.push({ pathname: "/login", params: { next: `/product/${slug}` } });
       return;
     }
-    setAdding(true);
+    if (!product) return;
+    setError("");
     setAdded(false);
     try {
-      await api.post('/cart/items', { productId: product.id, quantity });
+      await cart.add(product.id, quantity);
       setAdded(true);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not add to cart.');
-    } finally {
-      setAdding(false);
+    } catch (e) {
+      setError(message(e));
     }
   }
-
-  if (error) {
-    return (
-      <SafeAreaView edges={['bottom']} className="flex-1 bg-brand-cream items-center justify-center">
-        <Text className="text-stone-500">{error}</Text>
-      </SafeAreaView>
-    );
-  }
-  if (!product) {
-    return (
-      <SafeAreaView edges={['bottom']} className="flex-1 bg-brand-cream items-center justify-center">
-        <Text className="text-stone-500">Loading…</Text>
-      </SafeAreaView>
-    );
-  }
-
-  const unitPrice = priceForQuantity(product.tiers, quantity, product.basePrice);
-  const accent = categoryColor(product.categoryId).color;
-
   return (
-    <SafeAreaView edges={['bottom']} className="flex-1 bg-brand-cream">
-      <Stack.Screen options={{ title: product.name.length > 22 ? product.name.slice(0, 22) + '…' : product.name }} />
-      <ScrollView className="flex-1 px-4" contentContainerClassName="pt-4 pb-8 gap-5">
-        <View style={{ backgroundColor: accent }} className="h-40 rounded-2xl items-center justify-center">
-          <Icon name={categoryIcon(product.category?.slug ?? '')} size={56} color="rgba(255,255,255,0.9)" />
-        </View>
-
-        <View>
-          <Text className="text-xl font-bold text-stone-900">{product.name}</Text>
-          <View className="flex-row items-center gap-2 mt-2">
-            <Text className="text-xs px-2.5 py-1 rounded-full font-medium bg-brand-orange-100 text-brand-orange-800">
-              {BRAND_LABELS[product.brand]}
+    <Screen onRefresh={result.reload} refreshing={result.loading}>
+      {!!result.error && (
+        <ErrorState error={result.error} retry={result.reload} />
+      )}
+      {result.loading && !product && <Loading />}
+      {product && (
+        <>
+          <ProductImage product={product} large />
+          <Text style={s.eyebrow}>
+            {BRAND_LABELS[product.brand]} /{" "}
+            {product.category?.name ?? "THE COLLECTION"}
+          </Text>
+          <Text style={s.title}>{product.name}</Text>
+          <Text style={s.body}>
+            {product.description ||
+              "A considered addition to your next project. Explore the specifications below."}
+          </Text>
+          <View style={s.between}>
+            <Text style={s.price}>
+              {money(
+                priceForQuantity(product.tiers, quantity, product.basePrice),
+              )}
+              <Text style={s.small}> / {product.unit}</Text>
             </Text>
-            <Text className="text-xs text-stone-400">SKU {product.sku}</Text>
+            <Text style={s.small}>SKU {product.sku}</Text>
           </View>
-          {product.description && <Text className="mt-3 text-stone-600">{product.description}</Text>}
-        </View>
-
-        <View className="flex-row items-baseline gap-2">
-          <Text className="text-2xl font-bold text-brand-orange-700">₹{unitPrice}</Text>
-          <Text className="text-sm text-stone-500">/ {product.unit}</Text>
-        </View>
-
-        <View className="flex-row items-center gap-3">
-          <Text className="text-sm font-medium text-stone-700">Quantity</Text>
-          <View className="flex-row items-center rounded-lg border border-stone-300">
-            <Pressable onPress={() => setQuantity((q) => Math.max(1, q - 1))} className="px-3.5 py-2">
-              <Icon name="minus" size={14} color="#57534e" />
-            </Pressable>
-            <Text className="w-8 text-center text-stone-900">{quantity}</Text>
-            <Pressable onPress={() => setQuantity((q) => q + 1)} className="px-3.5 py-2">
-              <Icon name="plus" size={14} color="#57534e" />
-            </Pressable>
+          {product.tiers.length > 0 && (
+            <View style={s.card}>
+              <Text style={s.eyebrow}>MORE FOR YOUR PROJECT</Text>
+              {[...product.tiers]
+                .sort((a, b) => a.minQty - b.minQty)
+                .map((tier) => (
+                  <View key={tier.minQty} style={s.between}>
+                    <Text style={s.body}>
+                      {tier.minQty}+ {product.unit}
+                    </Text>
+                    <Text style={s.link}>{money(tier.pricePerUnit)} each</Text>
+                  </View>
+                ))}
+            </View>
+          )}
+          <DeliveryArea />
+          {area?.serviceable && (
+            <Notice
+              text={
+                product.stock
+                  ? product.stock.stockQty > 0
+                    ? `${product.stock.stockQty} available at ${product.stock.storeName}. Final availability is checked at checkout.`
+                    : "Currently out of stock for this delivery area."
+                  : "This item is not available in your delivery area."
+              }
+            />
+          )}
+          <View style={s.between}>
+            <Text style={s.heading}>Quantity</Text>
+            <View style={s.row}>
+              <Button
+                title="−"
+                secondary
+                disabled={quantity <= 1 || cart.busy}
+                onPress={() => {
+                  setQuantity((q) => q - 1);
+                  setAdded(false);
+                }}
+              />
+              <Text
+                accessibilityLabel={`Quantity ${quantity}`}
+                style={s.heading}
+              >
+                {quantity}
+              </Text>
+              <Button
+                title="+"
+                secondary
+                disabled={
+                  quantity >= Math.min(9999, product.stock?.stockQty ?? 9999) ||
+                  cart.busy
+                }
+                onPress={() => {
+                  setQuantity((q) => q + 1);
+                  setAdded(false);
+                }}
+              />
+            </View>
           </View>
-          <Text className="font-bold text-stone-900">₹{unitPrice * quantity} total</Text>
-        </View>
-
-        {error && <Text className="text-rose-600 text-sm">{error}</Text>}
-
-        <PressableCard onPress={addToCart} className="bg-brand-orange-600 items-center py-3.5">
-          <Text className="text-white font-semibold">{adding ? 'Adding…' : added ? 'Added ✓' : 'Add to cart'}</Text>
-        </PressableCard>
-
-        {product.tiers.length > 0 && (
-          <Card className="p-0 overflow-hidden">
-            <View className="px-4 py-2.5 flex-row justify-between bg-brand-orange-50/60">
-              <Text className="font-semibold text-stone-700">Quantity</Text>
-              <Text className="font-semibold text-stone-700">Price / {product.unit}</Text>
-            </View>
-            <View className="px-4 py-2.5 flex-row justify-between border-t border-stone-100">
-              <Text className="text-stone-700">1 – {product.tiers[0].minQty - 1}</Text>
-              <Text className="text-stone-700">₹{product.basePrice}</Text>
-            </View>
-            {[...product.tiers]
-              .sort((a, b) => a.minQty - b.minQty)
-              .map((tier, i, arr) => (
-                <View key={tier.minQty} className="px-4 py-2.5 flex-row justify-between border-t border-stone-100">
-                  <Text className="text-stone-700">
-                    {tier.minQty}
-                    {arr[i + 1] ? ` – ${arr[i + 1].minQty - 1}` : '+'}
+          <Notice text={error} error />
+          {added && <Notice text="Added to your cart. Ready when you are." />}
+          <Button
+            title={
+              user
+                ? `Add to cart · ${money(priceForQuantity(product.tiers, quantity, product.basePrice) * quantity)}`
+                : "Sign in to add to cart"
+            }
+            busy={cart.busy}
+            disabled={
+              !!area &&
+              (!area.serviceable ||
+                !product.stock ||
+                product.stock.stockQty < quantity)
+            }
+            onPress={add}
+          />
+          {added && (
+            <Button
+              title="View cart →"
+              secondary
+              onPress={() => router.push("/cart")}
+            />
+          )}
+          {product.specs && Object.keys(product.specs).length > 0 && (
+            <View style={s.card}>
+              <Text style={s.heading}>The details</Text>
+              {Object.entries(product.specs).map(([key, value]) => (
+                <View key={key} style={s.between}>
+                  <Text style={[s.body, { flex: 1 }]}>
+                    {key.replace(/_/g, " ")}
                   </Text>
-                  <Text className="font-medium text-emerald-700">₹{tier.pricePerUnit}</Text>
+                  <Text style={[s.body, { flex: 1, textAlign: "right" }]}>
+                    {String(value)}
+                  </Text>
                 </View>
               ))}
-          </Card>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+            </View>
+          )}
+        </>
+      )}
+    </Screen>
   );
 }

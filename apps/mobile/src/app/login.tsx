@@ -1,184 +1,148 @@
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { ApiError } from '@matrizo/shared';
-import { PressableCard } from '@/components/Card';
-import { api } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
-
-const inputClass = 'w-full rounded-lg border border-stone-300 px-3 py-2.5 text-stone-900';
-
-type OtpRequestResponse = { sent: true; devOtp?: string; note?: string };
-type OtpVerifyResponse = { accessToken: string; user: { id: string; role: 'customer'; phone: string | null; name: string | null } };
-
-// OTP is skipped for now — MSG91 isn't wired up yet, same dev-mode chain as
-// apps/web/src/app/login/page.tsx: request + verify happen invisibly using
-// the devOtp the API returns in dev mode instead of texting it.
-async function authenticate(phone: string): Promise<OtpVerifyResponse> {
-  const requestRes = await api.post<OtpRequestResponse>('/auth/otp/request', { phone });
-  if (!requestRes.devOtp) {
-    throw new ApiError('OTP was sent via SMS — enter it to continue (not implemented in this UI yet).', 500);
-  }
-  return api.post<OtpVerifyResponse>('/auth/otp/verify', { phone, code: requestRes.devOtp });
-}
-
-export default function LoginScreen() {
-  const router = useRouter();
+import { useState } from "react";
+import { Text, View } from "react-native";
+import { Link, useLocalSearchParams, router, type Href } from "expo-router";
+import { authApi } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import type { CustomerSession } from "@/lib/session-core";
+import { safeDestination } from "@/lib/navigation";
+import { message } from "@/lib/useResource";
+import { styles as s } from "@/lib/theme";
+import { Brand, Button, Field, Notice, Screen } from "@/components/ui";
+export default function Login() {
   const { login } = useAuth();
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
-  const [stage, setStage] = useState<'form' | 'complete-profile'>('form');
-
-  const [phone, setPhone] = useState('');
-  const [name, setName] = useState('');
-  const [line1, setLine1] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
-  const [pincode, setPincode] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  async function saveProfileAndContinue() {
-    await Promise.all([
-      api.patch('/account/me', { name }),
-      api.post('/account/addresses', { line1, city, state, pincode, isDefault: true }),
-    ]).catch(() => {});
-    router.replace('/');
-  }
-
-  async function submitLogin() {
-    setError(null);
+  const { next } = useLocalSearchParams<{ next?: string }>();
+  const [signup, setSignup] = useState(false),
+    [identifier, setIdentifier] = useState(""),
+    [email, setEmail] = useState(""),
+    [phone, setPhone] = useState(""),
+    [name, setName] = useState(""),
+    [password, setPassword] = useState(""),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState("");
+  async function submit() {
+    if (busy) return;
+    setError("");
     setBusy(true);
     try {
-      const res = await authenticate(phone);
-      login(res.accessToken, res.user);
-      if (res.user.name) router.replace('/');
-      else setStage('complete-profile');
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong');
+      const result = await authApi.post<CustomerSession>(
+        signup ? "/auth/customer-register" : "/auth/customer-login",
+        signup
+          ? {
+              name: name.trim(),
+              email: email.trim(),
+              phone: phone.trim(),
+              password,
+            }
+          : { identifier: identifier.trim(), password },
+      );
+      await login(result);
+      setPassword("");
+      router.replace(safeDestination(next) as Href);
+    } catch (e) {
+      setError(
+        message(
+          e,
+          e instanceof Error
+            ? e.message
+            : "We couldn’t sign you in. Try again.",
+        ),
+      );
     } finally {
       setBusy(false);
     }
   }
-
-  async function submitSignup() {
-    setError(null);
-    setBusy(true);
-    try {
-      const res = await authenticate(phone);
-      login(res.accessToken, res.user);
-      if (!res.user.name) {
-        await Promise.all([
-          api.patch('/account/me', { name }),
-          api.post('/account/addresses', { line1, city, state, pincode, isDefault: true }),
-        ]).catch(() => {});
-      }
-      router.replace('/');
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function submitProfile() {
-    setError(null);
-    setBusy(true);
-    try {
-      await saveProfileAndContinue();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong');
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
-    <SafeAreaView edges={['bottom']} className="flex-1 bg-brand-cream">
-      <ScrollView contentContainerClassName="p-4 pb-10">
-        {stage === 'form' && (
+    <Screen>
+      <Brand />
+      <Text style={s.eyebrow}>YOUR SPACE. BEAUTIFULLY MADE.</Text>
+      <Text style={s.title}>
+        {signup ? "Welcome to Matrizo" : "Good to see you again"}
+      </Text>
+      <Text style={s.body}>
+        Thoughtful finishes, trusted essentials. Everything for your next
+        project, in one place.
+      </Text>
+      <View style={s.card}>
+        {signup ? (
           <>
-            <View className="flex-row bg-stone-100 rounded-full p-1 mb-5">
-              <Pressable onPress={() => setMode('login')} className={`flex-1 rounded-full py-2 items-center ${mode === 'login' ? 'bg-white' : ''}`}>
-                <Text className={`text-sm font-semibold ${mode === 'login' ? 'text-brand-orange-700' : 'text-stone-500'}`}>Log in</Text>
-              </Pressable>
-              <Pressable onPress={() => setMode('signup')} className={`flex-1 rounded-full py-2 items-center ${mode === 'signup' ? 'bg-white' : ''}`}>
-                <Text className={`text-sm font-semibold ${mode === 'signup' ? 'text-brand-orange-700' : 'text-stone-500'}`}>Sign up</Text>
-              </Pressable>
-            </View>
-
-            {mode === 'login' ? (
-              <View className="gap-3">
-                <Text className="text-xl font-bold text-stone-900">Welcome back</Text>
-                <Text className="text-sm text-stone-500 -mt-2">Enter your phone number to continue.</Text>
-                <View>
-                  <Text className="text-sm font-medium text-stone-700 mb-1">Phone number</Text>
-                  <TextInput value={phone} onChangeText={setPhone} placeholder="9876543210" keyboardType="phone-pad" className={inputClass} />
-                </View>
-                {error && <Text className="text-rose-600 text-sm">{error}</Text>}
-                <PressableCard onPress={submitLogin} disabled={busy} className="bg-brand-orange-600 items-center py-3">
-                  <Text className="text-white font-semibold">{busy ? 'Logging in…' : 'Log in'}</Text>
-                </PressableCard>
-              </View>
-            ) : (
-              <View className="gap-3">
-                <Text className="text-xl font-bold text-stone-900">Create your account</Text>
-                <Text className="text-sm text-stone-500 -mt-2">Tell us where to deliver and you&apos;re in.</Text>
-                <View>
-                  <Text className="text-sm font-medium text-stone-700 mb-1">Phone number</Text>
-                  <TextInput value={phone} onChangeText={setPhone} placeholder="9876543210" keyboardType="phone-pad" className={inputClass} />
-                </View>
-                <View>
-                  <Text className="text-sm font-medium text-stone-700 mb-1">Name</Text>
-                  <TextInput value={name} onChangeText={setName} placeholder="Your name" className={inputClass} />
-                </View>
-                <View>
-                  <Text className="text-sm text-stone-500 mb-1.5">Delivery address</Text>
-                  <View className="gap-2">
-                    <TextInput value={line1} onChangeText={setLine1} placeholder="Address line" className={inputClass} />
-                    <View className="flex-row gap-2">
-                      <TextInput value={city} onChangeText={setCity} placeholder="City" className={`flex-1 ${inputClass}`} />
-                      <TextInput value={state} onChangeText={setState} placeholder="State" className={`flex-1 ${inputClass}`} />
-                    </View>
-                    <TextInput value={pincode} onChangeText={setPincode} placeholder="Pincode" keyboardType="number-pad" className={inputClass} />
-                  </View>
-                </View>
-                {error && <Text className="text-rose-600 text-sm">{error}</Text>}
-                <PressableCard onPress={submitSignup} disabled={busy} className="bg-brand-orange-600 items-center py-3">
-                  <Text className="text-white font-semibold">{busy ? 'Creating account…' : 'Sign up'}</Text>
-                </PressableCard>
-              </View>
-            )}
+            <Field
+              label="Full name"
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="words"
+              autoComplete="name"
+              maxLength={100}
+            />
+            <Field
+              label="Email address"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoComplete="email"
+              maxLength={254}
+            />
+            <Field
+              label="Mobile number"
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+              autoComplete="tel"
+              maxLength={16}
+              placeholder="10-digit Indian mobile number"
+            />
           </>
+        ) : (
+          <Field
+            label="Email or mobile number"
+            value={identifier}
+            onChangeText={setIdentifier}
+            autoComplete="username"
+            maxLength={254}
+            placeholder="you@example.com or mobile number"
+          />
         )}
-
-        {stage === 'complete-profile' && (
-          <View className="gap-3">
-            <Text className="text-xl font-bold text-stone-900">You&apos;re logged in — one more step</Text>
-            <Text className="text-sm text-stone-500 -mt-2">We don&apos;t have your name and address yet.</Text>
-            <View>
-              <Text className="text-sm font-medium text-stone-700 mb-1">Name</Text>
-              <TextInput value={name} onChangeText={setName} placeholder="Your name" className={inputClass} />
-            </View>
-            <View>
-              <Text className="text-sm text-stone-500 mb-1.5">Delivery address</Text>
-              <View className="gap-2">
-                <TextInput value={line1} onChangeText={setLine1} placeholder="Address line" className={inputClass} />
-                <View className="flex-row gap-2">
-                  <TextInput value={city} onChangeText={setCity} placeholder="City" className={`flex-1 ${inputClass}`} />
-                  <TextInput value={state} onChangeText={setState} placeholder="State" className={`flex-1 ${inputClass}`} />
-                </View>
-                <TextInput value={pincode} onChangeText={setPincode} placeholder="Pincode" keyboardType="number-pad" className={inputClass} />
-              </View>
-            </View>
-            {error && <Text className="text-rose-600 text-sm">{error}</Text>}
-            <PressableCard onPress={submitProfile} disabled={busy} className="bg-brand-orange-600 items-center py-3">
-              <Text className="text-white font-semibold">{busy ? 'Saving…' : 'Continue'}</Text>
-            </PressableCard>
-          </View>
+        <Field
+          label={signup ? "Password · at least 10 characters" : "Password"}
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          autoComplete={signup ? "new-password" : "current-password"}
+          maxLength={128}
+          onSubmitEditing={submit}
+        />
+        <Notice text={error} error />
+        <Button
+          title={signup ? "Create account" : "Sign in"}
+          busy={busy}
+          onPress={submit}
+        />
+        {!signup && (
+          <Link href="/forgot-password" style={s.link}>
+            Forgot password?
+          </Link>
         )}
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+      <Button
+        title={
+          signup
+            ? "Already a member? Sign in"
+            : "New to Matrizo? Create an account"
+        }
+        secondary
+        disabled={busy}
+        onPress={() => {
+          setSignup(!signup);
+          setPassword("");
+          setError("");
+        }}
+      />
+      <Text style={s.small}>
+        Read how we handle your information in our{" "}
+        <Link href="/privacy" style={s.link}>
+          Privacy policy
+        </Link>
+        .
+      </Text>
+    </Screen>
   );
 }

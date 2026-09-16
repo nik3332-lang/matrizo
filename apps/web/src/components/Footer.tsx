@@ -24,6 +24,9 @@ export function Footer() {
             <Link href="/account">My account</Link>
             <Link href="/orders">Track your orders</Link>
             <Link href="/cart">Your cart</Link>
+            <Link href="/support">Help & support</Link>
+            <Link href="/privacy">Privacy policy</Link>
+            <Link href="/delete-account">Delete account</Link>
           </div>
           <div>
             <h3>Behind the scenes</h3>

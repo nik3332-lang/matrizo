@@ -50,3 +50,11 @@ yarn-error.*
 
 # Isolated web preview
 .next-preview/
+
+# Mobile native output and signing/provider credentials
+/apps/mobile/ios/
+/apps/mobile/android/
+**/google-services.json
+**/GoogleService-Info.plist
+**/credentials.json
+**/*service-account*.json

@@ -27,7 +27,10 @@ import { requireAuth, requireRole, type AuthEnv } from "../middleware/auth";
 
 export const orderRoutes = new Hono<AuthEnv>();
 
-const checkoutSchema = z.object({ addressId: z.string() });
+const checkoutSchema = z.object({
+  addressId: z.string(),
+  checkoutKey: z.uuid().optional(),
+});
 
 // Checkout: COD only for now (payments.ts / Razorpay wiring is a separate,
 // later step). Assigns to the nearest store that both serves the address's
@@ -40,6 +43,29 @@ orderRoutes.post("/", requireAuth, requireRole("customer"), async (c) => {
   if (!parsed.success) return c.json({ error: "Invalid request" }, 400);
   const auth = c.get("auth");
   const db = getDb(c.env.DB);
+
+  if (parsed.data.checkoutKey) {
+    const [existing] = await db
+      .select()
+      .from(orders)
+      .where(
+        and(
+          eq(orders.userId, auth.sub),
+          eq(orders.checkoutKey, parsed.data.checkoutKey),
+        ),
+      )
+      .limit(1);
+    if (existing)
+      return c.json(
+        {
+          orderId: existing.id,
+          storeId: existing.storeId,
+          totalAmount: existing.totalAmount,
+          status: existing.status,
+        },
+        201,
+      );
+  }
 
   const [address] = await db
     .select()
@@ -116,7 +142,29 @@ orderRoutes.post("/", requireAuth, requireRole("customer"), async (c) => {
   // non-empty tuple, which a dynamically-built array (spreads of per-line
   // inserts/updates) can't satisfy statically — cast through this instead
   // of `as any`.
+  const cartFingerprint = cartRows
+    .map(({ cartItem }) => `${cartItem.id}:${cartItem.quantity}`)
+    .sort()
+    .join("|");
   const statements: BatchItem<"sqlite">[] = [
+    // The access check and checkout share the transaction. A deletion request
+    // cannot race an already-authorized checkout and recreate personal data.
+    db
+      .update(users)
+      .set({
+        sessionVersion: sql`CASE WHEN ${users.active}=1 AND ${users.deletionRequestedAt} IS NULL AND ${users.sessionVersion}=${auth.sessionVersion ?? 0} THEN ${users.sessionVersion} ELSE NULL END`,
+      })
+      .where(eq(users.id, auth.sub)),
+    // A cart can be shared across devices. Do not place it twice or discard edits
+    // made between reading the cart and committing the reservation.
+    db
+      .update(users)
+      .set({
+        sessionVersion: sql`CASE WHEN
+      (SELECT group_concat(value,'|') FROM (SELECT id || ':' || quantity AS value FROM cart_items WHERE user_id=${auth.sub} ORDER BY id))=${cartFingerprint}
+      THEN ${users.sessionVersion} ELSE NULL END`,
+      })
+      .where(eq(users.id, auth.sub)),
     db.insert(orders).values({
       id: orderId,
       userId: auth.sub,
@@ -126,6 +174,7 @@ orderRoutes.post("/", requireAuth, requireRole("customer"), async (c) => {
       paymentMethod: "cod",
       paymentStatus: "pending",
       totalAmount,
+      checkoutKey: parsed.data.checkoutKey ?? null,
     }),
     ...lines.map((line) =>
       db.insert(orderItems).values({
@@ -164,6 +213,46 @@ orderRoutes.post("/", requireAuth, requireRole("customer"), async (c) => {
     await db.batch(statements as unknown as Parameters<typeof db.batch>[0]);
   } catch (error) {
     const detail = String(error) + String((error as { cause?: unknown }).cause);
+    if (parsed.data.checkoutKey) {
+      const [existing] = await db
+        .select()
+        .from(orders)
+        .where(
+          and(
+            eq(orders.userId, auth.sub),
+            eq(orders.checkoutKey, parsed.data.checkoutKey),
+          ),
+        )
+        .limit(1);
+      if (existing)
+        return c.json(
+          {
+            orderId: existing.id,
+            storeId: existing.storeId,
+            totalAmount: existing.totalAmount,
+            status: existing.status,
+          },
+          201,
+        );
+    }
+    if (detail.includes("NOT NULL") && detail.includes("session_version")) {
+      const [currentUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, auth.sub))
+        .limit(1);
+      if (
+        !currentUser?.active ||
+        currentUser.sessionVersion !== (auth.sessionVersion ?? 0)
+      )
+        return c.json({ error: "Session expired. Please sign in again." }, 401);
+      return c.json(
+        {
+          error: "Your cart changed during checkout. Review it and try again.",
+        },
+        409,
+      );
+    }
     if (detail.includes("NOT NULL") && detail.includes("stock_qty"))
       return c.json(
         {
@@ -220,6 +309,28 @@ orderRoutes.get("/", requireAuth, async (c) => {
     .orderBy(desc(orders.createdAt));
   return c.json({ orders: rows });
 });
+
+// Recover a checkout whose response was lost without creating another order.
+orderRoutes.get(
+  "/checkout/:key",
+  requireAuth,
+  requireRole("customer"),
+  async (c) => {
+    if (!z.uuid().safeParse(c.req.param("key")).success)
+      return c.json({ error: "Invalid checkout key" }, 400);
+    const [order] = await getDb(c.env.DB)
+      .select({ id: orders.id })
+      .from(orders)
+      .where(
+        and(
+          eq(orders.userId, c.get("auth").sub),
+          eq(orders.checkoutKey, c.req.param("key")!),
+        ),
+      )
+      .limit(1);
+    return c.json({ orderId: order?.id ?? null });
+  },
+);
 
 orderRoutes.get("/:id", requireAuth, async (c) => {
   const auth = c.get("auth");
@@ -505,13 +616,11 @@ orderRoutes.patch(
         })
         .where(eq(deliveryAssignments.id, existing.id));
     } else {
-      await db
-        .insert(deliveryAssignments)
-        .values({
-          id: crypto.randomUUID(),
-          orderId: id,
-          deliveryPartnerUserId: partner.id,
-        });
+      await db.insert(deliveryAssignments).values({
+        id: crypto.randomUUID(),
+        orderId: id,
+        deliveryPartnerUserId: partner.id,
+      });
     }
 
     return c.json({ ok: true });

@@ -4,6 +4,9 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-08-04",
   "compatibility_flags": ["nodejs_compat"],
+  // Applied only at the next deployment: durable notification retries and
+  // completion of deletion requests after the last open delivery is resolved.
+  "triggers": { "crons": ["*/5 * * * *"] },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1

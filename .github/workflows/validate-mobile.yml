@@ -1,0 +1,35 @@
+name: Validate mobile app
+on:
+  pull_request:
+    paths:
+      - 'apps/mobile/**'
+      - 'apps/api/**'
+      - 'apps/web/**'
+      - 'packages/shared/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/validate-mobile.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: 'true'
+      EXPO_NO_DOTENV: '1'
+      EXPO_PUBLIC_API_URL: 'https://matrizo-api.nikhilsinghal-official.workers.dev/api/v1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm --filter @matrizo/api exec tsc --noEmit
+      - run: pnpm --filter @matrizo/mobile typecheck
+      - run: pnpm --filter @matrizo/web lint
+      - run: pnpm --filter @matrizo/mobile bundle:native
