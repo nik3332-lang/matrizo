@@ -14,9 +14,16 @@ import { PRODUCT_BRANDS } from "@matrizo/shared";
 import { serverApiGet } from "@/lib/serverApi";
 import { categoryIcon } from "@/lib/categoryIcon";
 import { Icon } from "@/components/Icon";
+import { CategoryBadge } from "@/components/CategoryBadge";
 import { BrandFilterGrid, type Product } from "./BrandFilterGrid";
 
-type Category = { id: string; slug: string; name: string; icon: string | null };
+type Category = {
+  id: string;
+  slug: string;
+  name: string;
+  icon: string | null;
+  colour?: string | null;
+};
 
 // Real photography, category-level only — see public/images/CREDITS.md.
 // It's a real photo of stacked plastic pipe, not any specific SKU on this
@@ -97,6 +104,7 @@ export default async function CategoryPage({
         </div>
         <h1 className="text-xl font-medium text-stone-900">
           {data.category.name}
+          <CategoryBadge category={data.category} />
         </h1>
       </div>
 

@@ -2,6 +2,12 @@
   "expo": {
     "name": "Matrizo",
     "slug": "matrizo",
+    "owner": "nikhilmatrizos-team",
+    "extra": {
+      "eas": {
+        "projectId": "5e70cf48-6d95-46f7-92e6-7ab78f81e791"
+      }
+    },
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/brand/icon.png",

@@ -6,6 +6,8 @@ export type CategoryFormValues = {
   slug: string;
   name: string;
   icon: string;
+  colour: string | null;
+  colourSelection: boolean;
   sortOrder: number;
   parentId: string | null;
 };
@@ -14,6 +16,8 @@ const EMPTY: CategoryFormValues = {
   slug: "",
   name: "",
   icon: "",
+  colour: null,
+  colourSelection: false,
   sortOrder: 0,
   parentId: null,
 };
@@ -110,6 +114,39 @@ export function CategoryForm({
               </option>
             ))}
         </select>
+      </label>
+      <label className="flex items-center gap-3 text-sm">
+        <input
+          type="checkbox"
+          checked={values.colourSelection}
+          onChange={(e) =>
+            setValues((v) => ({ ...v, colourSelection: e.target.checked }))
+          }
+        />
+        Require paint colour selection
+      </label>
+      <label className="flex items-center gap-3 text-sm">
+        <input
+          type="checkbox"
+          checked={!!values.colour}
+          onChange={(e) =>
+            setValues((v) => ({
+              ...v,
+              colour: e.target.checked ? "#ffffff" : null,
+            }))
+          }
+        />
+        Category colour
+        {values.colour && (
+          <input
+            aria-label="Category colour"
+            type="color"
+            value={values.colour}
+            onChange={(e) =>
+              setValues((v) => ({ ...v, colour: e.target.value }))
+            }
+          />
+        )}
       </label>
       <div className="flex gap-2 pt-1">
         <button

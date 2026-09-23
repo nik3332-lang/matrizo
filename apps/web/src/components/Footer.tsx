@@ -37,7 +37,7 @@ export function Footer() {
         </div>
         <div className="footer-bottom">
           <span>
-            © {new Date().getFullYear()} Matrizo. All rights reserved.
+            © {new Date().getFullYear()} Matrizo | All rights reserved.
           </span>
           <span>Thoughtful choices. Beautiful spaces.</span>
         </div>

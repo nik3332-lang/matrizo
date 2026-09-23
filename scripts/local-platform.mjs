@@ -81,9 +81,9 @@ export async function startFixture(port = 0, options = {}) {
   for (const [i, [slug, name]] of categories.entries())
     await db
       .prepare(
-        "INSERT INTO categories (id,slug,name,sort_order) VALUES (?,?,?,?)",
+        "INSERT INTO categories (id,slug,name,sort_order,colour,colour_selection) VALUES (?,?,?,?,CASE ? WHEN 'upvc' THEN '#ffffff' WHEN 'cpvc' THEN '#ffdf00' WHEN 'pvc' THEN '#808080' ELSE NULL END, ?)",
       )
-      .bind(slug, slug, name, i)
+      .bind(slug, slug, name, i, slug, slug === "paints" ? 1 : 0)
       .run();
   const products = [
     ["basin", "Ceramic countertop basin", "sanitary", 2499, "others"],

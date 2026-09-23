@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 export function Brand({ light = false }: { light?: boolean }) {
   return (
     <Link
@@ -6,19 +7,14 @@ export function Brand({ light = false }: { light?: boolean }) {
       aria-label="Matrizo home"
       className={`brand-lockup ${light ? "brand-light" : ""}`}
     >
-      <span className="brand-symbol" aria-hidden="true">
-        <svg viewBox="0 0 32 32" fill="none">
-          <path
-            d="M5 25V8l11 10L27 8v17"
-            stroke="currentColor"
-            strokeWidth="3"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </span>
-      <span>
-        matrizo<span className="brand-dot">.</span>
-      </span>
+      <Image
+        src="/matrizo-logo.jpeg"
+        alt="Matrizo"
+        width={100}
+        height={75}
+        className="brand-logo"
+      />
+      <span>Matrizo</span>
     </Link>
   );
 }

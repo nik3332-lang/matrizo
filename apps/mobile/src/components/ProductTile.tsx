@@ -7,6 +7,8 @@ import { Icon } from "./Icon";
 import { money } from "./ui";
 import { colors, styles as s } from "@/lib/theme";
 import type { Product } from "@/lib/types";
+import { useLocation } from "@/lib/location";
+import { useResource } from "@/lib/useResource";
 export function ProductImage({
   product,
   large = false,
@@ -41,6 +43,12 @@ export function ProductImage({
   );
 }
 export function ProductTile({ product }: { product: Product }) {
+  const { area } = useLocation();
+  const availability = useResource<{ stock: { available: boolean } | null }>(
+    area
+      ? `/products/${encodeURIComponent(product.slug)}/stock?pincode=${area.pincode}`
+      : null,
+  );
   return (
     <Pressable
       accessibilityRole="button"
@@ -63,6 +71,10 @@ export function ProductTile({ product }: { product: Product }) {
       })}
     >
       <ProductImage product={product} />
+      <CategoryBadge category={product.category} />
+      {area && availability.data && !availability.data.stock?.available && (
+        <Text style={s.small}>Unavailable</Text>
+      )}
       <Text style={[s.eyebrow, { fontSize: 9, letterSpacing: 1 }]}>
         {BRAND_LABELS[product.brand]}
       </Text>
@@ -84,5 +96,27 @@ export function ProductTile({ product }: { product: Product }) {
       </Text>
       <Text style={[s.small, { color: colors.accent }]}>View details →</Text>
     </Pressable>
+  );
+}
+export function CategoryBadge({
+  category,
+}: {
+  category?: Product["category"];
+}) {
+  if (!category?.colour) return null;
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+      <View
+        style={{
+          width: 16,
+          height: 16,
+          borderRadius: 3,
+          borderWidth: 1,
+          borderColor: "#999",
+          backgroundColor: category.colour,
+        }}
+      />
+      <Text style={[s.small, { flexShrink: 1 }]}>{category.name}</Text>
+    </View>
   );
 }

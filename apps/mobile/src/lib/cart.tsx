@@ -18,8 +18,8 @@ type Value = {
   busy: boolean;
   error: string;
   reload(): Promise<void>;
-  change(productId: string, quantity: number): Promise<void>;
-  add(productId: string, quantity: number): Promise<void>;
+  change(productId: string, quantity: number, shadeId?: string): Promise<void>;
+  add(productId: string, quantity: number, shadeId?: string): Promise<void>;
 };
 const Context = createContext<Value | null>(null);
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -56,7 +56,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
       generation.current++;
     };
   }, [reload]);
-  async function mutate(productId: string, quantity: number, add: boolean) {
+  async function mutate(
+    productId: string,
+    quantity: number,
+    add: boolean,
+    shadeId = "",
+  ) {
     if (!user) throw new Error("Please sign in first.");
     if (mutation.current)
       throw new Error("Please wait for your cart to update.");
@@ -66,9 +71,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     generation.current++;
     try {
       const result = add
-        ? await api.post<Cart>("/cart/items", { productId, quantity })
+        ? await api.post<Cart>("/cart/items", { productId, quantity, shadeId })
         : await api.patch<Cart>(
-            `/cart/items/${encodeURIComponent(productId)}`,
+            `/cart/items/${encodeURIComponent(productId)}?shadeId=${encodeURIComponent(shadeId)}`,
             { quantity },
           );
       if (session.get()?.user.id === user.id) {
@@ -96,8 +101,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         busy,
         error,
         reload,
-        add: (id, qty) => mutate(id, qty, true),
-        change: (id, qty) => mutate(id, qty, false),
+        add: (id, qty, shadeId) => mutate(id, qty, true, shadeId),
+        change: (id, qty, shadeId) => mutate(id, qty, false, shadeId),
       }}
     >
       {children}

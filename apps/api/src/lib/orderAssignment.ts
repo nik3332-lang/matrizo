@@ -1,7 +1,7 @@
-import { and, asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray } from "drizzle-orm";
 
-import type { getDb } from '../db/client';
-import { inventory, storeServicePincodes, stores } from '../db/schema';
+import type { getDb } from "../db/client";
+import { inventory, storeServicePincodes, stores } from "../db/schema";
 
 export type CartLine = { productId: string; quantity: number };
 
@@ -14,13 +14,15 @@ export type CartLine = { productId: string; quantity: number };
 export async function findStoreWithStock(
   db: ReturnType<typeof getDb>,
   pincode: string,
-  items: CartLine[]
+  items: CartLine[],
 ) {
   const candidates = await db
     .select({ storeId: stores.id, etaMinutes: storeServicePincodes.etaMinutes })
     .from(storeServicePincodes)
     .innerJoin(stores, eq(stores.id, storeServicePincodes.storeId))
-    .where(and(eq(storeServicePincodes.pincode, pincode), eq(stores.active, true)))
+    .where(
+      and(eq(storeServicePincodes.pincode, pincode), eq(stores.active, true)),
+    )
     .orderBy(asc(storeServicePincodes.etaMinutes));
 
   const productIds = items.map((item) => item.productId);
@@ -29,10 +31,25 @@ export async function findStoreWithStock(
     const stockRows = await db
       .select()
       .from(inventory)
-      .where(and(eq(inventory.storeId, candidate.storeId), inArray(inventory.productId, productIds)));
+      .where(
+        and(
+          eq(inventory.storeId, candidate.storeId),
+          inArray(inventory.productId, productIds),
+        ),
+      );
 
-    const stockByProduct = new Map(stockRows.map((row) => [row.productId, row.stockQty]));
-    const hasEnoughStock = items.every((item) => (stockByProduct.get(item.productId) ?? 0) >= item.quantity);
+    const stockByProduct = new Map(
+      stockRows.map((row) => [row.productId, row.stockQty]),
+    );
+    const quantities = new Map<string, number>();
+    for (const item of items)
+      quantities.set(
+        item.productId,
+        (quantities.get(item.productId) ?? 0) + item.quantity,
+      );
+    const hasEnoughStock = [...quantities].every(
+      ([id, quantity]) => (stockByProduct.get(id) ?? 0) >= quantity,
+    );
     if (hasEnoughStock) return candidate;
   }
 

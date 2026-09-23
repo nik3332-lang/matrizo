@@ -8,6 +8,7 @@ import {
 import { api } from "@/lib/api";
 import type { CatalogProduct, Category } from "@/lib/catalog";
 import { ProductCard } from "@/components/ProductCard";
+import { CategoryBadge } from "@/components/CategoryBadge";
 import { ProductCardSkeleton } from "@/components/Skeleton";
 import { categoryIcon } from "@/lib/categoryIcon";
 import { productCatalogImage } from "@/lib/catalogImages";
@@ -83,6 +84,9 @@ export default function ShopPage() {
         <select
           aria-label="Category"
           value={category}
+          style={{
+            borderLeft: `8px solid ${categories.find((c) => c.id === category)?.colour ?? "transparent"}`,
+          }}
           onChange={(e) => setCategory(e.target.value)}
         >
           <option value="">All categories</option>
@@ -93,6 +97,7 @@ export default function ShopPage() {
             </option>
           ))}
         </select>
+        <CategoryBadge category={categories.find((c) => c.id === category)} />
         <select
           aria-label="Brand"
           value={brand}

@@ -25,6 +25,7 @@ import { categoryIcon } from "@/lib/categoryIcon";
 import { productCatalogImage } from "@/lib/catalogImages";
 import { specEntries, type ProductSpecs } from "@/lib/specs";
 import { Icon } from "@/components/Icon";
+import { CategoryBadge } from "@/components/CategoryBadge";
 import { AddToCartPanel } from "./AddToCartPanel";
 
 const BRAND_LABELS: Record<ProductBrand, string> = {
@@ -37,7 +38,13 @@ const BRAND_LABELS: Record<ProductBrand, string> = {
 };
 
 type Tier = { minQty: number; pricePerUnit: number };
-type Category = { id: string; slug: string; name: string };
+type Category = {
+  id: string;
+  slug: string;
+  name: string;
+  colour?: string | null;
+  colourSelection?: boolean;
+};
 type Product = {
   id: string;
   sku: string;
@@ -164,6 +171,7 @@ export default async function ProductPage({
         </div>
 
         <div>
+          <CategoryBadge category={product.category} />
           <h1 className="text-2xl font-medium text-stone-900">
             {product.name}
           </h1>
@@ -205,6 +213,7 @@ export default async function ProductPage({
 
           <AddToCartPanel
             productId={product.id}
+            colourSelection={product.category?.colourSelection}
             productSlug={slug}
             unit={product.unit}
             basePrice={product.basePrice}

@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { STATUS_COLORS, STATUS_SOLID_COLORS } from "@/lib/statusColors";
 
 type OrderItem = {
+  shade?: { name: string; hex: string } | null;
   id: string;
   productName: string;
   quantity: number;
@@ -272,6 +273,11 @@ export default function AdminOrderDetailPage({
           <div key={item.id} className="p-3 flex justify-between text-sm">
             <span>
               {item.productName} × {item.quantity}
+              {item.shade && (
+                <small className="block">
+                  {item.shade.name} · {item.shade.hex}
+                </small>
+              )}
             </span>
             <span className="font-medium">
               ₹{item.unitPrice * item.quantity}

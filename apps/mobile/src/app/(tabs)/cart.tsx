@@ -23,10 +23,10 @@ export default function CartScreen() {
       void reload();
     }, [reload]),
   );
-  async function update(id: string, quantity: number) {
+  async function update(id: string, quantity: number, shadeId?: string) {
     setActionError("");
     try {
-      await change(id, quantity);
+      await change(id, quantity, shadeId);
     } catch (e) {
       setActionError(message(e));
     }
@@ -73,6 +73,7 @@ export default function CartScreen() {
                 }
               >
                 {item.product.name}
+                {item.shade ? `\n${item.shade.name} · ${item.shade.hex}` : ""}
               </Text>
               <Text style={s.small}>
                 {money(item.unitPrice)} / {item.product.unit}
@@ -86,14 +87,18 @@ export default function CartScreen() {
                     title="−"
                     secondary
                     disabled={busy}
-                    onPress={() => update(item.product.id, item.quantity - 1)}
+                    onPress={() =>
+                      update(item.product.id, item.quantity - 1, item.shadeId)
+                    }
                   />
                   <Text style={s.heading}>{item.quantity}</Text>
                   <Button
                     title="+"
                     secondary
                     disabled={busy || item.quantity >= 9999}
-                    onPress={() => update(item.product.id, item.quantity + 1)}
+                    onPress={() =>
+                      update(item.product.id, item.quantity + 1, item.shadeId)
+                    }
                   />
                 </View>
                 <Text style={s.heading}>{money(item.lineTotal)}</Text>
@@ -102,7 +107,7 @@ export default function CartScreen() {
                 title="Remove item"
                 secondary
                 disabled={busy}
-                onPress={() => update(item.product.id, 0)}
+                onPress={() => update(item.product.id, 0, item.shadeId)}
               />
             </View>
           ))}

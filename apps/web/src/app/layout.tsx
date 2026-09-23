@@ -28,7 +28,6 @@ export const metadata: Metadata = {
     "Shop sanitary ware, bathroom fittings, pipes and paints. Great brands, quantity pricing and local delivery, all in one place.",
   manifest: "/manifest.json",
   icons: {
-    icon: [{ url: "/brandmark.svg", sizes: "any", type: "image/svg+xml" }],
     apple: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
   },
 };

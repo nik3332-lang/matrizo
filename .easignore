@@ -1,0 +1,79 @@
+# EAS upload rules: keep in sync with .gitignore.
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+.env
+
+# Cloudflare
+.wrangler/
+.dev.vars
+
+# pnpm
+.pnpm-store/
+
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+/ios
+/android
+
+# Isolated web preview
+.next-preview/
+
+# Mobile native output and signing/provider credentials
+/apps/mobile/ios/
+/apps/mobile/android/
+**/google-services.json
+**/GoogleService-Info.plist
+**/credentials.json
+**/*service-account*.json
+
+# Build variables come from eas.json or EAS environments.
+.git
+**/.env*
+**/.next/
+**/coverage/
+
+# Generated artifacts ignored by the nested web/mobile projects.
+.open-next/
+.vercel/
+out/
+build/
+.pnp
+.pnp.*
+.yarn/
+.pnpm-debug.log*
+next-env.d.ts
+/apps/mobile/example/

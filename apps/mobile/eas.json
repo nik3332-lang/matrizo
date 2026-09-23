@@ -4,7 +4,16 @@
     "base": { "node": "24.20.0", "pnpm": "11.20.0" },
     "development": { "extends": "base", "developmentClient": true, "distribution": "internal", "environment": "development" },
     "development-simulator": { "extends": "development", "ios": { "simulator": true } },
-    "preview": { "extends": "base", "distribution": "internal", "environment": "preview", "android": { "buildType": "apk" } },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "environment": "preview",
+      "env": {
+        "EXPO_NO_DOTENV": "1",
+        "EXPO_PUBLIC_API_URL": "https://matrizo-api.nikhilsinghal-official.workers.dev/api/v1"
+      },
+      "android": { "buildType": "apk" }
+    },
     "production": { "extends": "base", "autoIncrement": true, "environment": "production", "android": { "buildType": "app-bundle" } }
   },
   "submit": { "production": {} }

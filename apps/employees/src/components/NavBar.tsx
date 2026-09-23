@@ -1,12 +1,14 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 function Brand() {
   return (
     <Link href="/" className="portal-brand">
-      <span aria-hidden="true">M</span>matrizo.
+      <Image src="/matrizo-logo.jpeg" alt="" width={64} height={48} />
+      Matrizo
     </Link>
   );
 }
@@ -22,12 +24,16 @@ export function NavBar() {
     );
   const links =
     user?.role === "admin"
-      ? [["/admin", "Employees"]]
+      ? [
+          ["/admin", "Employees"],
+          ["/professionals", "Painters & Plumbers"],
+        ]
       : [
           ["/", "Overview"],
           ["/sales", "Log daily sales"],
           ["/commission", "Commission"],
           ["/profile", "My profile"],
+          ["/professionals", "Painters & Plumbers"],
         ];
   return (
     <>

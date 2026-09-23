@@ -6,6 +6,8 @@ import { analyticsRoutes } from "./routes/analytics";
 import { authRoutes } from "./routes/auth";
 import { cartRoutes } from "./routes/cart";
 import { catalogRoutes } from "./routes/catalog";
+import { shadeRoutes } from "./routes/shades";
+import { professionalRoutes } from "./routes/professionals";
 import { employeeAdminRoutes, employeeRoutes } from "./routes/employees";
 import { inventoryRoutes } from "./routes/inventory";
 import { orderRoutes } from "./routes/orders";
@@ -36,6 +38,8 @@ v1.get("/health", (c) =>
 );
 
 v1.route("/", catalogRoutes);
+v1.route("/", shadeRoutes);
+v1.route("/", professionalRoutes);
 v1.route("/serviceability", serviceabilityRoutes);
 v1.route("/auth", authRoutes);
 v1.route("/account", accountRoutes);

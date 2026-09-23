@@ -19,9 +19,11 @@ import {
   orderStatusEvents,
   orders,
   products,
+  paintShades,
   users,
 } from "../db/schema";
 import { findStoreWithStock } from "../lib/orderAssignment";
+import { categorySettings } from "../lib/categorySettings";
 import { notifyOrderStatus } from "../lib/orderTracking";
 import { requireAuth, requireRole, type AuthEnv } from "../middleware/auth";
 
@@ -95,6 +97,26 @@ orderRoutes.post("/", requireAuth, requireRole("customer"), async (c) => {
     );
 
   const productIds = cartRows.map((r) => r.product.id);
+  const resolveCategory = await categorySettings(db);
+  const activeShades = await db
+    .select()
+    .from(paintShades)
+    .where(eq(paintShades.active, true));
+  if (
+    cartRows.some(
+      ({ product, cartItem }) =>
+        resolveCategory(product.categoryId)?.colourSelection &&
+        (!cartItem.shade ||
+          !activeShades.some((shade) => shade.id === cartItem.shadeId)),
+    )
+  )
+    return c.json(
+      {
+        error:
+          "Choose an available colour for each paint before checkout. Remove the affected item and add it again with a colour.",
+      },
+      409,
+    );
   const tierRows = await db
     .select()
     .from(bulkPricingTiers)
@@ -109,6 +131,7 @@ orderRoutes.post("/", requireAuth, requireRole("customer"), async (c) => {
   const lines = cartRows.map(({ cartItem, product }) => ({
     productId: product.id,
     productName: product.name,
+    shade: cartItem.shade,
     quantity: cartItem.quantity,
     unitPrice: priceForQuantity(
       tiersByProduct.get(product.id) ?? [],
@@ -126,7 +149,7 @@ orderRoutes.post("/", requireAuth, requireRole("customer"), async (c) => {
     return c.json(
       {
         error:
-          "Not serviceable, or insufficient stock at the store(s) covering this address",
+          "One or more items are unavailable for this delivery address or requested quantity.",
       },
       409,
     );
@@ -182,6 +205,7 @@ orderRoutes.post("/", requireAuth, requireRole("customer"), async (c) => {
         orderId,
         productId: line.productId,
         productName: line.productName,
+        shade: line.shade,
         quantity: line.quantity,
         unitPrice: line.unitPrice,
       }),
@@ -257,7 +281,7 @@ orderRoutes.post("/", requireAuth, requireRole("customer"), async (c) => {
       return c.json(
         {
           error:
-            "Stock changed during checkout. Please review your cart and try again.",
+            "An item became unavailable. Please review your cart and try again.",
         },
         409,
       );

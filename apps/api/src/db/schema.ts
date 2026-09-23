@@ -40,6 +40,10 @@ export const categories = sqliteTable("categories", {
   slug: text("slug").notNull().unique(),
   name: text("name").notNull(),
   icon: text("icon"),
+  colour: text("colour"),
+  colourSelection: integer("colour_selection", { mode: "boolean" })
+    .notNull()
+    .default(false),
   parentId: text("parent_id"),
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at"),
@@ -283,9 +287,17 @@ export const cartItems = sqliteTable(
       .notNull()
       .references(() => products.id),
     quantity: integer("quantity").notNull(),
+    shadeId: text("shade_id").notNull().default(""),
+    shade: text("shade", { mode: "json" }).$type<ShadeSelection>(),
     createdAt: timestamp("created_at"),
   },
-  (t) => [uniqueIndex("cart_items_user_product_idx").on(t.userId, t.productId)],
+  (t) => [
+    uniqueIndex("cart_items_user_product_shade_idx").on(
+      t.userId,
+      t.productId,
+      t.shadeId,
+    ),
+  ],
 );
 
 // --- orders ----------------------------------------------------------------
@@ -324,6 +336,7 @@ export const orders = sqliteTable(
 );
 
 export const orderItems = sqliteTable("order_items", {
+  shade: text("shade", { mode: "json" }).$type<ShadeSelection>(),
   id: text("id").primaryKey(),
   orderId: text("order_id")
     .notNull()
@@ -334,6 +347,44 @@ export const orderItems = sqliteTable("order_items", {
   productName: text("product_name").notNull(),
   quantity: integer("quantity").notNull(),
   unitPrice: real("unit_price").notNull(),
+});
+
+export type ShadeSelection = {
+  id: string;
+  family: string;
+  name: string;
+  hex: string;
+};
+export const professionals = sqliteTable("professionals", {
+  id: text("id").primaryKey(),
+  kind: text("kind", { enum: ["painter", "plumber"] }).notNull(),
+  name: text("name").notNull(),
+  yearsExperience: integer("years_experience").notNull(),
+  photoUrl: text("photo_url").notNull(),
+  workPhotos: text("work_photos", { mode: "json" }).$type<string[]>().notNull(),
+  updatedBy: text("updated_by")
+    .notNull()
+    .references(() => users.id),
+  createdAt: timestamp("created_at"),
+  updatedAt: timestamp("updated_at"),
+});
+export const media = sqliteTable("media", {
+  id: text("id").primaryKey(),
+  contentType: text("content_type").notNull(),
+  data: text("data").notNull(),
+  uploadedBy: text("uploaded_by")
+    .notNull()
+    .references(() => users.id),
+  createdAt: timestamp("created_at"),
+});
+export const paintShades = sqliteTable("paint_shades", {
+  id: text("id").primaryKey(),
+  family: text("family").notNull(),
+  name: text("name").notNull(),
+  hex: text("hex").notNull(),
+  imageUrl: text("image_url"),
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
 });
 
 // Append-only audit trail for order tracking. `actorUserId` is null for

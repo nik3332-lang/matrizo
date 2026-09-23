@@ -21,6 +21,7 @@ import {
 import { findServiceableStore } from "../lib/serviceability";
 import { requireAuth, requireRole, type AuthEnv } from "../middleware/auth";
 import type { Env } from "../env";
+import { categorySettings } from "../lib/categorySettings";
 
 export const catalogRoutes = new Hono<AuthEnv>();
 
@@ -158,7 +159,10 @@ catalogRoutes.get("/categories/:slug/products", async (c) => {
     .where(and(...conditions));
 
   const withTiers = await attachTiers(db, productRows);
-  return c.json({ category, products: withTiers });
+  return c.json({
+    category: (await categorySettings(db))(category.id),
+    products: withTiers,
+  });
 });
 
 // Product search by name or SKU. Simple LIKE match — fine at this catalog
@@ -208,11 +212,6 @@ catalogRoutes.get("/products/:slug", async (c) => {
     .limit(1);
   if (!product) return c.json({ error: "Product not found" }, 404);
 
-  const [category] = await db
-    .select()
-    .from(categories)
-    .where(eq(categories.id, product.categoryId))
-    .limit(1);
   const tiers = await db
     .select()
     .from(bulkPricingTiers)
@@ -220,7 +219,7 @@ catalogRoutes.get("/products/:slug", async (c) => {
 
   let stock: {
     storeName: string;
-    stockQty: number;
+    available: boolean;
     etaMinutes: number;
   } | null = null;
   if (pincode) {
@@ -240,7 +239,7 @@ catalogRoutes.get("/products/:slug", async (c) => {
       if (row)
         stock = {
           storeName: row.storeName,
-          stockQty: row.stockQty,
+          available: row.stockQty > 0,
           etaMinutes: match.etaMinutes,
         };
     }
@@ -250,9 +249,7 @@ catalogRoutes.get("/products/:slug", async (c) => {
     product: {
       ...product,
       tiers,
-      category: category
-        ? { id: category.id, slug: category.slug, name: category.name }
-        : null,
+      category: (await categorySettings(db))(product.categoryId),
       stock,
     },
   });
@@ -294,7 +291,7 @@ catalogRoutes.get("/products/:slug/stock", async (c) => {
     stock: row
       ? {
           storeName: row.storeName,
-          stockQty: row.stockQty,
+          available: row.stockQty > 0,
           etaMinutes: match.etaMinutes,
         }
       : null,
@@ -325,6 +322,7 @@ async function attachTiers(
   }
 
   const tiersByProduct = new Map<string, typeof tierRows>();
+  const resolveCategory = await categorySettings(db);
   for (const tier of tierRows) {
     const list = tiersByProduct.get(tier.productId) ?? [];
     list.push(tier);
@@ -333,6 +331,7 @@ async function attachTiers(
 
   return productRows.map((product) => ({
     ...product,
+    category: resolveCategory(product.categoryId),
     tiers: tiersByProduct.get(product.id) ?? [],
   }));
 }
@@ -376,6 +375,12 @@ const categorySchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   name: z.string().trim().min(1).max(120),
   icon: z.string().trim().optional(),
+  colour: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .nullable()
+    .optional(),
+  colourSelection: z.boolean().optional(),
   parentId: z.string().nullable().optional(),
   sortOrder: z.number().int().optional(),
 });
@@ -400,6 +405,8 @@ catalogRoutes.post("/admin/categories", async (c) => {
       slug: parsed.data.slug,
       name: parsed.data.name,
       icon: parsed.data.icon ?? null,
+      colour: parsed.data.colour ?? null,
+      colourSelection: parsed.data.colourSelection ?? false,
       parentId: parsed.data.parentId ?? null,
       sortOrder: parsed.data.sortOrder ?? 0,
     });

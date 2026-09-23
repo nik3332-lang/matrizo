@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Image } from "expo-image";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -221,17 +222,25 @@ export function ErrorState({
 }
 export function Brand() {
   return (
-    <Text
-      accessibilityLabel="Matrizo"
-      style={{
-        color: colors.ink,
-        fontSize: 23,
-        letterSpacing: 4,
-        fontWeight: "600",
-      }}
-    >
-      MATRIZO<Text style={{ color: colors.accent }}>.</Text>
-    </Text>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+      <Image
+        source={require("@/assets/brand/logo.jpeg")}
+        style={{ width: 64, height: 48 }}
+        contentFit="contain"
+        accessibilityLabel="Matrizo logo"
+      />
+      <Text
+        accessibilityLabel="Matrizo"
+        style={{
+          color: colors.ink,
+          fontSize: 23,
+          letterSpacing: 0,
+          fontWeight: "600",
+        }}
+      >
+        Matrizo
+      </Text>
+    </View>
   );
 }
 export { formatMoney as money } from "@matrizo/shared";

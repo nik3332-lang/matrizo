@@ -6,3 +6,5 @@ export * from "./pricing";
 export * from "./apiClient";
 export * from "./format";
 export * from "./privacy";
+export * from "./shades";
+export * from "./professionals";

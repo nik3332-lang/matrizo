@@ -1,6 +1,7 @@
 import type { ConfigContext, ExpoConfig } from "expo/config";
 export default ({ config }: ConfigContext): ExpoConfig => {
-  const projectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
+  const projectId =
+    process.env.EXPO_PUBLIC_EAS_PROJECT_ID || config.extra?.eas?.projectId;
   const googleServicesFile = process.env.GOOGLE_SERVICES_JSON;
   const production = process.env.EAS_BUILD_PROFILE === "production";
   if (production) {
@@ -31,6 +32,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ...config.android,
       ...(googleServicesFile ? { googleServicesFile } : {}),
     },
-    extra: { ...config.extra, ...(projectId ? { eas: { projectId } } : {}) },
+    extra: {
+      ...config.extra,
+      ...(projectId ? { eas: { ...config.extra?.eas, projectId } } : {}),
+    },
   };
 };

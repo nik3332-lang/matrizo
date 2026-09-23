@@ -8,6 +8,7 @@ import { useCart } from "@/lib/cart";
 import { useLocation } from "@/lib/location";
 import { Icon } from "./Icon";
 import { Brand } from "./Brand";
+import { CategoryBadge } from "./CategoryBadge";
 import type { Category } from "@/lib/catalog";
 type Suggestion = { id: string; name: string; slug: string };
 export function NavBar() {
@@ -134,6 +135,8 @@ export function NavBar() {
         </nav>
       </div>
       <nav className="category-nav" aria-label="Shop categories">
+        <Link href="/painters">Painters</Link>
+        <Link href="/plumbers">Plumbers</Link>
         <Link href="/shop" className={pathname === "/shop" ? "active" : ""}>
           All products
         </Link>
@@ -149,7 +152,7 @@ export function NavBar() {
               href={`/category/${c.slug}`}
               className={pathname === `/category/${c.slug}` ? "active" : ""}
             >
-              {c.name}
+              {c.colour ? <CategoryBadge category={c} /> : c.name}
             </Link>
           ))}
       </nav>

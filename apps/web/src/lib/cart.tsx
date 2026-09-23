@@ -12,6 +12,8 @@ import { api } from "./api";
 import { useAuth } from "./auth";
 
 type CartItem = {
+  shadeId?: string;
+  shade?: { name: string; hex: string } | null;
   id: string;
   product: { id: string; name: string; unit: string };
   quantity: number;
@@ -27,7 +29,11 @@ type CartState = Cart & {
   clear: () => void;
   quantityOf: (productId: string) => number;
   addItem: (productId: string) => Promise<void>;
-  setQuantity: (productId: string, quantity: number) => Promise<void>;
+  setQuantity: (
+    productId: string,
+    quantity: number,
+    shadeId?: string,
+  ) => Promise<void>;
 };
 const empty: Cart = { items: [], subtotal: 0 };
 const CartContext = createContext<CartState | null>(null);
@@ -77,10 +83,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
         : await api.post<Cart>("/cart/items", { productId, quantity: 1 });
     setState({ ownerId: userId, cart: updated, error: null });
   }
-  async function setQuantity(productId: string, quantity: number) {
+  async function setQuantity(
+    productId: string,
+    quantity: number,
+    shadeId = "",
+  ) {
     setState({
       ownerId: userId,
-      cart: await api.patch<Cart>(`/cart/items/${productId}`, { quantity }),
+      cart: await api.patch<Cart>(
+        `/cart/items/${productId}?shadeId=${encodeURIComponent(shadeId)}`,
+        { quantity },
+      ),
       error: null,
     });
   }

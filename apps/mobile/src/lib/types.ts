@@ -1,5 +1,7 @@
 import type { ProductBrand, OrderStatus } from "@matrizo/shared";
 export type Category = {
+  colour?: string | null;
+  colourSelection?: boolean;
   id: string;
   slug: string;
   name: string;
@@ -22,7 +24,7 @@ export type Product = {
   specs: Record<string, string | number> | null;
   gstInvoiceEligible: boolean;
   category?: Category | null;
-  stock?: { stockQty: number; storeName: string; etaMinutes: number } | null;
+  stock?: { available: boolean; storeName: string; etaMinutes: number } | null;
 };
 export type Address = {
   id: string;
@@ -36,6 +38,8 @@ export type Address = {
 };
 export type Cart = {
   items: {
+    shadeId?: string;
+    shade?: { name: string; hex: string } | null;
     id: string;
     product: Product;
     quantity: number;
@@ -57,6 +61,7 @@ export type OrderDetail = {
   items: {
     id: string;
     productName: string;
+    shade?: { name: string; hex: string } | null;
     quantity: number;
     unitPrice: number;
   }[];

@@ -1,12 +1,38 @@
 # Matrizo Android and iOS release
 
+## Feature update: 23 September 2026
+
+Implemented in the working tree: configurable category colours with inherited category settings; supplied official logo and `Matrizo` wordmarks without a trailing dot; public availability without stock quantities; original paint shades grouped by family, with distinct cart variants and order snapshots; public painter/plumber listings and profiles on web and mobile; admin shade management; and employee profile/photo management restricted to `admin` and `sales_employee` on the API.
+
+Apply migrations 0006, 0007 and 0008 after any unapplied earlier migrations, before deploying these API/client changes. 0006 configures colours for existing UPVC/CPVC/PVC category slugs. 0007 enables colour selection for the existing `paints` category, seeds original Matrizo shades, and changes cart uniqueness to customer/product/shade. New categories are configured through the category editor. Existing uncoloured paint cart lines must be removed and added with a colour before checkout. Existing orders remain readable; their shade is null.
+
+The public stock response now contains `available` instead of `stockQty`. Coordinate API, web and mobile rollout; older installed apps expecting quantities must be updated. Do not deploy this API change without preparing updated clients.
+
+Profile photos are resized in the employee browser and stored as immutable media in D1, limited to 512 KB each and 20 gallery photos per profile. R2 remains unprovisioned. Monitor database growth and move media to object storage when needed. Profile removal removes the listing; uploaded media is retained. No fabricated professional profiles are seeded.
+
+The official logo is `MATRIZO LOGO.jpeg`, copied into each app. Native icons, splash, notification silhouettes, website icons and favicons are generated from it by `apps/mobile/scripts/generate-brand-assets.mjs`. No original brand font file was supplied; the logo preserves its original lettering, while the existing text fonts remain. The web order detail includes a branded printable order receipt, not a tax invoice.
+
+Verification: 15 in-process API/database and mobile session/timeout tests passed, including role restrictions, uploads, shade isolation, stock aggregation and historical order snapshots. All five application/API TypeScript checks and all three web-app lint checks passed. The storefront production build and Android/iOS JavaScript bundle exports passed. Admin and employee production builds were blocked by Google Fonts DNS failures while fetching the existing Geist fonts. Local Expo dependency checks passed using the offline dependency map. Browser rendering and physical-device acceptance remain unverified: this session could not bind a local web port. The Cloudflare-runtime suites could not start; the new route tests use in-memory SQLite and do not replace D1 runtime acceptance. The earlier EAS build status could not be fetched because `api.expo.dev` was unreachable.
+
+Still required for release: official text font if it must replace existing fonts, monitored support mailbox, Firebase Android configuration/FCM credentials, Apple signing/push setup, production migration/deployment, email recovery verification, and device/store acceptance. None of these credentials or business facts is inferred from the logo.
+
 ## Scope and current state
 
 The customer app in `apps/mobile` shares products, categories, prices, inventory, users, addresses, carts and orders with the website. Admin and employee portals continue to run on the web. This release uses cash on delivery. Online payments, driver GPS maps, customer reviews, wishlists and SMS OTP are not part of this release.
 
 Implemented: Matrizo branding/icons/splash, email or Indian mobile number + password login, signup, secure persisted sessions with refresh, conditional email password recovery, browsing/search/categories/brands, stock and delivery-pincode checks, quantity/bulk pricing, address management, COD checkout with durable retry references, order history/progress/cancellation, opt-in push notifications, account deletion, and public privacy/support/deletion pages.
 
-Code changes are local. No remote migration, Worker deployment, native signing, store upload or submission is performed by this checklist or the verification scripts.
+Mobile release code is pushed on `codex/mobile-release`. No remote migration, Worker deployment, native signing, store upload or submission is performed by this checklist or the verification scripts.
+
+The app configuration links the verified Expo project [`@nikhilmatrizos-team/matrizo`](https://expo.dev/accounts/nikhilmatrizos-team/projects/matrizo), ID `5e70cf48-6d95-46f7-92e6-7ab78f81e791`. `EXPO_OWNER` and `EXPO_PUBLIC_EAS_PROJECT_ID` are optional overrides for a separate project. Linking these public identifiers does not sign the CLI into Expo or configure signing credentials.
+
+## First Android test build — 16 September 2026
+
+The owner completed Expo CLI authorization. Expo generated and stores the Android signing keystore. Preview build [`1edc360b-4b45-45b0-85f6-c48a7422a56b`](https://expo.dev/accounts/nikhilmatrizos-team/projects/matrizo/builds/1edc360b-4b45-45b0-85f6-c48a7422a56b) was submitted for Matrizo `1.0.0`, Android version code `1`, package `com.matrizo.app`. At submission it was queued in the free tier; a completed APK and physical-device tests are not yet verified. The upload includes the local Expo-linking and preview configuration changes on top of commit `f0edd89`.
+
+The `preview` profile explicitly selects the live API and disables dotenv loading, so a local development URL cannot be included accidentally. The root `.easignore` excludes environment files, signing/provider credentials, Git metadata and generated web/native output. The inspected upload passed a scan for the existing local credential values before submission. Production build variables must be set in the EAS environment because local `.env` files are not uploaded.
+
+This is an internal test build. Production database/API changes, public policy/support pages, working support email, email recovery, Firebase push credentials, physical-device validation and Google Play submission remain pending.
 
 ## Local validation
 
@@ -41,7 +67,7 @@ For UI checks, run `pnpm test:serve`, then start Expo with `EXPO_PUBLIC_API_URL=
 
 | Where | Variable / requirement | Purpose |
 | --- | --- | --- |
-| Expo project / EAS | `EXPO_OWNER`, `EXPO_PUBLIC_EAS_PROJECT_ID` | Actual Matrizo project/account identifiers. Create/link in the owner’s Expo account; do not invent IDs. |
+| Expo project / EAS | `EXPO_OWNER`, `EXPO_PUBLIC_EAS_PROJECT_ID` | Optional overrides; the verified Matrizo owner and project ID are already linked in `app.json`. |
 | Mobile build | `EXPO_PUBLIC_API_URL` | HTTPS API ending in `/api/v1`; use the correct staging/production environment. |
 | Mobile build | `EXPO_PUBLIC_SUPPORT_EMAIL` | Monitored working support mailbox. Resend sending-domain verification alone does not create an incoming mailbox. |
 | Website build | `NEXT_PUBLIC_SUPPORT_EMAIL` | Same monitored support contact for public support page. |
@@ -55,7 +81,7 @@ For UI checks, run `pnpm test:serve`, then start Expo with `EXPO_PUBLIC_API_URL=
 
 Copy `apps/mobile/.env.example` to an ignored `.env.local` for local configuration if appropriate. Set build variables in each EAS environment (`development`, `preview`, `production`). Public values are embedded in the binary. Keep secrets out of app config’s `extra` field.
 
-`pnpm --filter @matrizo/mobile release:check` checks the current process environment; it deliberately does not source the repository’s private `.env`. It fails until the project ID, HTTPS API, working support email, owner and Android config path are supplied. The production app config also refuses a build with missing required public settings, or an Android build without the Firebase file. Signing credentials still require verification in EAS.
+`pnpm --filter @matrizo/mobile release:check` checks the current process environment, with the linked owner and project ID from `app.json` as defaults; it deliberately does not source the repository’s private `.env`. It fails until the project ID, HTTPS API, working support email, owner and Android config path are supplied. The production app config also refuses a build with missing required public settings, or an Android build without the Firebase file. Signing credentials still require verification in EAS.
 
 ## Deployment order (run only when approved for launch)
 

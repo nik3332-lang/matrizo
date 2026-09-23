@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
@@ -7,6 +8,7 @@ const ADMIN_LINKS = [
   ["/", "Orders"],
   ["/products", "Products"],
   ["/categories", "Categories"],
+  ["/shades", "Paint colours"],
   ["/inventory", "Inventory"],
   ["/employees", "Employees"],
   ["/sales", "Daily sales"],
@@ -16,7 +18,8 @@ const ADMIN_LINKS = [
 function Brand() {
   return (
     <Link href="/" className="portal-brand">
-      <span aria-hidden="true">M</span>matrizo.
+      <Image src="/matrizo-logo.jpeg" alt="" width={64} height={48} />
+      Matrizo
     </Link>
   );
 }

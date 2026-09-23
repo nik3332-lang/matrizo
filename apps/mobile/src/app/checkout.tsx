@@ -234,6 +234,7 @@ export default function Checkout() {
               <View key={item.id} style={s.between}>
                 <Text style={[s.body, { flex: 1 }]}>
                   {item.quantity} × {item.product.name}
+                  {item.shade ? `\n${item.shade.name} · ${item.shade.hex}` : ""}
                 </Text>
                 <Text style={s.body}>{money(item.lineTotal)}</Text>
               </View>

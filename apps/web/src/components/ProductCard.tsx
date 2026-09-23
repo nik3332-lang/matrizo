@@ -2,14 +2,22 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ApiError, formatMoney } from "@matrizo/shared";
 import { useAuth } from "@/lib/auth";
 import { useCart } from "@/lib/cart";
+import { useLocation } from "@/lib/location";
+import { api } from "@/lib/api";
 import { specLine, type ProductSpecs } from "@/lib/specs";
 import { Icon, type IconName } from "./Icon";
+import { CategoryBadge } from "./CategoryBadge";
 type Tier = { minQty: number; pricePerUnit: number };
 export type ProductCardData = {
+  category?: {
+    name: string;
+    colour?: string | null;
+    colourSelection?: boolean;
+  } | null;
   id: string;
   slug: string;
   name: string;
@@ -38,6 +46,28 @@ export function ProductCard({
   const { user } = useAuth();
   const cart = useCart();
   const router = useRouter();
+  const { pincode } = useLocation();
+  const [availability, setAvailability] = useState<{
+    pincode: string;
+    available: boolean;
+  } | null>(null);
+  const unavailable =
+    !!pincode && availability?.pincode === pincode && !availability.available;
+  useEffect(() => {
+    if (!pincode) return;
+    let live = true;
+    api
+      .get<{ stock: { available: boolean } | null }>(
+        `/products/${encodeURIComponent(product.slug)}/stock?pincode=${encodeURIComponent(pincode)}`,
+      )
+      .then(({ stock }) => {
+        if (live) setAvailability({ pincode, available: !!stock?.available });
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [pincode, product.slug]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const quantity = cart.quantityOf(product.id);
@@ -47,6 +77,10 @@ export function ProductCard({
   const picture = product.imageUrl || imageSrc;
   const spec = specLine(specs);
   async function update(next: number) {
+    if (product.category?.colourSelection) {
+      router.push(`/product/${product.slug}`);
+      return;
+    }
     if (!user) {
       router.push(
         `/login?next=${encodeURIComponent(`/product/${product.slug}`)}`,
@@ -89,6 +123,8 @@ export function ProductCard({
         )}
       </Link>
       <div className="product-card-body">
+        {unavailable && <p className="text-sm text-danger">Unavailable</p>}
+        <CategoryBadge category={product.category} />
         <span className="product-brand">
           {brandLabel ?? "Matrizo collection"}
         </span>
@@ -106,10 +142,18 @@ export function ProductCard({
               <small>From {formatMoney(bestTier.pricePerUnit)} in bulk</small>
             )}
           </div>
-          {!quantity ? (
+          {product.category?.colourSelection ? (
+            <Link
+              href={`/product/${product.slug}`}
+              className="quick-add"
+              style={{ whiteSpace: "normal", maxWidth: 90 }}
+            >
+              Choose colour
+            </Link>
+          ) : !quantity ? (
             <button
               aria-label={`Add ${product.name} to cart`}
-              disabled={busy}
+              disabled={busy || unavailable}
               onClick={() => update(1)}
               className="quick-add"
             >
@@ -126,7 +170,7 @@ export function ProductCard({
               </button>
               <span>{quantity}</span>
               <button
-                disabled={busy}
+                disabled={busy || unavailable}
                 onClick={() => update(quantity + 1)}
                 aria-label={`Increase ${product.name} quantity`}
               >

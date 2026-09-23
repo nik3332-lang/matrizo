@@ -16,6 +16,8 @@ type Category = {
   slug: string;
   name: string;
   icon: string | null;
+  colour: string | null;
+  colourSelection: boolean;
   sortOrder: number;
   parentId: string | null;
 };
@@ -161,6 +163,8 @@ export default function CategoriesPage() {
                 slug: cat.slug,
                 name: cat.name,
                 icon: cat.icon ?? "",
+                colour: cat.colour,
+                colourSelection: cat.colourSelection,
                 sortOrder: cat.sortOrder,
                 parentId: cat.parentId,
               }}

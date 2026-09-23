@@ -248,6 +248,11 @@ export default function CheckoutPage() {
               <div key={item.id}>
                 <span>
                   {item.product.name} × {item.quantity}
+                  {item.shade && (
+                    <small className="block">
+                      {item.shade.name} · {item.shade.hex}
+                    </small>
+                  )}
                 </span>
                 <strong>{formatMoney(item.lineTotal)}</strong>
               </div>

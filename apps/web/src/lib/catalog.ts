@@ -1,12 +1,15 @@
 import type { ProductBrand } from "@matrizo/shared";
 import type { ProductSpecs } from "./specs";
 export type Category = {
+  colour?: string | null;
+  colourSelection?: boolean;
   id: string;
   name: string;
   slug: string;
   parentId: string | null;
 };
 export type CatalogProduct = {
+  category?: Category | null;
   id: string;
   slug: string;
   name: string;

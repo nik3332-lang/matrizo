@@ -1,4 +1,6 @@
 import { useState } from "react";
+import type { Shade } from "@matrizo/shared";
+import { ShadePicker } from "@/components/ShadePicker";
 import { Text, View } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { BRAND_LABELS, priceForQuantity } from "@matrizo/shared";
@@ -8,7 +10,7 @@ import { useCart } from "@/lib/cart";
 import { useLocation, DeliveryArea } from "@/lib/location";
 import { styles as s } from "@/lib/theme";
 import type { Product } from "@/lib/types";
-import { ProductImage } from "@/components/ProductTile";
+import { ProductImage, CategoryBadge } from "@/components/ProductTile";
 import {
   Button,
   ErrorState,
@@ -29,6 +31,7 @@ export default function ProductDetail() {
     [error, setError] = useState(""),
     [added, setAdded] = useState(false);
   const product = result.data?.product;
+  const [shade, setShade] = useState<Shade | null>(null);
   async function add() {
     if (!user) {
       router.push({ pathname: "/login", params: { next: `/product/${slug}` } });
@@ -38,7 +41,7 @@ export default function ProductDetail() {
     setError("");
     setAdded(false);
     try {
-      await cart.add(product.id, quantity);
+      await cart.add(product.id, quantity, shade?.id);
       setAdded(true);
     } catch (e) {
       setError(message(e));
@@ -53,6 +56,7 @@ export default function ProductDetail() {
       {product && (
         <>
           <ProductImage product={product} large />
+          <CategoryBadge category={product.category} />
           <Text style={s.eyebrow}>
             {BRAND_LABELS[product.brand]} /{" "}
             {product.category?.name ?? "THE COLLECTION"}
@@ -87,16 +91,17 @@ export default function ProductDetail() {
             </View>
           )}
           <DeliveryArea />
-          {area?.serviceable && (
-            <Notice
-              text={
-                product.stock
-                  ? product.stock.stockQty > 0
-                    ? `${product.stock.stockQty} available at ${product.stock.storeName}. Final availability is checked at checkout.`
-                    : "Currently out of stock for this delivery area."
-                  : "This item is not available in your delivery area."
-              }
+          {product.category?.colourSelection && (
+            <ShadePicker
+              value={shade}
+              onChange={(value) => {
+                setShade(value);
+                setAdded(false);
+              }}
             />
+          )}
+          {area?.serviceable && !product.stock?.available && (
+            <Notice text={"Unavailable in your delivery area."} />
           )}
           <View style={s.between}>
             <Text style={s.heading}>Quantity</Text>
@@ -119,10 +124,7 @@ export default function ProductDetail() {
               <Button
                 title="+"
                 secondary
-                disabled={
-                  quantity >= Math.min(9999, product.stock?.stockQty ?? 9999) ||
-                  cart.busy
-                }
+                disabled={quantity >= 9999 || cart.busy}
                 onPress={() => {
                   setQuantity((q) => q + 1);
                   setAdded(false);
@@ -140,10 +142,11 @@ export default function ProductDetail() {
             }
             busy={cart.busy}
             disabled={
-              !!area &&
-              (!area.serviceable ||
-                !product.stock ||
-                product.stock.stockQty < quantity)
+              (!!product.category?.colourSelection && !shade) ||
+              (!!area &&
+                (!area.serviceable ||
+                  !product.stock ||
+                  !product.stock.available))
             }
             onPress={add}
           />

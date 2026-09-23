@@ -5,7 +5,7 @@ import type { Category, Product } from "@/lib/types";
 import { colors, styles as s } from "@/lib/theme";
 import { DeliveryArea } from "@/lib/location";
 import { Button, ErrorState, Loading, Screen } from "@/components/ui";
-import { ProductTile } from "@/components/ProductTile";
+import { ProductTile, CategoryBadge } from "@/components/ProductTile";
 import { Icon, categoryIcon } from "@/components/Icon";
 type Storefront = {
   categories: Category[];
@@ -61,6 +61,26 @@ export default function Home() {
         </View>
       </ImageBackground>
       <DeliveryArea />
+      <Button
+        title="Painters"
+        secondary
+        onPress={() =>
+          router.push({
+            pathname: "/professionals/[kind]",
+            params: { kind: "painter" },
+          })
+        }
+      />
+      <Button
+        title="Plumbers"
+        secondary
+        onPress={() =>
+          router.push({
+            pathname: "/professionals/[kind]",
+            params: { kind: "plumber" },
+          })
+        }
+      />
       {!!result.error && (
         <ErrorState error={result.error} retry={result.reload} />
       )}
@@ -106,8 +126,9 @@ export default function Home() {
                         fontSize: 14,
                       }}
                     >
-                      {category.name} →
+                      {category.colour ? "" : `${category.name} →`}
                     </Text>
+                    <CategoryBadge category={category} />
                   </Pressable>
                 ))}
             </View>

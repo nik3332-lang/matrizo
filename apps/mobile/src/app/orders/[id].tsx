@@ -115,6 +115,7 @@ export default function OrderDetailScreen() {
               <View key={item.id} style={s.between}>
                 <Text style={[s.body, { flex: 1 }]}>
                   {item.quantity} × {item.productName}
+                  {item.shade ? `\n${item.shade.name} · ${item.shade.hex}` : ""}
                 </Text>
                 <Text style={s.body}>
                   {money(item.unitPrice * item.quantity)}

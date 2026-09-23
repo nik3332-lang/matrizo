@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 import {
   ORDER_STATUSES,
@@ -6,7 +6,7 @@ import {
   PAYMENT_STATUSES,
   USER_ROLES,
   WALLET_TXN_TYPES,
-} from './enums';
+} from "./enums";
 
 export const userSchema = z.object({
   id: z.string(),
@@ -35,6 +35,8 @@ export const categorySchema = z.object({
   slug: z.string(),
   name: z.string(),
   icon: z.string().nullable(),
+  colour: z.string().nullable().optional(),
+  colourSelection: z.boolean().optional(),
   parentId: z.string().nullable(),
   sortOrder: z.number(),
 });
@@ -94,7 +96,16 @@ export const inventorySchema = z.object({
   stockQty: z.number(),
 });
 
+export const shadeSelectionSchema = z.object({
+  id: z.string(),
+  family: z.string(),
+  name: z.string(),
+  hex: z.string(),
+});
+
 export const cartItemSchema = z.object({
+  shadeId: z.string().optional(),
+  shade: shadeSelectionSchema.nullable().optional(),
   id: z.string(),
   product: productSchema,
   quantity: z.number(),
@@ -121,6 +132,7 @@ export const orderSchema = z.object({
 });
 
 export const orderItemSchema = z.object({
+  shade: shadeSelectionSchema.nullable().optional(),
   id: z.string(),
   orderId: z.string(),
   productId: z.string(),

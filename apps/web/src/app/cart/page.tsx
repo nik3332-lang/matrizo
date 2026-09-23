@@ -11,11 +11,11 @@ export default function CartPage() {
   const cart = useCart();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
-  async function update(productId: string, quantity: number) {
+  async function update(productId: string, quantity: number, shadeId?: string) {
     setBusy(productId);
     setError("");
     try {
-      await cart.setQuantity(productId, quantity);
+      await cart.setQuantity(productId, quantity, shadeId);
     } catch (e) {
       setError(
         e instanceof ApiError
@@ -70,13 +70,18 @@ export default function CartPage() {
             <div className="basket-line" key={item.id}>
               <div>
                 <h2>{item.product.name}</h2>
+                {item.shade && (
+                  <p>
+                    {item.shade.name} · {item.shade.hex}
+                  </p>
+                )}
                 <p>
                   {formatMoney(item.unitPrice)} / {item.product.unit}
                 </p>
                 <button
                   className="text-accent text-xs underline mt-2"
                   disabled={!!busy}
-                  onClick={() => update(item.product.id, 0)}
+                  onClick={() => update(item.product.id, 0, item.shadeId)}
                 >
                   Remove
                 </button>
@@ -86,7 +91,9 @@ export default function CartPage() {
                   <button
                     aria-label={`Decrease ${item.product.name}`}
                     disabled={!!busy}
-                    onClick={() => update(item.product.id, item.quantity - 1)}
+                    onClick={() =>
+                      update(item.product.id, item.quantity - 1, item.shadeId)
+                    }
                   >
                     −
                   </button>
@@ -94,7 +101,9 @@ export default function CartPage() {
                   <button
                     aria-label={`Increase ${item.product.name}`}
                     disabled={!!busy}
-                    onClick={() => update(item.product.id, item.quantity + 1)}
+                    onClick={() =>
+                      update(item.product.id, item.quantity + 1, item.shadeId)
+                    }
                   >
                     +
                   </button>
