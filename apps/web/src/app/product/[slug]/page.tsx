@@ -22,7 +22,7 @@ import Link from "next/link";
 import { priceForQuantity, type ProductBrand } from "@matrizo/shared";
 import { serverApiGet } from "@/lib/serverApi";
 import { categoryIcon } from "@/lib/categoryIcon";
-import { productCatalogImage } from "@/lib/catalogImages";
+import { manufacturerCatalogImage, productCatalogImage } from "@/lib/catalogImages";
 import { specEntries, type ProductSpecs } from "@/lib/specs";
 import { Icon } from "@/components/Icon";
 import { CategoryBadge } from "@/components/CategoryBadge";
@@ -175,6 +175,11 @@ export default async function ProductPage({
           <h1 className="text-2xl font-medium text-stone-900">
             {product.name}
           </h1>
+          {!product.imageUrl && manufacturerCatalogImage(product.category?.slug ?? "", product.name) && (
+            <p className="mt-2 text-xs text-stone-500">
+              Representative packaging. Supplied pack size is as listed above.
+            </p>
+          )}
           <div className="mt-2 flex items-center gap-2 flex-wrap">
             <span className="text-xs px-2.5 py-1 rounded-card border border-line text-stone-600 font-medium">
               {BRAND_LABELS[product.brand]}

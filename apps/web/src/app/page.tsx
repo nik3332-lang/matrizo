@@ -200,8 +200,8 @@ export default function HomePage() {
           <div className="paint-swatch swatch-two" />
           <div className="paint-swatch swatch-three" />
           <Image
-            src="/images/catalog/paint-supplies.png"
-            alt="Paint can, brush and roller"
+            src="/images/catalog/brands/asian-apcolite.png"
+            alt="Asian Paints Apcolite Premium Emulsion"
             width={480}
             height={350}
             sizes="(max-width: 700px) 85vw, 40vw"

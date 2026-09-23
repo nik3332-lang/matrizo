@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from "node:fs";
 import {
   categoryCatalogImage,
   productCatalogImage,
+  manufacturerCatalogImage,
 } from "../apps/web/src/lib/catalogImages.ts";
 import postcss from "postcss";
 
@@ -29,9 +30,40 @@ test("pipe families use their own complete artwork set", () => {
   }
   assert.equal(
     productCatalogImage("paints", "Paint"),
-    "/images/catalog/paint-supplies.png",
+    null,
   );
   assert.equal(categoryCatalogImage("unknown"), null);
+});
+
+test("manufacturer packshots match ranges and preserve pack-size variants", () => {
+  const ranges = {
+    "Asian Paints Apcolite Premium Emulsion": "asian-apcolite.png",
+    "Asian Paints Royale Luxury Emulsion": "asian-royale.png",
+    "Asian Paints Apex Dust Proof": "asian-apex.png",
+    "Birla Opus One Pure Elegance Shine": "birla-pure-elegance.webp",
+    "Birla Opus Style Power Bright Shine": "birla-power-bright.webp",
+    "Birla Opus Power Bright Shine": "birla-power-bright.webp",
+    "Birla Opus Wall n Roof 10 (Waterproofing)": "birla-wall-roof.jpg",
+    "Birla Opus Pro Fresh Primer Interior": "birla-pro-fresh.webp",
+    "Birla Opus Perfect Start Primer": "birla-perfect-start.webp",
+    "Birla Opus Power Fit": "birla-power-fit.webp",
+    "Birla Opus Neostar Shine": "birla-neostar.webp",
+  };
+  for (const [range, file] of Object.entries(ranges)) {
+    for (const size of ["1L", "4L", "10L", "20L"]) {
+      const expected = `/images/catalog/brands/${file}`;
+      assert.equal(productCatalogImage("paints", `${range} ${size}`), expected);
+      assert.ok(existsSync(new URL(`../apps/web/public${expected}`, import.meta.url)));
+    }
+  }
+  for (const size of [20, 40]) {
+    assert.equal(productCatalogImage("paint-materials-tools", `Wallmaxx Wall Putty ${size} KG`),
+      "/images/catalog/brands/jk-wallmaxx.png");
+  }
+  assert.equal(manufacturerCatalogImage("paints", "Other Brand Emulsion 10L"), null);
+  assert.equal(manufacturerCatalogImage("paints", "Asian Paints Royale Luxury Emulsion Advanced 10L"), null);
+  assert.equal(manufacturerCatalogImage("paint-materials-tools", "Other Wall Putty 20 KG"), null);
+  assert.equal(manufacturerCatalogImage("upvc", "Wallmaxx Wall Putty 20 KG"), null);
 });
 
 test("all websites share the logo palette without local brand overrides", () => {
