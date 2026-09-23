@@ -30,17 +30,24 @@ export default function LoginPage() {
         email: email.trim(),
         password,
       });
-      // /auth/login accepts any non-customer role (it's shared across every
-      // portal) — this one is only for admin + sales_employee accounts, so
-      // reject anything else here rather than letting e.g. a store_staff
-      // login land on a portal that has nothing for them.
-      if (res.user.role !== "admin" && res.user.role !== "sales_employee") {
+      // Store staff and delivery partners use the operations portal instead.
+      if (
+        !["admin", "sales_employee", "painter", "plumber"].includes(
+          res.user.role,
+        )
+      ) {
         setError("This account cannot access the employee portal.");
         return;
       }
       setRefreshToken(res.refreshToken);
       login(res.accessToken, res.user);
-      router.push(res.user.role === "admin" ? "/admin" : "/");
+      router.push(
+        res.user.role === "admin"
+          ? "/admin"
+          : res.user.role === "sales_employee"
+            ? "/"
+            : "/professionals",
+      );
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong.");
     } finally {
@@ -55,7 +62,7 @@ export default function LoginPage() {
           Your work, in one place.
         </h1>
         <p className="text-sm text-stone-500 mb-6">
-          Sign in to log sales, track commission, or manage the sales team.
+          Sign in to your Matrizo workspace.
         </p>
         <form onSubmit={submit} className="space-y-4">
           <label className="block text-sm font-medium text-stone-700">

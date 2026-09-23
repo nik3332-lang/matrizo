@@ -1,17 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
-import type { Professional } from "@matrizo/shared";
+import type { Professional, ProfessionalProject } from "@matrizo/shared";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-type Draft = Omit<Professional, "id">;
-const fresh = (kind: Professional["kind"]): Draft => ({
-  kind,
-  name: "",
-  yearsExperience: 0,
-  photoUrl: "",
-  workPhotos: [],
-});
 
 async function upload(file: File) {
   if (
@@ -38,314 +31,387 @@ async function upload(file: File) {
 }
 
 export default function ProfessionalsPage() {
-  const { user, loading: authLoading } = useAuth();
-  const [kind, setKind] = useState<Professional["kind"]>("painter");
-  const [profiles, setProfiles] = useState<Professional[]>([]);
-  const [draft, setDraft] = useState<Draft | null>(null);
-  const [editing, setEditing] = useState<string | null>(null);
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const [profile, setProfile] = useState<Professional | null>(null);
   const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const allowed = user?.role === "admin" || user?.role === "sales_employee";
-  async function load() {
-    setLoading(true);
-    setError("");
-    try {
-      setProfiles(
-        (
-          await api.get<{ professionals: Professional[] }>(
-            `/professionals?kind=${kind}`,
-          )
-        ).professionals,
-      );
-    } catch {
-      setError("Could not load profiles.");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [saved, setSaved] = useState(false);
+  const [version, setVersion] = useState(0);
+  const allowed = user?.role === "painter" || user?.role === "plumber";
   useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
     if (!allowed) return;
     let live = true;
     api
-      .get<{ professionals: Professional[] }>(`/professionals?kind=${kind}`)
+      .get<{ profile: Professional }>("/team/my-profile")
       .then((r) => {
         if (live) {
-          setProfiles(r.professionals);
+          setProfile(r.profile);
           setError("");
         }
       })
-      .catch(() => {
-        if (live) setError("Could not load profiles.");
-      })
-      .finally(() => {
-        if (live) setLoading(false);
+      .catch((e) => {
+        if (live)
+          setError(
+            e instanceof Error ? e.message : "Could not load your profile.",
+          );
       });
     return () => {
       live = false;
     };
-  }, [kind, allowed]);
-  async function save(e: React.FormEvent) {
-    e.preventDefault();
-    if (!draft) return;
-    setBusy(true);
-    setError("");
-    try {
-      if (editing) await api.patch(`/team/professionals/${editing}`, draft);
-      else await api.post("/team/professionals", draft);
-      setDraft(null);
-      setEditing(null);
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save profile.");
-    } finally {
-      setBusy(false);
-    }
+  }, [user, loading, allowed, router, version]);
+  function change(next: Professional) {
+    setProfile(next);
+    setSaved(false);
   }
-  async function photos(files: FileList | null, gallery: boolean) {
-    if (!files?.length || !draft) return;
-    if (gallery && draft.workPhotos.length + files.length > 20) {
-      setError("A profile can have up to 20 work photos.");
+  function projectChange(id: string, patch: Partial<ProfessionalProject>) {
+    if (profile)
+      change({
+        ...profile,
+        projects: (profile.projects ?? []).map((p) =>
+          p.id === id ? { ...p, ...patch } : p,
+        ),
+      });
+  }
+  async function photos(
+    files: FileList | null,
+    target: "profile" | "gallery" | string,
+  ) {
+    if (!files?.length || !profile) return;
+    const previous =
+      target === "profile"
+        ? []
+        : target === "gallery"
+          ? profile.workPhotos
+          : (profile.projects?.find((p) => p.id === target)?.photos ?? []);
+    if (target !== "profile" && previous.length + files.length > 20) {
+      setError("Maximum 20 photos per gallery or project.");
       return;
     }
     setBusy(true);
     setError("");
+    setSaved(false);
     try {
       for (const file of Array.from(files)) {
         const url = await upload(file);
-        setDraft((d) =>
-          d
-            ? gallery
-              ? { ...d, workPhotos: [...d.workPhotos, url] }
-              : { ...d, photoUrl: url }
-            : d,
+        setProfile((p) =>
+          !p
+            ? p
+            : target === "profile"
+              ? { ...p, photoUrl: url }
+              : target === "gallery"
+                ? { ...p, workPhotos: [...p.workPhotos, url] }
+                : {
+                    ...p,
+                    projects: (p.projects ?? []).map((project) =>
+                      project.id === target
+                        ? { ...project, photos: [...project.photos, url] }
+                        : project,
+                    ),
+                  },
         );
       }
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "Photo upload failed. Please retry.",
-      );
+      setError(e instanceof Error ? e.message : "Photo upload failed.");
     } finally {
       setBusy(false);
     }
   }
-  if (authLoading) return <p>Loading...</p>;
-  if (!allowed) return <p>Employee or administrator sign-in required.</p>;
-  return (
-    <div className="space-y-5">
-      <h1 className="text-2xl font-bold">Professional profiles</h1>
-      <div role="tablist" aria-label="Profession" className="flex gap-4">
-        {(["painter", "plumber"] as const).map((value) => (
-          <button
-            key={value}
-            role="tab"
-            aria-selected={kind === value}
-            disabled={busy || !!draft}
-            className="border-b-2 p-2 capitalize"
-            onClick={() => setKind(value)}
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    if (!profile) return;
+    setBusy(true);
+    setError("");
+    setSaved(false);
+    try {
+      const details = {
+        name: profile.name,
+        yearsExperience: profile.yearsExperience,
+        photoUrl: profile.photoUrl,
+        workPhotos: profile.workPhotos,
+        projects: profile.projects ?? [],
+      };
+      const r = await api.patch<{ profile: Professional }>(
+        "/team/my-profile",
+        details,
+      );
+      setProfile(r.profile);
+      setSaved(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not save your profile.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  if (loading) return <p>Loading...</p>;
+  if (!allowed)
+    return (
+      <p>
+        Painter or plumber sign-in required.{" "}
+        {user?.role === "admin" && (
+          <a
+            className="underline"
+            href="https://adminacc.matrizo.com/professionals"
           >
-            {value}s
-          </button>
-        ))}
-      </div>
+            Manage professional accounts in Admin
+          </a>
+        )}
+      </p>
+    );
+  if (!profile)
+    return (
+      <p role="status">
+        {error || "Loading your profile..."}{" "}
+        {error && (
+          <button onClick={() => setVersion((v) => v + 1)}>Retry</button>
+        )}
+      </p>
+    );
+  return (
+    <form onSubmit={save} className="space-y-6 max-w-4xl">
+      <h1 className="text-2xl font-semibold">My profile &amp; work</h1>
       {error && (
         <p role="alert" className="text-red-700">
           {error}
-          {!draft && (
-            <button onClick={load} className="ml-3 underline">
-              Retry
-            </button>
-          )}
         </p>
       )}
-      {!draft && (
-        <button
-          className="border rounded p-3"
-          onClick={() => {
-            setDraft(fresh(kind));
-            setEditing(null);
-          }}
-        >
-          Add {kind}
-        </button>
-      )}
-      {draft && (
-        <form onSubmit={save} className="space-y-4 border-b pb-6">
-          <fieldset disabled={busy} className="space-y-4">
-            <h2 className="text-lg font-semibold">
-              {editing ? "Edit" : "Add"} {kind}
-            </h2>
-            <label className="block">
-              Name
-              <input
-                required
-                maxLength={120}
-                className="block w-full border rounded p-2"
-                value={draft.name}
-                onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-              />
-            </label>
-            <label className="block">
-              Years of experience
-              <input
-                type="number"
-                required
-                min={0}
-                max={80}
-                step={1}
-                className="block border rounded p-2"
-                value={draft.yearsExperience}
-                onChange={(e) =>
-                  setDraft({
-                    ...draft,
-                    yearsExperience: Number(e.target.value),
-                  })
-                }
-              />
-            </label>
-            <label className="block">
-              Profile photo
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="block mt-2"
-                onChange={(e) => {
-                  void photos(e.target.files, false);
-                  e.target.value = "";
-                }}
-              />
-            </label>
-            {draft.photoUrl && (
-              <Image
-                unoptimized
-                src={draft.photoUrl}
-                alt="Profile preview"
-                width={160}
-                height={160}
-                className="object-cover rounded"
-              />
-            )}
-            <label className="block">
-              Photos of work
-              <input
-                type="file"
-                multiple
-                accept="image/jpeg,image/png,image/webp"
-                className="block mt-2"
-                onChange={(e) => {
-                  void photos(e.target.files, true);
-                  e.target.value = "";
-                }}
-              />
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {draft.workPhotos.map((url, index) => (
-                <div key={`${url}-${index}`}>
-                  <Image
-                    unoptimized
-                    width={320}
-                    height={240}
-                    src={url}
-                    alt={`Work photo ${index + 1}`}
-                    className="w-full h-32 object-cover rounded"
-                  />
-                  <button
-                    type="button"
-                    className="underline"
-                    onClick={() =>
-                      setDraft({
-                        ...draft,
-                        workPhotos: draft.workPhotos.filter(
-                          (_, i) => i !== index,
-                        ),
-                      })
-                    }
-                  >
-                    Remove photo
-                  </button>
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-4">
-              <button
-                type="submit"
-                disabled={!draft.photoUrl}
-                className="border rounded p-3 disabled:opacity-50"
-              >
-                Save profile
-              </button>
+      {saved && <p role="status">Profile saved.</p>}
+      <fieldset disabled={busy} className="space-y-6">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <label>
+            Name
+            <input
+              required
+              maxLength={120}
+              className="block w-full border rounded p-2"
+              value={profile.name}
+              onChange={(e) => change({ ...profile, name: e.target.value })}
+            />
+          </label>
+          <label>
+            Years of experience
+            <input
+              required
+              type="number"
+              min={0}
+              max={80}
+              className="block w-full border rounded p-2"
+              value={profile.yearsExperience}
+              onChange={(e) =>
+                change({ ...profile, yearsExperience: Number(e.target.value) })
+              }
+            />
+          </label>
+        </div>
+        <Image
+          unoptimized
+          width={160}
+          height={160}
+          src={profile.photoUrl}
+          alt={profile.name}
+          className="h-40 w-40 object-cover rounded"
+        />
+        <label className="block">
+          Profile photo
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="block mt-2 max-w-full"
+            onChange={(e) => {
+              void photos(e.target.files, "profile");
+              e.target.value = "";
+            }}
+          />
+        </label>
+        <section className="space-y-3 border-t pt-4">
+          <h2 className="text-lg font-semibold">Work gallery</h2>
+          <label className="block">
+            Photos
+            <input
+              type="file"
+              multiple
+              accept="image/jpeg,image/png,image/webp"
+              className="block mt-2 max-w-full"
+              onChange={(e) => {
+                void photos(e.target.files, "gallery");
+                e.target.value = "";
+              }}
+            />
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {profile.workPhotos.map((url, i) => (
+              <div key={url + i}>
+                <Image
+                  unoptimized
+                  src={url}
+                  alt={"Work photo " + (i + 1)}
+                  width={320}
+                  height={240}
+                  className="h-32 w-full object-cover rounded"
+                />
+                <button
+                  type="button"
+                  className="underline"
+                  onClick={() =>
+                    change({
+                      ...profile,
+                      workPhotos: profile.workPhotos.filter((_, n) => n !== i),
+                    })
+                  }
+                >
+                  Remove photo
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+        <section className="space-y-5 border-t pt-4">
+          <h2 className="text-lg font-semibold">Work sites</h2>
+          {(profile.projects ?? []).map((project) => (
+            <article key={project.id} className="border rounded p-4 space-y-3">
+              <label className="block">
+                Project name
+                <input
+                  required
+                  maxLength={120}
+                  value={project.name}
+                  onChange={(e) =>
+                    projectChange(project.id, { name: e.target.value })
+                  }
+                  className="block w-full border rounded p-2"
+                />
+              </label>
+              <label className="block">
+                Locality (public)
+                <input
+                  required
+                  maxLength={120}
+                  value={project.locality}
+                  onChange={(e) =>
+                    projectChange(project.id, { locality: e.target.value })
+                  }
+                  className="block w-full border rounded p-2"
+                />
+              </label>
+              <label className="block">
+                Site address (private)
+                <textarea
+                  maxLength={500}
+                  value={project.address ?? ""}
+                  onChange={(e) =>
+                    projectChange(project.id, { address: e.target.value })
+                  }
+                  className="block w-full border rounded p-2"
+                />
+              </label>
+              <label className="block">
+                Work description
+                <textarea
+                  maxLength={2000}
+                  value={project.description}
+                  onChange={(e) =>
+                    projectChange(project.id, { description: e.target.value })
+                  }
+                  className="block w-full border rounded p-2"
+                />
+              </label>
+              <label className="block">
+                Site photos
+                <input
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/png,image/webp"
+                  className="block mt-2 max-w-full"
+                  onChange={(e) => {
+                    void photos(e.target.files, project.id);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {project.photos.map((url, i) => (
+                  <div key={url + i}>
+                    <Image
+                      unoptimized
+                      src={url}
+                      alt={project.name + " photo " + (i + 1)}
+                      width={320}
+                      height={240}
+                      className="h-32 w-full object-cover rounded"
+                    />
+                    <button
+                      type="button"
+                      className="underline"
+                      onClick={() =>
+                        projectChange(project.id, {
+                          photos: project.photos.filter((_, n) => n !== i),
+                        })
+                      }
+                    >
+                      Remove photo
+                    </button>
+                  </div>
+                ))}
+              </div>
               <button
                 type="button"
+                className="text-red-700"
                 onClick={() => {
-                  setDraft(null);
-                  setEditing(null);
+                  if (confirm("Remove this work site?"))
+                    change({
+                      ...profile,
+                      projects: profile.projects?.filter(
+                        (p) => p.id !== project.id,
+                      ),
+                    });
                 }}
               >
-                Cancel
+                Remove site
               </button>
-            </div>
-          </fieldset>
-          {busy && <p role="status">Saving...</p>}
-        </form>
-      )}
-      {loading ? (
-        <p>Loading profiles...</p>
-      ) : (
-        !profiles.length && <p>No {kind}s added yet.</p>
-      )}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {profiles.map((profile) => (
-          <article key={profile.id} className="border rounded p-4 space-y-3">
-            <Image
-              unoptimized
-              width={640}
-              height={480}
-              src={profile.photoUrl}
-              alt={profile.name}
-              className="w-full h-48 object-cover rounded"
-            />
-            <h2 className="font-semibold">{profile.name}</h2>
-            <p>
-              {profile.yearsExperience} years of experience ·{" "}
-              {profile.workPhotos.length} work photos
-            </p>
-            <button
-              disabled={busy || !!draft}
-              onClick={() => {
-                setDraft({
-                  kind: profile.kind,
-                  name: profile.name,
-                  yearsExperience: profile.yearsExperience,
-                  photoUrl: profile.photoUrl,
-                  workPhotos: profile.workPhotos,
-                });
-                setEditing(profile.id);
-              }}
-            >
-              Edit
-            </button>
-            <button
-              className="ml-4 text-red-700"
-              disabled={busy || !!draft}
-              onClick={async () => {
-                if (!confirm(`Remove ${profile.name}'s public profile?`))
-                  return;
-                setBusy(true);
-                try {
-                  await api.delete(`/team/professionals/${profile.id}`);
-                  await load();
-                } catch {
-                  setError("Could not remove profile.");
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
-              Remove
-            </button>
-          </article>
-        ))}
-      </div>
-    </div>
+            </article>
+          ))}
+          <button
+            type="button"
+            disabled={(profile.projects ?? []).length >= 30}
+            className="border rounded px-3 py-2"
+            onClick={() =>
+              change({
+                ...profile,
+                projects: [
+                  ...(profile.projects ?? []),
+                  {
+                    id: crypto.randomUUID(),
+                    name: "",
+                    locality: "",
+                    address: "",
+                    description: "",
+                    photos: [],
+                  },
+                ],
+              })
+            }
+          >
+            Add work site
+          </button>
+        </section>
+        <button type="submit" className="portal-button">
+          Save profile
+        </button>
+        <a
+          href={"https://www.matrizo.com/" + profile.kind + "s/" + profile.id}
+          target="_blank"
+          rel="noreferrer"
+          className="ml-4 underline"
+        >
+          View public profile
+        </a>
+      </fieldset>
+      {busy && <p role="status">Saving...</p>}
+    </form>
   );
 }

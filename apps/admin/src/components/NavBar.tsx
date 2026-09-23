@@ -11,6 +11,7 @@ const ADMIN_LINKS = [
   ["/shades", "Paint colours"],
   ["/inventory", "Inventory"],
   ["/employees", "Employees"],
+  ["/professionals", "Painters & Plumbers"],
   ["/sales", "Daily sales"],
   ["/staff", "Store staff"],
   ["/analytics", "Analytics"],

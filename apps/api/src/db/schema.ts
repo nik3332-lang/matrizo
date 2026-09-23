@@ -357,6 +357,13 @@ export type ShadeSelection = {
 };
 export const professionals = sqliteTable("professionals", {
   id: text("id").primaryKey(),
+  userId: text("user_id")
+    .unique()
+    .references(() => users.id),
+  projects: text("projects", { mode: "json" })
+    .$type<import("@matrizo/shared").ProfessionalProject[]>()
+    .notNull()
+    .default([]),
   kind: text("kind", { enum: ["painter", "plumber"] }).notNull(),
   name: text("name").notNull(),
   yearsExperience: integer("years_experience").notNull(),

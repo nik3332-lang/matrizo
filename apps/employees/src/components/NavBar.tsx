@@ -26,15 +26,16 @@ export function NavBar() {
     user?.role === "admin"
       ? [
           ["/admin", "Employees"],
-          ["/professionals", "Painters & Plumbers"],
+          ["https://adminacc.matrizo.com/professionals", "Painters & Plumbers"],
         ]
-      : [
-          ["/", "Overview"],
-          ["/sales", "Log daily sales"],
-          ["/commission", "Commission"],
-          ["/profile", "My profile"],
-          ["/professionals", "Painters & Plumbers"],
-        ];
+      : user?.role === "painter" || user?.role === "plumber"
+        ? [["/professionals", "My profile & work"]]
+        : [
+            ["/", "Overview"],
+            ["/sales", "Log daily sales"],
+            ["/commission", "Commission"],
+            ["/profile", "My profile"],
+          ];
   return (
     <>
       <header className="portal-mobile">

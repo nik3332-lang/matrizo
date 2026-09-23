@@ -1,5 +1,13 @@
 # Matrizo Android and iOS release
 
+## Professional logins: 23 September 2026
+
+This update supersedes the employee-management permissions described below. Admins create painter/plumber profiles at `https://adminacc.matrizo.com/professionals`, then create each profile's email/password login. Painters and plumbers sign in at `https://emp.matrizo.com/login` and manage only their own profile, gallery and work sites. Sales employees cannot manage these profiles. Admins can reset passwords, disable logins and remove profiles; these actions revoke existing sessions as appropriate.
+
+Work sites contain a name, public locality, private address, description and photos. Full addresses are returned only to the owner and admins, never by the public list/detail endpoints. Migration 0009 links profiles to users and adds the project gallery. It was applied to production after a restricted-permission database backup. No real professional accounts or fabricated public profiles were created during verification.
+
+Verification: 16 focused API/database and mobile session/timeout tests passed, including real password login for both trades, ownership enforcement, address privacy and session revocation. All five typechecks, three web lint checks and three OpenNext production builds passed. Authenticated production browser acceptance and native-app distribution remain separate checks.
+
 ## Feature update: 23 September 2026
 
 Implemented in the working tree: configurable category colours with inherited category settings; supplied official logo and `Matrizo` wordmarks without a trailing dot; public availability without stock quantities; original paint shades grouped by family, with distinct cart variants and order snapshots; public painter/plumber listings and profiles on web and mobile; admin shade management; and employee profile/photo management restricted to `admin` and `sales_employee` on the API.

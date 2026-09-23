@@ -32,6 +32,10 @@ export default function DashboardPage() {
       router.replace("/admin");
       return;
     }
+    if (user.role === "painter" || user.role === "plumber") {
+      router.replace("/professionals");
+      return;
+    }
     let live = true;
     Promise.all([
       api.get<Summary>("/employees/me"),

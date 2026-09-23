@@ -92,7 +92,39 @@ export function Professionals({
             {id && (
               <>
                 <h2 className="text-xl font-semibold">Past work</h2>
-                {!p.workPhotos.length && <p>No work photos added yet.</p>}
+                {!p.workPhotos.length && !p.projects?.length && (
+                  <p>No work photos added yet.</p>
+                )}
+                {(p.projects ?? []).map((project) => (
+                  <section key={project.id} className="space-y-3 border-t pt-4">
+                    <h3 className="text-lg font-semibold break-words">
+                      {project.name}
+                    </h3>
+                    <p className="break-words">{project.locality}</p>
+                    <p className="whitespace-pre-wrap break-words">
+                      {project.description}
+                    </p>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      {project.photos.map((url, i) => (
+                        <a
+                          key={url + i}
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <Image
+                            unoptimized
+                            src={url}
+                            alt={`${project.name}: work photo ${i + 1}`}
+                            width={640}
+                            height={480}
+                            className="w-full h-64 object-cover rounded"
+                          />
+                        </a>
+                      ))}
+                    </div>
+                  </section>
+                ))}
                 <div className="grid sm:grid-cols-2 gap-4">
                   {p.workPhotos.map((url, i) => (
                     <a

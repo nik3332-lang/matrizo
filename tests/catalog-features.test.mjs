@@ -67,7 +67,7 @@ async function request(
 before(async () => {
   const bundle = await build({
     stdin: {
-      contents: `import { Hono } from 'hono'; import { catalogRoutes } from './apps/api/src/routes/catalog'; import { cartRoutes } from './apps/api/src/routes/cart'; import { orderRoutes } from './apps/api/src/routes/orders'; import { shadeRoutes } from './apps/api/src/routes/shades'; import { professionalRoutes } from './apps/api/src/routes/professionals'; const app = new Hono().basePath('/api/v1'); app.route('/',catalogRoutes); app.route('/',shadeRoutes); app.route('/',professionalRoutes); app.route('/cart',cartRoutes); app.route('/orders',orderRoutes); export default app;`,
+      contents: `import { Hono } from 'hono'; import { catalogRoutes } from './apps/api/src/routes/catalog'; import { cartRoutes } from './apps/api/src/routes/cart'; import { orderRoutes } from './apps/api/src/routes/orders'; import { shadeRoutes } from './apps/api/src/routes/shades'; import { professionalRoutes } from './apps/api/src/routes/professionals'; import { authRoutes } from './apps/api/src/routes/auth'; const app = new Hono().basePath('/api/v1'); app.route('/',catalogRoutes); app.route('/',shadeRoutes); app.route('/',professionalRoutes); app.route('/auth',authRoutes); app.route('/cart',cartRoutes); app.route('/orders',orderRoutes); export default app;`,
       resolveDir: process.cwd(),
     },
     bundle: true,
@@ -258,7 +258,7 @@ test("shade catalogue writes reject employees and preserve historical orders", a
     "Matrizo Blue 01",
   );
 });
-test("employee profile writes are role restricted and immediately public for both trades", async () => {
+test("admin profile writes are role restricted and immediately public for both trades", async () => {
   for (const kind of ["painter", "plumber"]) {
     const body = {
       kind,
@@ -268,7 +268,12 @@ test("employee profile writes are role restricted and immediately public for bot
       workPhotos: ["https://example.com/work.jpg"],
     };
     await request("/team/professionals", { method: "POST", body, status: 401 });
-    for (const role of ["customer", "store_staff", "delivery_partner"])
+    for (const role of [
+      "customer",
+      "store_staff",
+      "delivery_partner",
+      "sales_employee",
+    ])
       await request("/team/professionals", {
         role,
         method: "POST",
@@ -276,7 +281,7 @@ test("employee profile writes are role restricted and immediately public for bot
         status: 403,
       });
     const { profile } = await request("/team/professionals", {
-      role: "sales_employee",
+      role: "admin",
       method: "POST",
       body,
       status: 201,
@@ -295,11 +300,138 @@ test("employee profile writes are role restricted and immediately public for bot
       1,
     );
     await request(`/team/professionals/${profile.id}`, {
-      role: "sales_employee",
+      role: "admin",
       method: "DELETE",
     });
     await request(`/professionals/${profile.id}`, { status: 404 });
   }
+});
+test("professional logins are owner scoped, private addresses stay private and revocation works", async () => {
+  const password = "test-only-long-password";
+  const created = [];
+  for (const kind of ["painter", "plumber"]) {
+    const body = {
+      kind,
+      name: `Test ${kind}`,
+      yearsExperience: 4,
+      photoUrl: "https://example.com/person.jpg",
+      workPhotos: [],
+    };
+    const { profile } = await request("/team/professionals", {
+      role: "admin",
+      method: "POST",
+      body,
+      status: 201,
+    });
+    await request(`/team/professionals/${profile.id}/account`, {
+      role: "admin",
+      method: "POST",
+      body: { email: `${kind}@example.com`, password },
+      status: 201,
+    });
+    const user = sqlite
+      .prepare("SELECT * FROM users WHERE email=?")
+      .get(`${kind}@example.com`);
+    assert.equal(user.role, kind);
+    assert.notEqual(user.password_hash, password);
+    const login = await request("/auth/login", {
+      method: "POST",
+      body: { email: `${kind}@example.com`, password },
+    });
+    assert.equal(login.user.role, kind);
+    tokens[kind] = login.accessToken;
+    assert.equal(
+      (await request("/team/my-profile", { role: kind })).profile.id,
+      profile.id,
+    );
+    const { kind: _kind, ...details } = body;
+    const projects = [
+      {
+        id: "site-one",
+        name: "Bathroom renovation",
+        locality: "Meerut",
+        address: "Private house address",
+        description: "Pipe installation",
+        photos: ["https://example.com/work.jpg"],
+      },
+    ];
+    await request("/team/my-profile", {
+      role: kind,
+      method: "PATCH",
+      body: { ...details, projects },
+    });
+    assert.equal(
+      (await request("/team/my-profile", { role: kind })).profile.projects[0]
+        .address,
+      "Private house address",
+    );
+    const publicResult = (await request(`/professionals/${profile.id}`))
+      .profile;
+    assert.equal(publicResult.projects[0].address, undefined);
+    assert.equal(publicResult.userId, undefined);
+    assert.equal(
+      (await request(`/professionals?kind=${kind}`)).professionals[0]
+        .projects[0].address,
+      undefined,
+    );
+    await request("/team/my-profile", {
+      role: kind,
+      method: "PATCH",
+      body: { ...details, userId: "admin", projects },
+      status: 400,
+    });
+    await request("/team/professionals", { role: kind, status: 403 });
+    await request(`/team/professionals/${profile.id}`, {
+      role: kind,
+      method: "PATCH",
+      body,
+      status: 403,
+    });
+    await request(`/team/professionals/${profile.id}/account`, {
+      role: kind,
+      method: "PATCH",
+      body: { active: true },
+      status: 403,
+    });
+    await request(`/team/professionals/${profile.id}/account`, {
+      role: "admin",
+      method: "POST",
+      body: { email: "duplicate@example.com", password },
+      status: 409,
+    });
+    created.push({ kind, profile, body });
+  }
+  await request(`/team/professionals/${created[1].profile.id}`, {
+    role: "painter",
+    method: "DELETE",
+    status: 403,
+  });
+  assert.equal(
+    (await request("/team/my-profile", { role: "painter" })).profile.kind,
+    "painter",
+  );
+  const admin = await request("/team/professionals", { role: "admin" });
+  assert.equal(
+    admin.professionals[0].projects[0].address,
+    "Private house address",
+  );
+  await request(`/team/professionals/${created[0].profile.id}/account`, {
+    role: "admin",
+    method: "PATCH",
+    body: { active: false },
+  });
+  await request("/team/my-profile", { role: "painter", status: 401 });
+  await request(`/team/professionals/${created[1].profile.id}/account`, {
+    role: "admin",
+    method: "PATCH",
+    body: { password: "replacement-password-long" },
+  });
+  await request("/team/my-profile", { role: "plumber", status: 401 });
+  for (const { profile } of created)
+    await request(`/team/professionals/${profile.id}`, {
+      role: "admin",
+      method: "DELETE",
+    });
 });
 test("media rejects unauthorized users and mislabeled images", async () => {
   const body = { dataUrl: "data:image/jpeg;base64,SGVsbG8=" };
@@ -310,14 +442,14 @@ test("media rejects unauthorized users and mislabeled images", async () => {
     status: 403,
   });
   await request("/team/media", {
-    role: "sales_employee",
+    role: "admin",
     method: "POST",
     body,
     status: 400,
   });
   const data = (await readFile("MATRIZO LOGO.jpeg")).toString("base64");
   const { url } = await request("/team/media", {
-    role: "sales_employee",
+    role: "admin",
     method: "POST",
     body: { dataUrl: `data:image/jpeg;base64,${data}` },
     status: 201,

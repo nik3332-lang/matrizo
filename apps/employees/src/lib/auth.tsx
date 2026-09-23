@@ -11,14 +11,10 @@ import {
 import { ApiError } from "@matrizo/shared";
 import { api, getStoredToken, setStoredToken } from "./api";
 
-// Only two roles ever reach this portal: 'admin' (the same shared admin
-// account used across matrizo-admin too — commission/employee management is
-// just another thing an admin can do) and 'sales_employee' (accounts an
-// admin creates from the Employees section). Any other role's token is
-// rejected below, same as a logged-out visitor.
+// Sales staff and tradespeople have separate workspaces and API permissions.
 export type PortalUser = {
   id: string;
-  role: "admin" | "sales_employee";
+  role: "admin" | "sales_employee" | "painter" | "plumber";
   email: string | null;
   name: string | null;
 };
@@ -52,7 +48,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       }>("/account/me")
       .then((res) => {
-        if (res.user.role === "admin" || res.user.role === "sales_employee")
+        if (
+          ["admin", "sales_employee", "painter", "plumber"].includes(
+            res.user.role,
+          )
+        )
           setUser(res.user as PortalUser);
         else setStoredToken(null);
       })
