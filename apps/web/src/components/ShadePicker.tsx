@@ -97,7 +97,7 @@ export function ShadePicker({
                     style={{
                       outline:
                         value?.id === shade.id
-                          ? "2px solid #153747"
+                          ? "2px solid var(--color-brand-purple-700)"
                           : undefined,
                     }}
                   >

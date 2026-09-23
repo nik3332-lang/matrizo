@@ -50,6 +50,7 @@ type Product = {
   sku: string;
   name: string;
   description: string | null;
+  imageUrl: string | null;
   unit: string;
   basePrice: number;
   categoryId: string;
@@ -102,10 +103,9 @@ export default async function ProductPage({
 
   const unitPrice = priceForQuantity(product.tiers, 1, product.basePrice);
   const specs = specEntries(product.specs);
-  const imageSrc = productCatalogImage(
-    product.category?.slug ?? "",
-    product.name,
-  );
+  const imageSrc =
+    product.imageUrl ||
+    productCatalogImage(product.category?.slug ?? "", product.name);
 
   // Product/Offer schema.org markup (STAGE 6) — availability is
   // deliberately omitted rather than guessed: there's no customer-facing

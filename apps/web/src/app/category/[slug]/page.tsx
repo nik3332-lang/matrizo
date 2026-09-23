@@ -13,6 +13,7 @@ import Image from "next/image";
 import { PRODUCT_BRANDS } from "@matrizo/shared";
 import { serverApiGet } from "@/lib/serverApi";
 import { categoryIcon } from "@/lib/categoryIcon";
+import { categoryCatalogImage } from "@/lib/catalogImages";
 import { Icon } from "@/components/Icon";
 import { CategoryBadge } from "@/components/CategoryBadge";
 import { BrandFilterGrid, type Product } from "./BrandFilterGrid";
@@ -23,23 +24,6 @@ type Category = {
   name: string;
   icon: string | null;
   colour?: string | null;
-};
-
-// Real photography, category-level only — see public/images/CREDITS.md.
-// It's a real photo of stacked plastic pipe, not any specific SKU on this
-// page (the actual products are small fittings — elbows, tees, unions),
-// so it's deliberately not used on individual product cards, where a
-// pipe-yard photo at this scale would misrepresent what's being sold.
-// Categories without an entry here keep the plain icon header only.
-const CATEGORY_BANNERS: Partial<
-  Record<string, { src: string; width: number; height: number; alt: string }>
-> = {
-  upvc: {
-    src: "/images/upvc-pipes-category.jpg",
-    width: 900,
-    height: 596,
-    alt: "Stacked UPVC pipes",
-  },
 };
 
 async function getCategory(
@@ -81,19 +65,21 @@ export default async function CategoryPage({
   const brandsPresent = PRODUCT_BRANDS.filter((b) =>
     data.products.some((p) => p.brand === b),
   );
-  const banner = CATEGORY_BANNERS[slug];
+  const banner = ["upvc", "cpvc", "pvc"].includes(slug)
+    ? categoryCatalogImage(slug)
+    : null;
 
   return (
     <div>
       {banner && (
-        <div className="mb-6 rounded-card overflow-hidden border border-line">
+        <div className="mb-6 overflow-hidden bg-white">
           <Image
-            src={banner.src}
-            alt={banner.alt}
-            width={banner.width}
-            height={banner.height}
+            src={banner}
+            alt={data.category.name}
+            width={1280}
+            height={1280}
             priority
-            className="w-full h-40 sm:h-56 object-cover"
+            className="w-full h-40 sm:h-56 object-contain p-3"
           />
         </div>
       )}

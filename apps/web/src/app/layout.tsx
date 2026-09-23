@@ -37,7 +37,7 @@ export const metadata: Metadata = {
 // gate their own install UI behind engagement heuristics; the only way to
 // force one earlier is to write beforeinstallprompt handling, which this
 // deliberately doesn't.
-export const viewport: Viewport = { themeColor: "#153747" };
+export const viewport: Viewport = { themeColor: "#611b98" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

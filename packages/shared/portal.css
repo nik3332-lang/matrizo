@@ -1,32 +1,10 @@
-@theme {
-  --color-brand-orange-50: #edf6fa;
-  --color-brand-orange-100: #deedf4;
-  --color-brand-orange-200: #c0dce9;
-  --color-brand-orange-300: #99c5da;
-  --color-brand-orange-400: #6babca;
-  --color-brand-orange-500: #358bb2;
-  --color-brand-orange-600: #237c9f;
-  --color-brand-orange-700: #176d93;
-  --color-brand-orange-800: #105676;
-  --color-brand-orange-900: #103f54;
-  --color-brand-purple-50: #eff4f7;
-  --color-brand-purple-100: #dce8ed;
-  --color-brand-purple-200: #bfcfd8;
-  --color-brand-purple-300: #9fb9c8;
-  --color-brand-purple-400: #83a1b3;
-  --color-brand-purple-500: #64869c;
-  --color-brand-purple-600: #45697f;
-  --color-brand-purple-700: #264b62;
-  --color-brand-purple-800: #18394b;
-  --color-brand-purple-900: #112d3e;
-  --color-brand-cream: #f4f6f8;
-}
+@import "./brand.css";
 :root {
-  --foreground: #243847;
+  --foreground: #29232e;
 }
 body {
-  background: #f4f6f8;
-  color: #243847;
+  background: #f7f7f8;
+  color: #29232e;
   font-family: var(--font-geist-sans), Arial, sans-serif;
 }
 button {
@@ -36,7 +14,7 @@ button:disabled {
   cursor: wait;
 }
 :focus-visible {
-  outline: 3px solid #78afc8;
+  outline: 3px solid var(--color-brand-orange-600);
   outline-offset: 3px;
 }
 .glass {
@@ -48,8 +26,8 @@ button:disabled {
   position: fixed;
   inset: 0 auto 0 0;
   width: 224px;
-  background: #153747;
-  color: #acc3ce;
+  background: var(--color-brand-purple-900);
+  color: #efdef9;
   padding: 31px 20px 22px;
   display: flex;
   flex-direction: column;
@@ -62,7 +40,7 @@ button:disabled {
   font-size: 30px;
   color: #fff;
   font-weight: 700;
-  letter-spacing: -1.4px;
+  letter-spacing: 0;
 }
 .portal-brand > span {
   display: grid;
@@ -73,11 +51,11 @@ button:disabled {
   border-radius: 7px;
   font-size: 18px;
   font-weight: 600;
-  letter-spacing: -2px;
+  letter-spacing: 0;
 }
 .portal-sidebar-label {
-  color: #7495a8;
-  letter-spacing: 1.7px;
+  color: #dec0ef;
+  letter-spacing: 0;
   font-size: 9px;
   margin: 15px 0 32px;
 }
@@ -100,8 +78,9 @@ button:disabled {
   color: #fff;
 }
 .portal-links a.active {
-  background: #2c5368;
+  background: var(--color-brand-purple-700);
   color: #fff;
+  box-shadow: inset 3px 0 var(--color-brand-orange-500);
 }
 .portal-links svg {
   width: 17px;
@@ -115,7 +94,7 @@ button:disabled {
 }
 .portal-sidebar-bottom strong {
   display: block;
-  color: #dce6eb;
+  color: #efdef9;
   font-size: 12px;
   font-weight: 500;
 }
@@ -142,7 +121,7 @@ button:disabled {
   justify-content: space-between;
   color: #95a3ad;
   font-size: 10px;
-  letter-spacing: 0.2px;
+  letter-spacing: 0;
   padding-bottom: 25px;
   margin-bottom: 20px;
   border-bottom: 1px solid #e1e7eb;
@@ -159,7 +138,7 @@ button:disabled {
 }
 .portal-heading h1 {
   font-size: 29px;
-  letter-spacing: -1px;
+  letter-spacing: 0;
   font-weight: 600;
 }
 .portal-heading p {
@@ -170,7 +149,7 @@ button:disabled {
 .portal-eyebrow {
   text-transform: uppercase;
   font-size: 9px;
-  letter-spacing: 1.8px;
+  letter-spacing: 0;
   color: #8499a6;
   margin-bottom: 8px;
   display: block;
@@ -184,12 +163,12 @@ button:disabled {
   border-radius: 7px;
   font-size: 12px;
   font-weight: 550;
-  background: #176d93;
+  background: var(--color-brand-purple-700);
   color: #fff;
-  border: 1px solid #176d93;
+  border: 1px solid var(--color-brand-purple-700);
 }
 .portal-button:hover {
-  background: #105676;
+  background: var(--color-brand-purple-800);
 }
 .portal-button.secondary {
   background: white;
@@ -225,7 +204,7 @@ button:disabled {
   display: block;
   font-size: 27px;
   font-weight: 550;
-  letter-spacing: -1px;
+  letter-spacing: 0;
   margin: 13px 0 7px;
 }
 .portal-stat p {
@@ -233,13 +212,13 @@ button:disabled {
   color: #8b9da8;
 }
 .portal-stat.highlight {
-  background: #183f53;
+  background: var(--color-brand-purple-800);
   color: white;
-  border-color: #183f53;
+  border-color: var(--color-brand-purple-800);
 }
 .portal-stat.highlight small,
 .portal-stat.highlight p {
-  color: #b0cbd8;
+  color: #efdef9;
 }
 .portal-panel {
   border: 1px solid #e0e7ec;
@@ -291,7 +270,7 @@ button:disabled {
   font-size: 9px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0;
   color: #8a9ba6;
   padding: 14px 14px;
   border-bottom: 1px solid #e9eef1;
@@ -411,7 +390,7 @@ button:disabled {
   top: 30px;
 }
 .portal-login-header .portal-brand {
-  color: #18394b;
+  color: var(--color-brand-purple-800);
 }
 .portal-login {
   display: flex;
@@ -431,7 +410,7 @@ button:disabled {
 .portal-login-card h1 {
   font-size: 26px;
   font-weight: 550;
-  letter-spacing: -0.9px;
+  letter-spacing: 0;
 }
 .portal-main:has(.portal-login) {
   margin-left: 0;
@@ -450,7 +429,7 @@ button:disabled {
 }
 .sales-form-amount {
   font-size: 34px !important;
-  letter-spacing: -1px;
+  letter-spacing: 0;
 }
 .sales-save-note {
   font-size: 11px;
@@ -477,7 +456,7 @@ button:disabled {
 }
 .sales-row strong {
   font-size: 14px;
-  color: #1e688b;
+  color: var(--color-brand-purple-700);
 }
 .sales-row:hover {
   background: #f9fbfc;
@@ -514,7 +493,7 @@ button:disabled {
     align-items: center;
     height: 61px;
     padding: 0 18px;
-    background: #153747;
+    background: var(--color-brand-purple-900);
     color: white;
     position: sticky;
     top: 0;
