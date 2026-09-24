@@ -67,7 +67,7 @@ async function request(
 before(async () => {
   const bundle = await build({
     stdin: {
-      contents: `import { Hono } from 'hono'; import { catalogRoutes } from './apps/api/src/routes/catalog'; import { cartRoutes } from './apps/api/src/routes/cart'; import { orderRoutes } from './apps/api/src/routes/orders'; import { shadeRoutes } from './apps/api/src/routes/shades'; import { professionalRoutes } from './apps/api/src/routes/professionals'; import { authRoutes } from './apps/api/src/routes/auth'; const app = new Hono().basePath('/api/v1'); app.route('/',catalogRoutes); app.route('/',shadeRoutes); app.route('/',professionalRoutes); app.route('/auth',authRoutes); app.route('/cart',cartRoutes); app.route('/orders',orderRoutes); export default app;`,
+      contents: `import { Hono } from 'hono'; import { storeRoutes } from './apps/api/src/routes/stores'; import { serviceabilityRoutes } from './apps/api/src/routes/serviceability'; import { catalogRoutes } from './apps/api/src/routes/catalog'; import { cartRoutes } from './apps/api/src/routes/cart'; import { orderRoutes } from './apps/api/src/routes/orders'; import { shadeRoutes } from './apps/api/src/routes/shades'; import { professionalRoutes } from './apps/api/src/routes/professionals'; import { authRoutes } from './apps/api/src/routes/auth'; const app = new Hono().basePath('/api/v1'); app.route('/admin/stores',storeRoutes); app.route('/serviceability',serviceabilityRoutes); app.route('/',catalogRoutes); app.route('/',shadeRoutes); app.route('/',professionalRoutes); app.route('/auth',authRoutes); app.route('/cart',cartRoutes); app.route('/orders',orderRoutes); export default app;`,
       resolveDir: process.cwd(),
     },
     bundle: true,
@@ -140,6 +140,29 @@ before(async () => {
     INSERT INTO addresses (id,user_id,line1,city,state,pincode) VALUES ('address','customer','Road','City','State','560102');`);
 });
 after(() => sqlite?.close());
+
+test("delivery areas are admin-only, validated and immediately affect coverage", async () => {
+  const path = "/admin/stores/store/pincodes";
+  await request(path, { status: 401 });
+  for (const role of ["customer", "store_staff", "sales_employee", "delivery_partner"]) {
+    await request(path, { role, status: 403 });
+    await request(path, { role, method: "POST", body: { pincode: "250401", etaMinutes: 90 }, status: 403 });
+    await request(`${path}/250401`, { role, method: "DELETE", status: 403 });
+  }
+  for (const body of [{ pincode: "abcd" }, { pincode: "025001" }, { pincode: "250401", etaMinutes: 0 }, { pincode: "250401", etaMinutes: 1.5 }, { pincode: "250401", etaMinutes: 10081 }]) {
+    await request(path, { role: "admin", method: "POST", body, status: 400 });
+  }
+  await request(path, { role: "admin", method: "POST", body: { pincode: "250401", etaMinutes: 90 } });
+  assert.equal((await request("/serviceability/250401")).etaMinutes, 90);
+  await request(path, { role: "admin", method: "POST", body: { pincode: "250401", etaMinutes: 120 } });
+  const { pincodes } = await request(path, { role: "admin" });
+  assert.equal(pincodes.filter((p) => p.pincode === "250401").length, 1);
+  assert.equal((await request("/serviceability/250401")).etaMinutes, 120);
+  await request(`${path}/250401`, { role: "admin", method: "DELETE" });
+  assert.equal((await request("/serviceability/250401")).serviceable, false);
+  assert.equal((await request("/serviceability/560102")).serviceable, true);
+  await request("/admin/stores/missing/pincodes", { role: "admin", method: "POST", body: { pincode: "250401" }, status: 404 });
+});
 
 test("category colours are admin managed and inherited by product reads", async () => {
   await request("/admin/categories/pipes", {

@@ -76,8 +76,8 @@ storeRoutes.get('/:id/pincodes', async (c) => {
 });
 
 const pincodeSchema = z.object({
-  pincode: z.string().trim().min(4).max(10),
-  etaMinutes: z.number().int().positive().optional(),
+  pincode: z.string().trim().regex(/^[1-9]\d{5}$/),
+  etaMinutes: z.number().int().min(1).max(10080).optional(),
 });
 
 storeRoutes.post('/:id/pincodes', async (c) => {
