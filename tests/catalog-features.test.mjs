@@ -141,6 +141,34 @@ before(async () => {
 });
 after(() => sqlite?.close());
 
+test("store lifecycle preserves history and scopes staff to their store", async () => {
+  const body = { name: "Second store", line1: "Test road", city: "Meerut", state: "Uttar Pradesh", pincode: "250401" };
+  for (const role of ["customer", "store_staff", "sales_employee", "delivery_partner"]) {
+    await request("/admin/stores", { role, method: "POST", body, status: 403 });
+    await request("/admin/stores/store", { role, method: "PATCH", body: { active: false }, status: 403 });
+  }
+  await request("/admin/stores", { role: "admin", method: "POST", body: { ...body, pincode: "invalid" }, status: 400 });
+  const { store } = await request("/admin/stores", { role: "admin", method: "POST", body, status: 201 });
+  await request(`/admin/stores/${store.id}/pincodes`, { role: "admin", method: "POST", body: { pincode: "250402", etaMinutes: 60 } });
+  sqlite.prepare("INSERT INTO orders (id,user_id,store_id,address_id,payment_method,total_amount) VALUES ('store-history','customer',?,'address','cod',10)").run(store.id);
+  sqlite.prepare("UPDATE users SET store_id='store' WHERE id='store_staff'").run();
+  try {
+    assert.equal((await request("/orders", { role: "store_staff" })).orders.some((o) => o.id === "store-history"), false);
+    await request("/orders/store-history", { role: "store_staff", status: 404 });
+    sqlite.prepare("UPDATE users SET store_id=? WHERE id='store_staff'").run(store.id);
+    assert.equal((await request("/orders", { role: "store_staff" })).orders.some((o) => o.id === "store-history"), true);
+    await request(`/admin/stores/${store.id}`, { role: "admin", method: "PATCH", body: { name: "Renamed store", active: false } });
+    assert.equal((await request("/serviceability/250402")).serviceable, false);
+    assert.equal((await request("/orders", { role: "admin" })).orders.some((o) => o.id === "store-history"), true);
+    assert.equal((await request(`/admin/stores/${store.id}/pincodes`, { role: "admin" })).pincodes.length, 1);
+    await request(`/admin/stores/${store.id}`, { role: "admin", method: "PATCH", body: { active: true } });
+    assert.equal((await request("/serviceability/250402")).serviceable, true);
+  } finally {
+    sqlite.prepare("UPDATE users SET store_id=NULL WHERE id='store_staff'").run();
+    sqlite.prepare("DELETE FROM orders WHERE id='store-history'").run();
+  }
+});
+
 test("delivery areas are admin-only, validated and immediately affect coverage", async () => {
   const path = "/admin/stores/store/pincodes";
   await request(path, { status: 401 });

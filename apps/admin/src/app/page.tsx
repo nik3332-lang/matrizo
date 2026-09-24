@@ -19,6 +19,7 @@ const STATUS_BORDER: Record<string, string> = {
 
 type Order = {
   id: string;
+  storeId: string;
   status: string;
   totalAmount: number;
   paymentMethod: string;
@@ -28,6 +29,8 @@ type Order = {
 export default function OrderQueuePage() {
   const { user, loading } = useAuth();
   const [orders, setOrders] = useState<Order[] | null>(null);
+  const [stores, setStores] = useState<{ id: string; name: string; active: boolean }[]>([]);
+  const [storeFilter, setStoreFilter] = useState("");
   const [filter, setFilter] = useState<"all" | (typeof ORDER_STATUSES)[number]>(
     "all",
   );
@@ -50,10 +53,24 @@ export default function OrderQueuePage() {
     if (!loading && user) load();
   }, [loading, user]);
 
+  useEffect(() => {
+    if (user?.role !== "admin") return;
+    let current = true;
+    api.get<{ stores: { id: string; name: string; active: boolean }[] }>("/admin/stores")
+      .then(({ stores }) => {
+        if (!current) return;
+        setStores(stores);
+        setStoreFilter(new URLSearchParams(window.location.search).get("storeId") ?? "");
+      }).catch(() => { if (current) setLoadError("Could not load stores. Refresh to try again."); });
+    return () => { current = false; };
+  }, [user?.role]);
+
+  const storeOrders = useMemo(() => orders?.filter((o) => user?.role !== "admin" || !storeFilter || o.storeId === storeFilter) ?? null, [orders, storeFilter, user?.role]);
+
   const filtered = useMemo(
     () =>
-      filter === "all" ? orders : orders?.filter((o) => o.status === filter),
-    [orders, filter],
+      filter === "all" ? storeOrders : storeOrders?.filter((o) => o.status === filter),
+    [storeOrders, filter],
   );
 
   if (!loading && !user) {
@@ -87,24 +104,31 @@ export default function OrderQueuePage() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-slate-900 mb-4">Order queue</h1>
+      {loadError && <p role="alert" className="portal-message portal-error">{loadError}</p>}
+      {user?.role === "admin" && <label className="block mb-5">Store
+        <select aria-label="Filter orders by store" value={storeFilter} onChange={(e) => setStoreFilter(e.target.value)} className="mt-1 block w-full max-w-lg rounded-lg border border-stone-300 bg-white p-2">
+          <option value="">All stores</option>
+          {stores.map((store) => <option key={store.id} value={store.id}>{store.name}{store.active ? "" : " (inactive)"}</option>)}
+        </select>
+      </label>}
 
       <div className="grid grid-cols-3 gap-3 mb-5">
         <div className="glass rounded-xl p-4 border-l-4 border-l-brand-purple-400">
           <div className="text-2xl font-bold text-brand-purple-800">
-            {orders.length}
+            {storeOrders?.length ?? 0}
           </div>
           <div className="text-xs text-slate-500">Total orders</div>
         </div>
         <div className="glass rounded-xl p-4 border-l-4 border-l-emerald-400">
           <div className="text-2xl font-bold text-emerald-700">
-            ₹{orders.reduce((sum, o) => sum + o.totalAmount, 0)}
+            ₹{storeOrders?.reduce((sum, o) => sum + o.totalAmount, 0) ?? 0}
           </div>
           <div className="text-xs text-slate-500">Total value</div>
         </div>
         <div className="glass rounded-xl p-4 border-l-4 border-l-brand-orange-400">
           <div className="text-2xl font-bold text-brand-orange-700">
             {
-              orders.filter(
+              storeOrders?.filter(
                 (o) => o.status !== "delivered" && o.status !== "cancelled",
               ).length
             }
@@ -157,6 +181,7 @@ export default function OrderQueuePage() {
               <div className="text-sm text-slate-500">
                 {new Date(order.createdAt).toLocaleString()}
               </div>
+              {user?.role === "admin" && <div className="text-sm text-stone-600">{stores.find((s) => s.id === order.storeId)?.name ?? order.storeId}</div>}
             </div>
             <div className="text-right flex items-center gap-3">
               <div>

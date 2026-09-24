@@ -22,7 +22,7 @@ const storeSchema = z.object({
   line2: z.string().trim().optional(),
   city: z.string().trim().min(1),
   state: z.string().trim().min(1),
-  pincode: z.string().trim().min(4).max(10),
+  pincode: z.string().trim().regex(/^[1-9]\d{5}$/),
   lat: z.number().optional(),
   lng: z.number().optional(),
   active: z.boolean().optional(),

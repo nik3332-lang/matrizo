@@ -10,7 +10,7 @@ const ADMIN_LINKS = [
   ["/categories", "Categories"],
   ["/shades", "Paint colours"],
   ["/inventory", "Inventory"],
-  ["/delivery-areas", "Delivery areas"],
+  ["/stores", "Stores"],
   ["/employees", "Employees"],
   ["/professionals", "Painters & Plumbers"],
   ["/sales", "Daily sales"],
